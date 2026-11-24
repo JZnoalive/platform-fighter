@@ -57,6 +57,9 @@
 | 2026-11-24 | Cajas rojas ocultas por defecto (se activan en el menú) | Imagen limpia para el tráiler |
 | 2026-11-24 | Poses estilo Smash: anticipación, giros de todo el cuerpo (Root), muñecas para apuntar, estelas en las armas | Que se vea mejor sin animaciones subidas |
 | 2026-11-24 | Contador de combo en el HUD ("COMBO x4 · 23%") | Los combos los crean los jugadores; así se ven en el tráiler |
+| 2026-11-24 | Las poses aceptan `AnimationConstraint` además de `Motor6D` | Los avatares nuevos de Roblox usan AnimationConstraint: antes las poses no se aplicaban |
+| 2026-11-24 | Cámara con 9° de inclinación desde arriba; fondo lejano (islas, nubes, sol) y contorno negro en los luchadores | Aspecto más cercano a Smash; probado con el MCP de Studio |
+| 2026-11-24 | Pruebas con el MCP de Roblox Studio (Claude arranca el juego, pulsa teclas y hace capturas) | Menos ida y vuelta de videos y logs |
 | 2026-11-24 | Mientras solo programa JZnoalive, commits directos a `main` | Rama + PR cuando entren más programadores |
 | 2026-11-24 | Arriba/abajo y recovery se hacen en M4b, después de M4 | Petición de JZnoalive; M4 primero para cerrar el ciclo de partida |
 | 2026-11-24 | Plano de juego: X = izquierda/derecha, Y = arriba/abajo, Z siempre 0 | Una sola convención para cámara, movimiento y hitboxes |

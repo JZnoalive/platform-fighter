@@ -7,6 +7,7 @@ local CameraConfig = {
 	MaxDistance = 120, -- lo más lejos que puede estar la cámara
 	Padding = 12, -- espacio libre alrededor de los luchadores (studs)
 	HeightOffset = 4, -- sube un poco el encuadre
+	Pitch = 9, -- grados mirando desde arriba (estilo Smash: se ve el suelo de las plataformas)
 	Smoothing = 6, -- mayor = la cámara sigue más rápido
 	EmptyFocus = Vector3.new(0, 10, 0), -- a dónde mira si no hay nadie
 }

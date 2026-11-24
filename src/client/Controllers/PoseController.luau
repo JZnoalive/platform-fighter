@@ -40,25 +40,36 @@ local JOINTS = {
 }
 
 local EMPTY = {}
-local motorCache: { [Model]: { [string]: Motor6D } } = {}
+-- Articulación = Motor6D (rig clásico) o AnimationConstraint (sistema nuevo de
+-- articulaciones de Roblox). Las dos tienen la propiedad Transform.
+local motorCache: { [Model]: { [string]: any } } = {}
 local runPhase: { [Model]: number } = {}
 local overridden: { [Model]: boolean } = {} -- true si este frame le pusimos pose
 
-local function getMotors(model: Model): { [string]: Motor6D }
+local function isJoint(instance: Instance?): boolean
+	return instance ~= nil and (instance:IsA("Motor6D") or instance:IsA("AnimationConstraint"))
+end
+
+local function getMotors(model: Model): { [string]: any }
 	local cached = motorCache[model]
 	if cached then
 		local anyMotor = next(cached)
 		-- Si el cuerpo se rehízo (ApplyDescription) o aún no había cargado, se vuelve a buscar.
-		if anyMotor ~= nil and (cached[anyMotor] :: Motor6D):IsDescendantOf(model) then
+		if anyMotor ~= nil and (cached[anyMotor] :: Instance):IsDescendantOf(model) then
 			return cached
 		end
 	end
 	local motors = {}
 	for jointName, partName in JOINTS do
 		local part = model:FindFirstChild(partName)
-		local motor = part and part:FindFirstChild(jointName)
-		if motor and motor:IsA("Motor6D") then
-			motors[jointName] = motor
+		-- Puede haber varios hijos con el mismo nombre en otras partes: se busca el que sea articulación.
+		if part then
+			for _, child in part:GetChildren() do
+				if child.Name == jointName and isJoint(child) then
+					motors[jointName] = child
+					break
+				end
+			end
 		end
 	end
 	motorCache[model] = motors

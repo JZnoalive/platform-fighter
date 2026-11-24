@@ -35,7 +35,9 @@ local function computeTarget(camera: Camera): CFrame
 	local positions = getFighterPositions()
 	if #positions == 0 then
 		local focus = CameraConfig.EmptyFocus
-		return CFrame.lookAt(focus + Vector3.new(0, 0, CameraConfig.MinDistance), focus)
+		local pitch = math.rad(CameraConfig.Pitch or 0)
+		local d = CameraConfig.MinDistance
+		return CFrame.lookAt(focus + Vector3.new(0, math.sin(pitch) * d, math.cos(pitch) * d), focus)
 	end
 
 	local minX, maxX = math.huge, -math.huge
@@ -64,7 +66,10 @@ local function computeTarget(camera: Camera): CFrame
 	)
 
 	local center = Vector3.new((minX + maxX) / 2, (minY + maxY) / 2 + CameraConfig.HeightOffset, 0)
-	return CFrame.lookAt(center + Vector3.new(0, 0, distance), center)
+	-- Un poco desde arriba (estilo Smash): se ve la parte de arriba de las plataformas.
+	local pitch = math.rad(CameraConfig.Pitch or 0)
+	local offset = Vector3.new(0, math.sin(pitch) * distance, math.cos(pitch) * distance)
+	return CFrame.lookAt(center + offset, center)
 end
 
 -- Sacudida de cámara (golpes fuertes, KO). intensity en studs, duration en segundos.

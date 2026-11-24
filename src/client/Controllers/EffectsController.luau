@@ -6,6 +6,7 @@
 --   • Sonidos (si hay IDs en Shared.Config.AudioConfig) y música de fondo.
 -- El servidor solo avisa (HitEvent, MatchEvent); no hay lógica de juego aquí.
 
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
@@ -112,6 +113,37 @@ local function onMatchEvent(kind: string, data: { [string]: any })
 	end
 end
 
+-- Contorno negro en los luchadores (estilo cartoon): se leen mejor sobre el fondo.
+local function ensureOutline(model: Model)
+	if model:FindFirstChild("Outline") then
+		return
+	end
+	local outline = Instance.new("Highlight")
+	outline.Name = "Outline"
+	outline.FillTransparency = 1
+	outline.OutlineColor = Color3.fromRGB(15, 10, 20)
+	outline.OutlineTransparency = 0.1
+	outline.DepthMode = Enum.HighlightDepthMode.Occluded
+	outline.Parent = model
+end
+
+local function outlineLoop()
+	while true do
+		for _, player in Players:GetPlayers() do
+			local character = player.Character
+			if character and character:GetAttribute("FighterId") then
+				ensureOutline(character)
+			end
+		end
+		for _, model in CollectionService:GetTagged("CameraTarget") do
+			if model:IsA("Model") and model:IsDescendantOf(workspace) then
+				ensureOutline(model)
+			end
+		end
+		task.wait(0.5)
+	end
+end
+
 local function startMusic()
 	if AudioConfig.MusicBattle == "" then
 		return
@@ -152,6 +184,7 @@ function EffectsController.Start()
 	end)
 
 	startMusic()
+	task.spawn(outlineLoop)
 end
 
 return EffectsController

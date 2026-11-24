@@ -16,7 +16,7 @@ local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 
 local DecorService = {}
 
-local STONE = Color3.fromRGB(118, 104, 128)
+local STONE = Color3.fromRGB(165, 150, 165)
 local STONE_DARK = Color3.fromRGB(70, 60, 82)
 local TRIM = Color3.fromRGB(255, 170, 90)
 
@@ -120,55 +120,59 @@ local function buildBackdrop(decor: Folder)
 	makePart(decor, {
 		Name = "Sun",
 		Shape = Enum.PartType.Ball,
-		Size = Vector3.one * 90,
-		Position = Vector3.new(60, 45, -420),
+		Size = Vector3.one * 150,
+		Position = Vector3.new(160, 60, -1100),
 		Material = Enum.Material.Neon,
 		Color = Color3.fromRGB(255, 170, 100),
 	})
 
-	-- Columnas del templo detrás del escenario (pares, con dintel)
-	for _, x in { -48, -16, 16, 48 } do
-		makePart(decor, {
-			Name = "Column",
-			Size = Vector3.new(3.5, 34, 3.5),
-			Position = Vector3.new(x, 15, -30),
-			Material = Enum.Material.Marble,
-			Color = Color3.fromRGB(215, 200, 210),
-		})
-	end
-	makePart(decor, {
-		Name = "Lintel",
-		Size = Vector3.new(104, 3, 5),
-		Position = Vector3.new(0, 33, -30),
-		Material = Enum.Material.Marble,
-		Color = Color3.fromRGB(200, 185, 200),
-	})
-
-	-- Islas flotantes lejanas (posiciones fijas para que siempre se vea igual)
+	-- Islas flotantes MUY lejanas (la bruma las difumina): fondo limpio, sin tapar la pelea
 	local islands = {
-		{ -120, 10, -160, 40 },
-		{ 110, 30, -180, 34 },
-		{ -60, 55, -260, 50 },
-		{ 160, -10, -240, 46 },
-		{ -190, 40, -300, 60 },
-		{ 30, -30, -140, 26 },
+		{ -330, 40, -700, 90 },
+		{ 360, 90, -760, 80 },
+		{ -60, 170, -900, 120 },
+		{ 160, -60, -650, 60 },
 	}
 	for i, data in islands do
 		local x, y, z, w = data[1], data[2], data[3], data[4]
 		makePart(decor, {
 			Name = `Island{i}`,
-			Size = Vector3.new(w, w * 0.25, w * 0.6),
-			Position = Vector3.new(x, y, z),
+			Shape = Enum.PartType.Cylinder,
+			Size = Vector3.new(w * 0.12, w, w), -- cilindro tumbado = disco de hierba
+			CFrame = CFrame.new(x, y, z) * CFrame.Angles(0, 0, math.rad(90)),
 			Material = Enum.Material.Grass,
-			Color = Color3.fromRGB(120, 140, 100),
+			Color = Color3.fromRGB(110, 160, 95),
 		})
 		makePart(decor, {
 			Name = `Island{i}_Rock`,
-			Size = Vector3.new(w * 0.7, w * 0.45, w * 0.45),
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.new(w * 0.8, w * 0.8, w * 0.8),
 			Position = Vector3.new(x, y - w * 0.3, z),
 			Material = Enum.Material.Rock,
-			Color = STONE_DARK,
+			Color = Color3.fromRGB(120, 95, 105),
 		})
+	end
+
+	-- Nubes suaves (bolas blancas semitransparentes) para dar profundidad
+	local clouds = {
+		{ -200, 120, -500, 60 },
+		{ 140, 150, -560, 80 },
+		{ 330, 60, -480, 50 },
+		{ -380, 70, -600, 70 },
+	}
+	for i, data in clouds do
+		local x, y, z, s = data[1], data[2], data[3], data[4]
+		for j = -1, 1 do
+			makePart(decor, {
+				Name = `Cloud{i}_{j}`,
+				Shape = Enum.PartType.Ball,
+				Size = Vector3.one * (s * (if j == 0 then 1 else 0.7)),
+				Position = Vector3.new(x + j * s * 0.6, y - math.abs(j) * s * 0.1, z),
+				Material = Enum.Material.SmoothPlastic,
+				Color = Color3.fromRGB(255, 235, 235),
+				Transparency = 0.25,
+			})
+		end
 	end
 end
 
