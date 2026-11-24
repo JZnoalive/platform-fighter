@@ -114,23 +114,24 @@ return {
 				offset = { scale = Vector3.new(0.25, 0, -0.52), add = ZERO },
 				color = "F43F8E", material = "Neon" },
 
-			-- Espadón en la mano derecha: empuñadura, guarda, hoja y ranura de neón.
-			-- Ancho en Z para que se vea de lado (la cámara mira de lado).
+			-- Espadón en la mano derecha, apuntando HACIA DELANTE (Z negativo).
+			-- Así se ve entero desde la cámara lateral aunque la mano quede detrás del
+			-- cuerpo, y no atraviesa el suelo. Alto en Y = el ancho que se ve de lado.
 			{ name = "SwordGrip", part = "RightHand",
-				size = { scale = ZERO, add = Vector3.new(0.3, 1.0, 0.3) },
-				offset = { scale = ZERO, add = Vector3.new(0, -0.4, 0) },
+				size = { scale = ZERO, add = Vector3.new(0.3, 0.3, 0.9) },
+				offset = { scale = ZERO, add = Vector3.new(0, -0.2, -0.25) },
 				color = "1E1B2E", material = "Metal" },
 			{ name = "SwordGuard", part = "RightHand",
-				size = { scale = ZERO, add = Vector3.new(0.45, 0.16, 0.95) },
-				offset = { scale = ZERO, add = Vector3.new(0, -0.95, 0) },
+				size = { scale = ZERO, add = Vector3.new(0.22, 1.0, 0.2) },
+				offset = { scale = ZERO, add = Vector3.new(0, -0.2, -0.8) },
 				color = "7C3AED", material = "Metal" },
 			{ name = "SwordBlade", part = "RightHand",
-				size = { scale = ZERO, add = Vector3.new(0.14, 4.2, 0.6) },
-				offset = { scale = ZERO, add = Vector3.new(0, -3.1, 0) },
+				size = { scale = ZERO, add = Vector3.new(0.12, 0.6, 4.2) },
+				offset = { scale = ZERO, add = Vector3.new(0, -0.2, -3.0) },
 				color = "7C3AED", material = "Metal" },
 			{ name = "SwordGlow", part = "RightHand",
-				size = { scale = ZERO, add = Vector3.new(0.16, 3.6, 0.12) },
-				offset = { scale = ZERO, add = Vector3.new(0, -3.2, 0) },
+				size = { scale = ZERO, add = Vector3.new(0.16, 0.12, 3.6) },
+				offset = { scale = ZERO, add = Vector3.new(0, -0.2, -3.1) },
 				color = "F43F8E", material = "Neon" },
 		},
 	},
