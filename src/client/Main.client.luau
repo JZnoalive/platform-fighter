@@ -11,8 +11,9 @@ local CameraController = require(Controllers.CameraController)
 local InputController = require(Controllers.InputController)
 local MovementController = require(Controllers.MovementController)
 
-InputController.Start()
+-- La cámara va primero: si otro controlador falla, al menos se ve el juego.
 CameraController.Start()
+InputController.Start()
 MovementController.Start()
 
 print(`[Client] listo — {Players.LocalPlayer.Name} — versión {GameConfig.Version}`)
