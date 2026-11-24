@@ -17,6 +17,8 @@ end
 local Remotes = {
 	ActionRequest = make("ActionRequest"), -- cliente → servidor: { action = "Attack", move = "Jab" }
 	ApplyKnockback = make("ApplyKnockback"), -- servidor → cliente víctima: (velocity, hitstun)
+	FighterReset = make("FighterReset"), -- servidor → cliente: "te acabo de recolocar, reinicia tu movimiento"
+	MatchEvent = make("MatchEvent"), -- servidor → todos: (kind, data) con kind = "Start" | "KO" | "Victory"
 }
 
 folder.Parent = ReplicatedStorage.Shared

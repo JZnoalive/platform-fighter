@@ -42,10 +42,16 @@ local function createPercentLabel(fighter: Fighter)
 	label.Parent = gui
 
 	local function refresh()
-		label.Text = `{math.floor(fighter.model:GetAttribute("Percent") or 0)}%`
+		local text = `{math.floor(fighter.model:GetAttribute("Percent") or 0)}%`
+		local stocks = fighter.model:GetAttribute("Stocks")
+		if stocks then
+			text ..= "  " .. string.rep("●", math.max(stocks, 0))
+		end
+		label.Text = text
 	end
 	refresh()
 	fighter.model:GetAttributeChangedSignal("Percent"):Connect(refresh)
+	fighter.model:GetAttributeChangedSignal("Stocks"):Connect(refresh)
 
 	gui.Parent = fighter.root
 end
@@ -120,10 +126,15 @@ function FighterService.GetState(fighter: Fighter): string
 	return fighter.model:GetAttribute("State") or "Idle"
 end
 
--- Vuelve a dejar al luchador como nuevo (0 %, Idle). Lo usa el dummy y luego el respawn.
-function FighterService.Reset(fighter: Fighter)
+-- Invalida cualquier hitstun o ataque en curso (sus temporizadores ya no harán nada).
+function FighterService.CancelTimers(fighter: Fighter)
 	fighter.hitToken += 1
 	fighter.attackToken += 1
+end
+
+-- Vuelve a dejar al luchador como nuevo (0 %, Idle). Lo usan el dummy y el respawn.
+function FighterService.Reset(fighter: Fighter)
+	FighterService.CancelTimers(fighter)
 	fighter.model:SetAttribute("Percent", 0)
 	fighter.model:SetAttribute("State", "Idle")
 end
@@ -131,7 +142,8 @@ end
 -- Aplica un golpe: suma %, calcula knockback y pone en hitstun.
 -- facing: hacia dónde mira el ATACANTE (1 derecha, -1 izquierda).
 function FighterService.ApplyHit(target: Fighter, attack, facing: number)
-	if target.model:GetAttribute("Invulnerable") then
+	local state = FighterService.GetState(target)
+	if target.model:GetAttribute("Invulnerable") or state == "KO" or state == "Respawning" or state == "Eliminated" then
 		return
 	end
 

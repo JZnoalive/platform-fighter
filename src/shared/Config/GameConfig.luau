@@ -2,9 +2,14 @@
 -- Reglas generales de la partida. Solo datos, sin lógica.
 
 local GameConfig = {
-	Version = "0.0.4-m3",
+	Version = "0.0.5-m4",
+
+	-- Partida
+	MinPlayersForMatch = 2, -- con menos jugadores: modo libre (KO sin perder vidas)
 	Stocks = 3,
-	RespawnInvulnerability = 1.5, -- segundos
+	RespawnDelay = 1.0, -- segundos congelado arriba antes de volver a jugar
+	RespawnInvulnerability = 1.5, -- segundos invulnerable después de soltarse
+	VictoryDelay = 5, -- segundos mostrando al ganador antes de reiniciar
 
 	-- Combate
 	HitstunPerForce = 0.004, -- segundos de hitstun por cada punto de fuerza de knockback

@@ -38,7 +38,7 @@ repo/
             ├── MovementController.luau (M1/M2/M3) plano 2D, saltos, knockback recibido
             ├── InputController.luau    (M2) teclas → acciones
             ├── CombatController.luau   (M3) elige el ataque y lo pide al servidor
-            └── HudController.luau      (M7)
+            └── HudController.luau      (M4) mensajes de partida; HUD completo en M7
 ```
 
 ### Mundo (creado en Studio, NO en Git)
@@ -101,7 +101,7 @@ busca objetivos **en el registro**, nunca recorriendo Workspace.
 | Atributo | Tipo | Quién lo escribe | Hito |
 |---|---|---|---|
 | `Percent` | number | servidor | M3 |
-| `State` | string: `Idle`, `Attacking`, `Hitstun`, `KO`, `Respawning` | servidor | M3 |
+| `State` | string: `Idle`, `Attacking`, `Hitstun`, `KO`, `Respawning`, `Eliminated` | servidor | M3/M4 |
 | `Stocks` | number | servidor | M4 |
 | `Invulnerable` | boolean | servidor | M4 |
 | `FighterId` | string: `Brawler`, `Blade` | servidor | M3 |
@@ -112,6 +112,8 @@ busca objetivos **en el registro**, nunca recorriendo Workspace.
 |---|---|---|---|---|
 | `ActionRequest` | RemoteEvent | cliente → servidor | `{ action = "Attack", move = "Jab" }` | M3 |
 | `ApplyKnockback` | RemoteEvent | servidor → cliente víctima | `velocity: Vector3, hitstun: number` | M3 |
+| `FighterReset` | RemoteEvent | servidor → cliente | (nada): reinicia velocidad y saltos tras un respawn | M4 |
+| `MatchEvent` | RemoteEvent | servidor → todos | `kind: "Start" \| "KO" \| "Victory", data` | M4 |
 
 ### Formato de datos de un ataque *(M3)*
 

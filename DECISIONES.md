@@ -19,6 +19,10 @@
 | 2026-11-24 | Hitlag se mueve de M3 a M7 | M3 se centra en que los golpes conecten bien; el "feeling" va en el pulido |
 | 2026-11-24 | Hitboxes visibles en rojo (`GameConfig.DebugHitboxes`) | Para ver y ajustar los ataques antes de tener animaciones |
 | 2026-11-24 | Cada ataque tiene un hueco `animationId` en su tabla | Cuando existan los modelos y animaciones se enchufan sin cambiar código |
+| 2026-11-24 | KO por posición fuera de la BlastZone (Heartbeat), nunca con Touched | Fiable a cualquier velocidad |
+| 2026-11-24 | Respawn = anclar arriba (RespawnTop) 1 s + invulnerable con brillo blanco; sin LoadCharacter | Rápido, sin recargar scripts; se ve claro quién es invulnerable |
+| 2026-11-24 | Con menos de 2 jugadores: modo libre (KO sin perder vidas) | Se puede entrenar solo contra el dummy |
+| 2026-11-24 | Arriba/abajo y recovery se hacen en M4b, después de M4 | Petición de JZnoalive; M4 primero para cerrar el ciclo de partida |
 | 2026-11-24 | Plano de juego: X = izquierda/derecha, Y = arriba/abajo, Z siempre 0 | Una sola convención para cámara, movimiento y hitboxes |
 
 ## Sistemas terminados
@@ -28,6 +32,7 @@
 | 2026-11-24 | M0 Proyecto | Rojo 7.7.1 conectado; con 2 jugadores salen `[Server] listo` y `[Client] listo` |
 | 2026-11-24 | M1 Arena y cámara | Cámara lateral encuadra a 2 jugadores; Z fijo en 0; se puede caer por el borde |
 | 2026-11-24 | M2 Movimiento | Correr, salto, 2 saltos aéreos, 2 jugadores. Pendiente: verificar la aceleración al mantener la tecla |
+| 2026-11-24 | M3 Combate vs dummy | Golpes conectan, % sube, knockback, dummy por código; probado con avatar y dummy |
 
 ## Problemas pendientes
 

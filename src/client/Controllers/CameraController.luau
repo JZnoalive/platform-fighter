@@ -15,7 +15,8 @@ local function getFighterPositions(): { Vector3 }
 	for _, player in Players:GetPlayers() do
 		local character = player.Character
 		local root = character and character:FindFirstChild("HumanoidRootPart")
-		if root then
+		-- Los eliminados (sin vidas) no cuentan para el encuadre.
+		if root and character:GetAttribute("State") ~= "Eliminated" then
 			table.insert(positions, root.Position)
 		end
 	end

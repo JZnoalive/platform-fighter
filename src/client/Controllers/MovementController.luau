@@ -57,6 +57,20 @@ function MovementController.ApplyKnockback(velocity: Vector3, hitstun: number)
 	root.AssemblyLinearVelocity = velocity
 end
 
+-- Lo llama el servidor (remote FighterReset) tras un respawn: empezar de cero.
+function MovementController.ResetMotion()
+	speedX = 0
+	inHitstun = false
+	airJumpsLeft = MovementConfig.MaxAirJumps
+	groundJumpAvailable = true
+	InputController.ClearJump()
+	local root, humanoid = getBody()
+	if root and humanoid then
+		root.AssemblyLinearVelocity = Vector3.zero
+		humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+	end
+end
+
 local function lockToPlane(root: BasePart)
 	local pos = root.Position
 	local rotation = if facing == 1 then FACE_RIGHT else FACE_LEFT
@@ -175,6 +189,8 @@ function MovementController.Start()
 		local remotes = ReplicatedStorage.Shared:WaitForChild("Remotes")
 		local applyKnockback = remotes:WaitForChild("ApplyKnockback") :: RemoteEvent
 		applyKnockback.OnClientEvent:Connect(MovementController.ApplyKnockback)
+		local fighterReset = remotes:WaitForChild("FighterReset") :: RemoteEvent
+		fighterReset.OnClientEvent:Connect(MovementController.ResetMotion)
 	end)
 end
 
