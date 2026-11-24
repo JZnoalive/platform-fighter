@@ -118,7 +118,10 @@ function MovementController.Start()
 	end
 	player.CharacterAdded:Connect(onCharacterAdded)
 
-	RunService.Heartbeat:Connect(step)
+	-- Los controles por defecto de Roblox llaman a Humanoid:Move(...) cada frame
+	-- con prioridad "Input". Nos ejecutamos justo DESPUÉS para que nuestro Move
+	-- sea el último antes de la física (si no, ellos lo pisan con cero).
+	RunService:BindToRenderStep("PlatformFighterMovement", Enum.RenderPriority.Input.Value + 1, step)
 end
 
 return MovementController
