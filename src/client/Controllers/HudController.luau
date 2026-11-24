@@ -1,14 +1,164 @@
 -- StarterPlayer.StarterPlayerScripts.Client.Controllers.HudController
--- M4: mensajes grandes de partida en el centro de la pantalla
--- ("¡A pelear!", "¡KO!", "¡X gana!"). El HUD completo llega en M7.
+-- HUD de combate:
+--   • Abajo: una tarjeta por luchador con su color, nombre, % grande (cambia de
+--     blanco a rojo según el daño y "salta" al recibir golpes) y vidas (●●●).
+--   • Centro: mensajes grandes de partida ("¡A pelear!", "¡KO!", "¡X gana!").
+-- Solo lee atributos que pone el servidor: no decide nada.
 
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local CharacterStyles = require(ReplicatedStorage.Shared.Config.CharacterStyles)
 
 local HudController = {}
 
-local label: TextLabel
+local messageLabel: TextLabel
+local cardsFrame: Frame
 local showToken = 0
+
+type Card = {
+	frame: Frame,
+	nameLabel: TextLabel,
+	percentLabel: TextLabel,
+	stocksLabel: TextLabel,
+	stripe: Frame,
+	scale: UIScale,
+	lastPercent: number,
+}
+local cards: { [Model]: Card } = {}
+
+-- Color del % según el daño: blanco → amarillo → naranja → rojo.
+local PERCENT_COLORS = {
+	{ 0, Color3.fromRGB(255, 255, 255) },
+	{ 50, Color3.fromRGB(255, 230, 90) },
+	{ 100, Color3.fromRGB(255, 140, 40) },
+	{ 150, Color3.fromRGB(230, 30, 30) },
+}
+
+local function percentColor(percent: number): Color3
+	for i = 1, #PERCENT_COLORS - 1 do
+		local a, b = PERCENT_COLORS[i], PERCENT_COLORS[i + 1]
+		if percent <= b[1] then
+			return a[2]:Lerp(b[2], (percent - a[1]) / (b[1] - a[1]))
+		end
+	end
+	return PERCENT_COLORS[#PERCENT_COLORS][2]
+end
+
+local function makeText(parent: Instance, font: Enum.Font, size: UDim2, position: UDim2): TextLabel
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.Font = font
+	label.TextScaled = true
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.TextStrokeTransparency = 0.2
+	label.Size = size
+	label.Position = position
+	label.Parent = parent
+	return label
+end
+
+local function createCard(model: Model): Card
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.fromOffset(190, 84)
+	frame.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+	frame.BackgroundTransparency = 0.25
+	frame.Parent = cardsFrame
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 10)
+	corner.Parent = frame
+
+	local stripe = Instance.new("Frame")
+	stripe.Size = UDim2.new(0, 8, 1, 0)
+	stripe.BorderSizePixel = 0
+	stripe.Parent = frame
+	local stripeCorner = Instance.new("UICorner")
+	stripeCorner.CornerRadius = UDim.new(0, 10)
+	stripeCorner.Parent = stripe
+
+	local nameLabel = makeText(frame, Enum.Font.GothamBold, UDim2.new(1, -20, 0, 18), UDim2.fromOffset(16, 4))
+	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+	local percentLabel = makeText(frame, Enum.Font.GothamBlack, UDim2.new(0, 120, 0, 44), UDim2.fromOffset(16, 22))
+	percentLabel.TextXAlignment = Enum.TextXAlignment.Left
+	local scale = Instance.new("UIScale")
+	scale.Parent = percentLabel
+
+	local stocksLabel = makeText(frame, Enum.Font.GothamBold, UDim2.new(0, 60, 0, 20), UDim2.new(1, -66, 1, -26))
+	stocksLabel.TextXAlignment = Enum.TextXAlignment.Right
+
+	return {
+		frame = frame,
+		nameLabel = nameLabel,
+		percentLabel = percentLabel,
+		stocksLabel = stocksLabel,
+		stripe = stripe,
+		scale = scale,
+		lastPercent = 0,
+	}
+end
+
+local function updateCard(model: Model, card: Card)
+	local style = CharacterStyles[model:GetAttribute("FighterId")]
+	card.stripe.BackgroundColor3 = if style and style.hudColor
+		then Color3.fromHex(style.hudColor)
+		else Color3.fromRGB(150, 150, 150)
+	card.nameLabel.Text = model:GetAttribute("DisplayName") or model.Name
+
+	local percent = math.floor(model:GetAttribute("Percent") or 0)
+	card.percentLabel.Text = `{percent}%`
+	card.percentLabel.TextColor3 = percentColor(percent)
+	if percent > card.lastPercent then
+		-- "Salto" del número al recibir daño
+		card.scale.Scale = 1.35
+		TweenService:Create(card.scale, TweenInfo.new(0.18, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+	end
+	card.lastPercent = percent
+
+	local stocks = model:GetAttribute("Stocks")
+	card.stocksLabel.Text = if stocks then string.rep("●", math.max(stocks, 0)) else ""
+	card.frame.Visible = model:GetAttribute("State") ~= "Eliminated" or stocks ~= nil
+end
+
+-- Luchadores a mostrar: jugadores registrados + CPU (etiqueta CameraTarget).
+local function currentFighters(): { Model }
+	local list = {}
+	for _, player in Players:GetPlayers() do
+		local character = player.Character
+		if character and character:GetAttribute("FighterId") then
+			table.insert(list, character)
+		end
+	end
+	for _, model in CollectionService:GetTagged("CameraTarget") do
+		if model:IsA("Model") and model:IsDescendantOf(workspace) and model:GetAttribute("FighterId") then
+			table.insert(list, model)
+		end
+	end
+	return list
+end
+
+local function syncCards()
+	local alive = {}
+	for order, model in currentFighters() do
+		alive[model] = true
+		local card = cards[model]
+		if not card then
+			card = createCard(model)
+			cards[model] = card
+		end
+		card.frame.LayoutOrder = order
+		updateCard(model, card)
+	end
+	for model, card in cards do
+		if not alive[model] then
+			card.frame:Destroy()
+			cards[model] = nil
+		end
+	end
+end
 
 local function createGui()
 	local gui = Instance.new("ScreenGui")
@@ -16,17 +166,31 @@ local function createGui()
 	gui.ResetOnSpawn = false
 	gui.IgnoreGuiInset = true
 
-	label = Instance.new("TextLabel")
-	label.AnchorPoint = Vector2.new(0.5, 0.5)
-	label.Position = UDim2.fromScale(0.5, 0.3)
-	label.Size = UDim2.fromScale(0.6, 0.12)
-	label.BackgroundTransparency = 1
-	label.TextScaled = true
-	label.Font = Enum.Font.GothamBlack
-	label.TextColor3 = Color3.new(1, 1, 1)
-	label.TextStrokeTransparency = 0
-	label.Visible = false
-	label.Parent = gui
+	messageLabel = Instance.new("TextLabel")
+	messageLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+	messageLabel.Position = UDim2.fromScale(0.5, 0.3)
+	messageLabel.Size = UDim2.fromScale(0.6, 0.12)
+	messageLabel.BackgroundTransparency = 1
+	messageLabel.TextScaled = true
+	messageLabel.Font = Enum.Font.GothamBlack
+	messageLabel.TextColor3 = Color3.new(1, 1, 1)
+	messageLabel.TextStrokeTransparency = 0
+	messageLabel.Visible = false
+	messageLabel.Parent = gui
+
+	cardsFrame = Instance.new("Frame")
+	cardsFrame.Name = "Cards"
+	cardsFrame.AnchorPoint = Vector2.new(0.5, 1)
+	cardsFrame.Position = UDim2.new(0.5, 0, 1, -16)
+	cardsFrame.Size = UDim2.new(1, -32, 0, 84)
+	cardsFrame.BackgroundTransparency = 1
+	cardsFrame.Parent = gui
+	local layout = Instance.new("UIListLayout")
+	layout.FillDirection = Enum.FillDirection.Horizontal
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Padding = UDim.new(0, 16)
+	layout.Parent = cardsFrame
 
 	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 end
@@ -35,12 +199,12 @@ end
 local function show(text: string, duration: number?)
 	showToken += 1
 	local token = showToken
-	label.Text = text
-	label.Visible = true
+	messageLabel.Text = text
+	messageLabel.Visible = true
 	if duration then
 		task.delay(duration, function()
 			if showToken == token then
-				label.Visible = false
+				messageLabel.Visible = false
 			end
 		end)
 	end
@@ -48,7 +212,7 @@ end
 
 local function onMatchEvent(kind: string, data: { [string]: any })
 	if kind == "Start" then
-		show("¡A pelear!", 1.5)
+		show(if data.mode == "VsCpu" then "¡Contra la CPU! ¡A pelear!" else "¡A pelear!", 1.5)
 	elseif kind == "KO" then
 		local text = `¡KO! {data.name}`
 		if data.stocks ~= nil then
@@ -64,6 +228,7 @@ function HudController.Start()
 	-- En segundo plano para no bloquear a nadie.
 	task.spawn(function()
 		createGui()
+		RunService.RenderStepped:Connect(syncCards)
 		local remotes = ReplicatedStorage.Shared:WaitForChild("Remotes")
 		local matchEvent = remotes:WaitForChild("MatchEvent") :: RemoteEvent
 		matchEvent.OnClientEvent:Connect(onMatchEvent)

@@ -46,6 +46,11 @@
 | 2026-11-24 | Demo con personajes de bloque estilizado hechos por código (Opción A), sin modelos 3D | JZnoalive trabaja solo y el rig 3D (Mixamo, escala 100x) frenaba la demo. Fecha límite: 4 de diciembre |
 | 2026-11-24 | Jugadores sin ropa/accesorios de su avatar (`LoadCharacterAppearance = false`) | Todos se ven como el luchador, como en un juego de pelea |
 | 2026-11-24 | Animaciones de ataque desde el servidor, solo si hay `animationId` | Se ven en todos los clientes; sin ID no pasa nada |
+| 2026-11-24 | Partida contra la CPU (VsCpu) desde el menú de práctica; la CPU juega en modo Pelear con 3 vidas | La handcam de la demo es contra la IA |
+| 2026-11-24 | Animaciones por código (Motor6D.Transform en Stepped) con poses en `Poses.luau` | No hay tiempo para animar y subir 24 animaciones; funciona también con la CPU |
+| 2026-11-24 | HUD abajo con tarjetas; etiqueta de % sobre la cabeza desactivada (`ShowOverheadPercent`) | Estilo del género, pantalla limpia para el tráiler |
+| 2026-11-24 | Escenario "templo al atardecer" generado por código (`DecorService`) | JZnoalive trabaja solo; se puede sustituir decorando a mano (crear Workspace.Decor) |
+| 2026-11-24 | Armas, poderes y personajes 2D/temáticos quedan para después de la demo | Fecha límite 4 de diciembre; personajes de franquicias ajenas no se usan |
 | 2026-11-24 | Mientras solo programa JZnoalive, commits directos a `main` | Rama + PR cuando entren más programadores |
 | 2026-11-24 | Arriba/abajo y recovery se hacen en M4b, después de M4 | Petición de JZnoalive; M4 primero para cerrar el ciclo de partida |
 | 2026-11-24 | Plano de juego: X = izquierda/derecha, Y = arriba/abajo, Z siempre 0 | Una sola convención para cámara, movimiento y hitboxes |
@@ -62,9 +67,9 @@
 
 ## Problemas pendientes
 
-- [ ] M4b, M4c, M4d, M5 y M6 subidos sin probar en Studio (prueba conjunta pendiente)
-- [ ] La CPU no tiene animaciones de caminar/idle (el script Animate de Roblox solo corre en jugadores) → M7
-- [ ] Falta el modo "1 jugador contra la CPU con 3 vidas" para la handcam (siguiente: M5b)
+- [ ] M4b–M7 subidos; en Studio solo se vio funcionando lo básico de M5/M6 (menú, golpes, aspecto). Falta prueba completa
+- [ ] Sonidos y música: faltan los IDs (AudioConfig.luau vacío = silencio)
+- [ ] Recomendado en Studio: Workspace.StreamingEnabled = false (arena pequeña)
 
 - [ ] Un 3er jugador que entra a mitad de partida no tiene vidas (la demo es 1v1; se revisa si hace falta)
 

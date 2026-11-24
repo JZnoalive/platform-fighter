@@ -82,10 +82,14 @@ local function playAttackAnimation(fighter: FighterService.Fighter, attack)
 end
 
 -- Ejecuta un ataque completo. Funciona igual para jugador o CPU.
-function CombatService.PerformAttack(fighter: FighterService.Fighter, attack)
+-- moveName ("Jab", "Heavy"...) se publica en el modelo para que los clientes
+-- dibujen la pose de ataque (PoseController): atributos Move y MoveTime.
+function CombatService.PerformAttack(fighter: FighterService.Fighter, attack, moveName: string)
 	fighter.attackToken += 1
 	local token = fighter.attackToken
 	fighter.queuedAttack = nil
+	fighter.model:SetAttribute("Move", moveName)
+	fighter.model:SetAttribute("MoveTime", workspace:GetServerTimeNow())
 	FighterService.SetState(fighter, "Attacking")
 	playAttackAnimation(fighter, attack)
 
@@ -165,9 +169,10 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack)
 
 		-- 4. Búfer: si se pidió otro ataque durante este, sale ya.
 		local queued = fighter.queuedAttack
+		local queuedMove = fighter.queuedMove
 		fighter.queuedAttack = nil
-		if queued and os.clock() - fighter.queuedAt <= GameConfig.AttackBufferWindow then
-			CombatService.PerformAttack(fighter, queued)
+		if queued and queuedMove and os.clock() - fighter.queuedAt <= GameConfig.AttackBufferWindow then
+			CombatService.PerformAttack(fighter, queued, queuedMove)
 		end
 	end)
 end
@@ -197,10 +202,11 @@ local function onActionRequest(player: Player, payload: any)
 
 	local state = FighterService.GetState(fighter)
 	if state == "Idle" then
-		CombatService.PerformAttack(fighter, attack)
+		CombatService.PerformAttack(fighter, attack, payload.move)
 	elseif state == "Attacking" and not attack.selfImpulse then
 		-- Pedido durante otro ataque: se guarda y sale al terminar (si no caduca).
 		fighter.queuedAttack = attack
+		fighter.queuedMove = payload.move
 		fighter.queuedAt = os.clock()
 	end
 end

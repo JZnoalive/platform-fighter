@@ -21,6 +21,7 @@ return {
 	---------------------------------------------------------------- BRAWLER
 	-- "Forja Cinética": guanteletes neumáticos, gafas de soldador, mono gris, botas.
 	Brawler = {
+		hudColor = "D94E28", -- color de su tarjeta en el HUD
 		bodyColors = {
 			head = "E8B796", -- piel
 			torso = "EDE6D6", -- camiseta blanco hueso
@@ -87,6 +88,7 @@ return {
 	---------------------------------------------------------------- BLADE
 	-- "Vórtice Amatista": traje obsidiana, bolero titanio, pelo lavanda, espadón violeta.
 	Blade = {
+		hudColor = "7C3AED",
 		bodyColors = {
 			head = "F2D7C9", -- piel
 			torso = "1E1B2E", -- chaqueta bolero titanio oscuro

@@ -22,6 +22,7 @@ export type Fighter = {
 	hitToken: number, -- cambia con cada golpe recibido (invalida temporizadores viejos)
 	attackToken: number, -- cambia con cada ataque iniciado
 	queuedAttack: any?, -- ataque pedido durante otro ataque (búfer de combos)
+	queuedMove: string?, -- su nombre ("Jab"...)
 	queuedAt: number, -- cuándo se pidió
 	lastDodgeAt: number, -- para el enfriamiento de la esquiva
 }
@@ -71,6 +72,7 @@ function FighterService.Register(model: Model, kind: string, fighterId: string, 
 	model:SetAttribute("FighterId", fighterId)
 	model:SetAttribute("Percent", 0)
 	model:SetAttribute("State", "Idle")
+	model:SetAttribute("DisplayName", if player then player.DisplayName else model.Name)
 
 	local fighter: Fighter = {
 		model = model,
@@ -82,11 +84,14 @@ function FighterService.Register(model: Model, kind: string, fighterId: string, 
 		hitToken = 0,
 		attackToken = 0,
 		queuedAttack = nil,
+		queuedMove = nil,
 		queuedAt = 0,
 		lastDodgeAt = -math.huge,
 	}
 	fighters[model] = fighter
-	createPercentLabel(fighter)
+	if GameConfig.ShowOverheadPercent then
+		createPercentLabel(fighter)
+	end
 
 	model.AncestryChanged:Connect(function()
 		if not model:IsDescendantOf(workspace) then
@@ -173,6 +178,9 @@ function FighterService.ApplyHit(target: Fighter, attack, facing: number)
 	target.model:SetAttribute("Percent", percent)
 
 	local velocity, hitstun = Knockback.Compute(attack, percent, facing)
+
+	-- Efectos visuales (chispa, destello, sacudida): los pinta cada cliente.
+	Remotes.HitEvent:FireAllClients(target.model, target.root.Position, velocity.Magnitude)
 
 	target.hitToken += 1
 	local token = target.hitToken

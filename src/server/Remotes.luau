@@ -20,6 +20,7 @@ local Remotes = {
 	ApplyKnockback = make("ApplyKnockback"), -- servidor → cliente víctima: (velocity, hitstun)
 	FighterReset = make("FighterReset"), -- servidor → cliente: "te acabo de recolocar, reinicia tu movimiento"
 	MatchEvent = make("MatchEvent"), -- servidor → todos: (kind, data) con kind = "Start" | "KO" | "Victory"
+	HitEvent = make("HitEvent"), -- servidor → todos: (targetModel, position, force) para efectos de golpe
 }
 
 folder.Parent = ReplicatedStorage.Shared

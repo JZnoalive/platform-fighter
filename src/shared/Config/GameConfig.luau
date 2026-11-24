@@ -2,7 +2,11 @@
 -- Reglas generales de la partida. Solo datos, sin lógica.
 
 local GameConfig = {
-	Version = "0.0.9-m6",
+	Version = "0.1.0-m7",
+
+	-- Presentación
+	ShowOverheadPercent = false, -- etiqueta de % encima de la cabeza (el HUD de abajo ya lo muestra)
+	BuildDecor = true, -- DecorService monta el escenario de atardecer (false si se decora a mano en Studio)
 
 	-- Partida
 	MinPlayersForMatch = 2, -- con menos jugadores: modo libre (KO sin perder vidas)

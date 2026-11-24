@@ -73,7 +73,8 @@ Regla: **no se empieza un hito hasta que el anterior pasa su prueba.**
 | **M5 CPU + menú de práctica** | El dummy pasa a ser Blade controlado por CPU; menú: Quieta / Caminar / Saltar / Atacar / Pelear, fijar %, reiniciar, hitboxes on/off | Cada opción del menú cambia lo que hace la CPU al instante |
 | **M5b Partida contra la CPU** | Modo 1 jugador vs CPU con 3 vidas, KO, victoria y reinicio (para la handcam) | 3 partidas completas contra la CPU en "Pelear" sin errores |
 | **M6 Personajes y animaciones** | Opción A: personajes de bloque estilizado por código (colores + piezas) y reproducción de animaciones de ataque cuando haya IDs en `docs/ENTREGAS.md` | Jugador = Brawler (guanteletes, gafas), CPU = Blade (espadón); los ataques con ID reproducen su animación |
-| **M7 Pulido para tráiler** | HUD de %, hitlag, sacudida de cámara, VFX de golpe/KO, sonido, música | Checklist del tráiler completa |
+| **M7 Pulido para tráiler** | HUD de %, animaciones por código (poses), sacudida de cámara, chispas de golpe, explosión de KO, escenario de atardecer, sonido y música (con IDs) | Checklist del tráiler completa |
+| **Después de la demo** | Armas y poderes recogibles, más personajes, modelos 3D/2D propios, hitlag real | — |
 | **M8 Grabación** | Arena decorada, cámara de grabación, build estable | Tráiler + partida handcam grabados |
 
 ## Cómo se ve el éxito

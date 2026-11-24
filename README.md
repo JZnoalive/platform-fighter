@@ -5,8 +5,9 @@ Juego de lucha de plataformas 2D **original** para Roblox. Inspirado en el géne
 nombres, arte y código **propios**.
 
 > **Estado:** M0–M4 terminados (proyecto, arena/cámara, movimiento, combate, partida).
-> M4b (arriba/abajo, recovery), M4c (combos, W salta, caída rápida), M4d (esquiva),
-> M5 (CPU + menú de práctica) y M6 (personajes de bloque) en pruebas.
+> M4b–M7 programados y en pruebas: arriba/abajo, recovery, combos, esquiva, CPU,
+> menú de práctica, partida contra la CPU, personajes de bloque, HUD, animaciones
+> por código, efectos y escenario de atardecer.
 > **Fecha límite de la demo: 4 de diciembre de 2026.**
 >
 > Ajuste de Studio necesario (una vez): **Home → Game Settings → Avatar → Avatar Type: R15**.
@@ -68,6 +69,7 @@ nombres, arte y código **propios**.
 | Recovery (impulso hacia arriba, 1 por vuelo) | W + K en el aire |
 | Esquiva (invulnerable; con A/D rueda, en el aire también W/S) | Shift izquierdo o L |
 | Menú de práctica (solo jugando solo) | P para ocultar/mostrar |
+| Partida contra la CPU (3 vidas) | Botón "⚔ Pelear contra la CPU" del menú de práctica |
 
 La tabla completa de qué ataque sale con cada combinación está al principio de
 `src/client/Controllers/CombatController.luau`.

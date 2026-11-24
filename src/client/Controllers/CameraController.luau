@@ -67,8 +67,25 @@ local function computeTarget(camera: Camera): CFrame
 	return CFrame.lookAt(center + Vector3.new(0, 0, distance), center)
 end
 
+-- Sacudida de cámara (golpes fuertes, KO). intensity en studs, duration en segundos.
+local shakeIntensity = 0
+local shakeUntil = 0
+local shakeDuration = 1
+
+function CameraController.Shake(intensity: number, duration: number)
+	local now = os.clock()
+	-- Si ya hay una sacudida más fuerte en curso, se respeta.
+	if now < shakeUntil and shakeIntensity >= intensity then
+		return
+	end
+	shakeIntensity = intensity
+	shakeDuration = math.max(duration, 0.01)
+	shakeUntil = now + shakeDuration
+end
+
 function CameraController.Start()
 	local camera = workspace.CurrentCamera
+	local baseCFrame = camera.CFrame -- posición sin sacudida (la que se suaviza)
 
 	RunService:BindToRenderStep("PlatformFighterCamera", Enum.RenderPriority.Camera.Value + 1, function(dt)
 		-- Roblox puede devolver la cámara a modo normal al reaparecer; se fuerza cada frame.
@@ -77,7 +94,15 @@ function CameraController.Start()
 
 		local target = computeTarget(camera)
 		local alpha = 1 - math.exp(-CameraConfig.Smoothing * dt)
-		camera.CFrame = camera.CFrame:Lerp(target, alpha)
+		baseCFrame = baseCFrame:Lerp(target, alpha)
+
+		local offset = Vector3.zero
+		local remaining = shakeUntil - os.clock()
+		if remaining > 0 then
+			local strength = shakeIntensity * (remaining / shakeDuration)
+			offset = Vector3.new((math.random() * 2 - 1) * strength, (math.random() * 2 - 1) * strength, 0)
+		end
+		camera.CFrame = baseCFrame + offset
 	end)
 end
 

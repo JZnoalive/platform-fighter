@@ -100,6 +100,15 @@ local function build(practiceCommand: RemoteEvent)
 	end
 
 	makeLabel(panel, "PRÁCTICA   (P = ocultar)", nextOrder())
+
+	-- Partida de verdad contra la CPU (3 vidas). Al terminar, vuelve la práctica.
+	local vsCpuButton = makeButton(panel, "⚔ Pelear contra la CPU (3 vidas)", nextOrder(), UDim2.new(1, 0, 0, 32))
+	vsCpuButton.BackgroundColor3 = Color3.fromRGB(124, 58, 237) -- violeta de Blade
+	vsCpuButton.Font = Enum.Font.GothamBold
+	vsCpuButton.Activated:Connect(function()
+		practiceCommand:FireServer("StartVsCpu")
+	end)
+
 	makeLabel(panel, "CPU:", nextOrder())
 	for _, name in CpuConfig.Behaviors do
 		local button = makeButton(panel, CpuConfig.Labels[name] or name, nextOrder(), UDim2.new(1, 0, 0, 26))

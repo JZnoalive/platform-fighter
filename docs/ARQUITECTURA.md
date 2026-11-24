@@ -1,7 +1,7 @@
 # Arquitectura
 
 Pequeña, modular y fácil de depurar. **Crece solo cuando un hito lo necesita.**
-Cada archivo indica el hito en que aparece. Hoy existen los de M0 a M6;
+Cada archivo indica el hito en que aparece. Hoy existen los de M0 a M7;
 los marcados *(M5)*, *(M6)* o *(M7)* todavía no existen.
 
 ## Estructura del repositorio → Roblox
@@ -20,6 +20,8 @@ repo/
     │   │   ├── MovementConfig.luau    (M2) velocidades, gravedad, saltos, esquiva
     │   │   ├── CpuConfig.luau         (M5) comportamientos e "inteligencia" de la CPU
     │   │   ├── CharacterStyles.luau   (M6) colores y piezas de cada luchador (estilo bloque)
+    │   │   ├── Poses.luau             (M7) "animaciones por código": poses de ataques y estados
+    │   │   ├── AudioConfig.luau       (M7) IDs de sonidos y música (vacío = silencio)
     │   │   └── Fighters/              (M3) un archivo de datos por luchador
     │   │       ├── Brawler.luau
     │   │       └── Blade.luau         (M4c datos; lo usa la CPU en M5)
@@ -34,9 +36,10 @@ repo/
     │       ├── FighterService.luau    (M3) registro de luchadores, estado, daño
     │       ├── CombatService.luau     (M3) ataques, ventanas activas, hitboxes
     │       ├── TrainingService.luau   (M3/M5) modo práctica: crea la CPU y atiende el menú
-    │       ├── MatchService.luau      (M4) spawns, blast zone, KO, stocks, victoria
+    │       ├── MatchService.luau      (M4/M5b) KO, stocks, victoria; modos PvP y VsCpu
     │       ├── CpuService.luau        (M5) controla a la CPU (6 comportamientos)
-    │       └── AppearanceService.luau (M6) viste a jugador (Brawler) y CPU (Blade)
+    │       ├── AppearanceService.luau (M6) viste a jugador (Brawler) y CPU (Blade)
+    │       └── DecorService.luau      (M7) escenario de atardecer + iluminación por código
     └── client/   → StarterPlayer.StarterPlayerScripts.Client
         ├── Main.client.luau           arranca los controladores
         └── Controllers/
@@ -44,8 +47,10 @@ repo/
             ├── MovementController.luau (M1/M2/M3) plano 2D, saltos, knockback recibido
             ├── InputController.luau    (M2) teclas → acciones
             ├── CombatController.luau   (M3) elige el ataque/esquiva y lo pide al servidor
-            ├── HudController.luau      (M4) mensajes de partida; HUD completo en M7
-            └── PracticeController.luau (M5) menú de práctica (tecla P)
+            ├── HudController.luau      (M4/M7) tarjetas de %, vidas y nombres + mensajes
+            ├── PracticeController.luau (M5) menú de práctica (tecla P) + "Pelear contra la CPU"
+            ├── PoseController.luau     (M7) poses de ataque/golpe/esquiva y andar de la CPU
+            └── EffectsController.luau  (M7) chispas, sacudida, explosión de KO, sonidos
 ```
 
 ### Mundo (creado en Studio, NO en Git)
@@ -57,7 +62,8 @@ Workspace
     ├── SpawnPoints      (Folder) Parts: Spawn1, Spawn2, RespawnTop
     └── BlastZone        (Part, anclada, invisible, CanCollide=false)
                          su tamaño define los límites; fuera = KO
-└── Decor                (M6, opcional) decoración; nunca colisiona ni tapa la cámara
+└── Decor                (M7) lo crea DecorService al arrancar (si no existe ya);
+                         nunca colisiona ni tapa la cámara
 ServerStorage
 └── FighterModels        (FUTURO, opcional) modelos 3D propios si algún día se hacen
 ```
@@ -125,6 +131,9 @@ busca objetivos **en el registro**, nunca recorriendo Workspace.
 | `Stocks` | number | servidor | M4 |
 | `Invulnerable` | boolean | servidor | M4 |
 | `FighterId` | string: `Brawler`, `Blade` | servidor | M3 |
+| `DisplayName` | string (nombre en el HUD) | servidor | M7 |
+| `Move` | string (ataque en curso, p. ej. `Jab`) | CombatService | M7 |
+| `MoveTime` | number (`workspace:GetServerTimeNow()` al empezar el ataque) | CombatService | M7 |
 
 ### Atributos en Workspace (estado global, los escribe el servidor)
 
@@ -142,7 +151,8 @@ también encuadra (la CPU).
 | Nombre | Tipo | Dirección | Datos | Hito |
 |---|---|---|---|---|
 | `ActionRequest` | RemoteEvent | cliente → servidor | `{ action = "Attack", move = "Jab" }` o `{ action = "Dodge" }` | M3/M4d |
-| `PracticeCommand` | RemoteEvent | cliente → servidor | `("Behavior", nombre)`, `("Percent", n)`, `("Reset")`, `("Hitboxes", bool)` | M5 |
+| `PracticeCommand` | RemoteEvent | cliente → servidor | `("Behavior", nombre)`, `("Percent", n)`, `("Reset")`, `("Hitboxes", bool)`, `("StartVsCpu")` | M5/M5b |
+| `HitEvent` | RemoteEvent | servidor → todos | `(targetModel, position, force)` solo para efectos | M7 |
 | `ApplyKnockback` | RemoteEvent | servidor → cliente víctima | `velocity: Vector3, hitstun: number` | M3 |
 | `FighterReset` | RemoteEvent | servidor → cliente | (nada): reinicia velocidad y saltos tras un respawn | M4 |
 | `MatchEvent` | RemoteEvent | servidor → todos | `kind: "Start" \| "KO" \| "Victory", data` | M4 |

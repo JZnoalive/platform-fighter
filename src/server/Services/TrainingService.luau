@@ -31,6 +31,8 @@ local spawning = false
 local cpuFighter: FighterService.Fighter? = nil
 local spawnCFrame: CFrame? = nil
 local currentBehavior = CpuConfig.DefaultBehavior
+local matchControl = false -- true = la CPU está en una partida "VsCpu" (la gestiona MatchService)
+local startVsCpuCallback: ((Player) -> ())? = nil
 
 local function isInside(position: Vector3, zone: BasePart): boolean
 	local half = zone.Size / 2
@@ -46,9 +48,19 @@ local function resetCpu(fighter: FighterService.Fighter)
 	if not spawnCFrame then
 		return
 	end
+	local root = fighter.root
+	root.Anchored = false -- por si venía de estar eliminada en una partida
 	fighter.model:PivotTo(spawnCFrame)
-	fighter.root.AssemblyLinearVelocity = Vector3.zero
+	root.AssemblyLinearVelocity = Vector3.zero
+	pcall(function()
+		root:SetNetworkOwner(nil)
+	end)
 	FighterService.Reset(fighter)
+	fighter.model:SetAttribute("Invulnerable", false)
+	local highlight = fighter.model:FindFirstChild("InvulnerableHighlight")
+	if highlight then
+		highlight:Destroy()
+	end
 	fighter.humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
 	CpuService.ResetState(fighter)
 end
@@ -96,6 +108,7 @@ local function spawnCpu()
 		return
 	end
 	fighter.root:SetNetworkOwner(nil) -- el servidor controla su física
+	model:SetAttribute("DisplayName", "Blade (CPU)")
 	CollectionService:AddTag(model, "CameraTarget") -- la cámara también la encuadra
 	CpuService.Attach(fighter, currentBehavior)
 	cpuFighter = fighter
@@ -103,14 +116,15 @@ local function spawnCpu()
 	workspace:SetAttribute("CpuBehavior", currentBehavior)
 	workspace:SetAttribute("PracticeActive", true)
 
-	-- Fuera de la BlastZone: vuelve a su sitio con 0 %.
+	-- Fuera de la BlastZone: vuelve a su sitio con 0 % (solo en práctica;
+	-- en una partida "VsCpu" el KO lo gestiona MatchService).
 	local connection
 	connection = RunService.Heartbeat:Connect(function()
 		if not model.Parent then
 			connection:Disconnect()
 			return
 		end
-		if not isInside(fighter.root.Position, blastZone) then
+		if not matchControl and not isInside(fighter.root.Position, blastZone) then
 			resetCpu(fighter)
 		end
 	end)
@@ -120,11 +134,15 @@ end
 
 local function onPracticeCommand(player: Player, command: any, value: any)
 	local fighter = cpuFighter
-	if not wantActive or not fighter or not fighter.model.Parent then
+	if not wantActive or matchControl or not fighter or not fighter.model.Parent then
 		return -- solo en modo práctica
 	end
 
-	if command == "Behavior" then
+	if command == "StartVsCpu" then
+		if startVsCpuCallback then
+			startVsCpuCallback(player)
+		end
+	elseif command == "Behavior" then
 		if isValidBehavior(value) then
 			currentBehavior = value
 			CpuService.SetBehavior(fighter, value)
@@ -147,11 +165,43 @@ local function onPracticeCommand(player: Player, command: any, value: any)
 	end
 end
 
+function TrainingService.GetCpuFighter(): FighterService.Fighter?
+	if cpuFighter and cpuFighter.model.Parent then
+		return cpuFighter
+	end
+	return nil
+end
+
+-- MatchService registra aquí qué hacer cuando el menú pide "pelear contra la CPU".
+function TrainingService.OnStartVsCpu(callback: (Player) -> ())
+	startVsCpuCallback = callback
+end
+
+-- true  = la CPU entra en una partida "VsCpu": modo Pelear, sin menú, sin auto-reset.
+-- false = vuelve a la práctica con el comportamiento que tenía, en su sitio y a 0 %.
+function TrainingService.SetMatchControl(enabled: boolean)
+	matchControl = enabled
+	local fighter = cpuFighter
+	if not fighter or not fighter.model.Parent then
+		return
+	end
+	if enabled then
+		workspace:SetAttribute("PracticeActive", false)
+		CpuService.SetBehavior(fighter, CpuConfig.VsCpuBehavior)
+	else
+		CpuService.SetBehavior(fighter, currentBehavior)
+		resetCpu(fighter)
+		workspace:SetAttribute("CpuBehavior", currentBehavior)
+		workspace:SetAttribute("PracticeActive", true)
+	end
+end
+
 -- true = debe haber CPU de práctica; false = se quita.
 function TrainingService.SetActive(active: boolean)
 	wantActive = active
 
 	if not active then
+		matchControl = false
 		workspace:SetAttribute("PracticeActive", false)
 		if cpuFighter then
 			cpuFighter.model:Destroy() -- FighterService y CpuService la dan de baja solos

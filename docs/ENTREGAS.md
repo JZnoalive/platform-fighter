@@ -79,6 +79,9 @@ Cómo rellenar:
 
 ## Sonidos y música
 
+> Cuando tengas un ID, pásaselo a Claude: va a `src/shared/Config/AudioConfig.luau`
+> (los nombres de la tabla de abajo son los mismos). Vacío = no suena.
+
 | Sonido | ID | Dueño | Origen (jsfxr, ElevenLabs, catálogo Roblox...) | Estado |
 |---|---|---|---|---|
 | HitLight | | | | ⬜ |

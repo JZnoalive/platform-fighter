@@ -4,6 +4,7 @@
 
 return {
 	DefaultBehavior = "Idle",
+	VsCpuBehavior = "Fight", -- comportamiento en la partida "contra la CPU"
 
 	-- Orden en el que salen en el menú de práctica.
 	Behaviors = { "Idle", "Walk", "Jump", "Dodge", "Attack", "Fight" },

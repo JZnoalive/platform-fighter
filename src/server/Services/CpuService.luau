@@ -87,7 +87,7 @@ local function attack(ctrl: Controller, moveName: string): boolean
 	local pos = fighter.root.Position
 	fighter.root.CFrame = CFrame.new(pos.X, pos.Y, 0) * (if ctrl.facing == 1 then FACE_RIGHT else FACE_LEFT)
 
-	CombatService.PerformAttack(fighter, data)
+	CombatService.PerformAttack(fighter, data, moveName)
 	if data.selfImpulse then
 		local vel = fighter.root.AssemblyLinearVelocity
 		local x = if data.selfImpulse.X ~= 0 then data.selfImpulse.X * ctrl.facing else vel.X
