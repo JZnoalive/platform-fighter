@@ -21,6 +21,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Movesets = require(ReplicatedStorage.Shared.Modules.Movesets)
 local InputController = require(script.Parent.InputController)
 local MovementController = require(script.Parent.MovementController)
+local AnimationController = require(script.Parent.AnimationController)
 
 local CombatController = {}
 
@@ -109,12 +110,27 @@ function CombatController.Start()
 
 			actionRequest:FireServer({ action = "Attack", move = moveName })
 
-			-- Impulso propio (Recovery, GroundPound): lo aplica el cliente porque
-			-- el jugador es dueño de la física de su personaje.
 			local moveset = Movesets[character:GetAttribute("Weapon")]
 			local attack = moveset and moveset[moveName]
+			if isIdle then
+				-- Respuesta instantánea: la animación empieza ya en mi pantalla.
+				AnimationController.PredictAttack(moveName)
+			end
+
+			-- Impulso propio (Recovery, GroundPound, embestidas): lo aplica el cliente
+			-- porque el jugador es dueño de la física de su personaje.
+			-- impulseAtStartup = la embestida sale cuando sale el golpe, no al pulsar.
 			if isIdle and attack and attack.selfImpulse then
-				MovementController.ApplySelfImpulse(attack.selfImpulse.X, attack.selfImpulse.Y)
+				local impulse = attack.selfImpulse
+				if attack.impulseAtStartup then
+					task.delay(attack.startup, function()
+						if character:GetAttribute("State") == "Attacking" then
+							MovementController.ApplySelfImpulse(impulse.X, impulse.Y)
+						end
+					end)
+				else
+					MovementController.ApplySelfImpulse(impulse.X, impulse.Y)
+				end
 			end
 		end)
 	end)

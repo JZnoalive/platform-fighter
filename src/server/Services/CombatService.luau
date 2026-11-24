@@ -82,10 +82,20 @@ end
 
 -- Proyectil (pistolas): avanza cada frame desde el atacante en la dirección del
 -- disparo y golpea al PRIMER luchador que toque. Lo decide el servidor.
+-- Si projectile.count > 1, salen varios en abanico separados projectile.spread grados.
 function CombatService.SpawnProjectile(fighter: FighterService.Fighter, attack)
 	local spec = attack.projectile
+	local count = spec.count or 1
+	for i = 1, count do
+		local offsetAngle = (i - (count + 1) / 2) * (spec.spread or 0)
+		CombatService.SpawnOneProjectile(fighter, attack, (spec.angle or 0) + offsetAngle)
+	end
+end
+
+function CombatService.SpawnOneProjectile(fighter: FighterService.Fighter, attack, angleDegrees: number)
+	local spec = attack.projectile
 	local facing = getFacing(fighter.root)
-	local angle = math.rad(spec.angle or 0)
+	local angle = math.rad(angleDegrees)
 	local direction = Vector3.new(math.cos(angle) * facing, math.sin(angle), 0)
 	local offset = attack.hitbox.offset
 	local origin = fighter.root.Position
@@ -149,6 +159,7 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack, mo
 	fighter.queuedAttack = nil
 	fighter.model:SetAttribute("Move", moveName)
 	fighter.model:SetAttribute("MoveTime", workspace:GetServerTimeNow())
+	fighter.model:SetAttribute("MoveId", token) -- identifica ESTE ataque (para las animaciones)
 	FighterService.SetState(fighter, "Attacking")
 	playAttackAnimation(fighter, attack)
 
@@ -180,8 +191,30 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack, mo
 		local params = OverlapParams.new()
 		params.FilterType = Enum.RaycastFilterType.Include
 
+		-- Golpes múltiples (firmas): el active se reparte en "hits" impactos. Los primeros
+		-- solo enganchan (knockback pequeño que mantiene al rival cerca) y el último remata.
+		local hits = attack.hits or 1
+		local hitInterval = attack.active / hits
+		local activeStart = os.clock()
+		local currentTick = 0
+		local lastLagTick = -1 -- el hitlag alarga el ataque una vez por impacto
+		local linkAttack = nil
+		if hits > 1 then
+			linkAttack = table.clone(attack)
+			linkAttack.baseKnockback = attack.linkKnockback or 10
+			linkAttack.knockbackScale = 0
+			linkAttack.angle = attack.linkAngle or 70
+		end
+
 		local activeEnd = os.clock() + attack.active
 		while not attack.projectile and os.clock() < activeEnd and stillAttacking() do
+			local tick = math.min(hits - 1, math.floor((os.clock() - activeStart) / hitInterval))
+			if tick ~= currentTick then
+				currentTick = tick
+				alreadyHit = {} -- nuevo impacto: se puede volver a golpear al mismo rival
+			end
+			local hitData = if linkAttack and tick < hits - 1 then linkAttack else attack
+
 			local boxCFrame = hitboxCFrame(fighter, attack)
 			if debugPart then
 				debugPart.CFrame = boxCFrame
@@ -207,16 +240,18 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack, mo
 							-- Golpes a los dos lados: empujar hacia donde está el rival.
 							direction = if target.root.Position.X >= fighter.root.Position.X then 1 else -1
 						end
-						FighterService.ApplyHit(target, attack, direction, fighter)
-						if not landedHit then
+						FighterService.ApplyHit(target, hitData, direction, fighter)
+						if lastLagTick ~= tick then
+							lastLagTick = tick
 							-- Hitlag: el ataque del atacante se "pausa" ese instante.
 							-- (Se desplaza MoveTime para que la pose también se quede quieta.)
-							hitlagExtra = FighterService.ComputeHitlag(attack)
+							hitlagExtra = FighterService.ComputeHitlag(hitData)
 							local moveTime = fighter.model:GetAttribute("MoveTime")
 							if type(moveTime) == "number" then
 								fighter.model:SetAttribute("MoveTime", moveTime + hitlagExtra)
 							end
 							activeEnd += hitlagExtra
+							activeStart += hitlagExtra -- los siguientes impactos también esperan
 						end
 						landedHit = true
 					end

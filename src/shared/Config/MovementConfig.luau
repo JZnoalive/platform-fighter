@@ -4,13 +4,13 @@
 
 local MovementConfig = {
 	-- Suelo
-	GroundSpeed = 26, -- velocidad máxima corriendo
-	GroundAcceleration = 220, -- qué tan rápido llega a la velocidad máxima
+	GroundSpeed = 32, -- velocidad máxima corriendo
+	GroundAcceleration = 320, -- qué tan rápido llega a la velocidad máxima
 	GroundDeceleration = 300, -- qué tan rápido frena al soltar la tecla
 
 	-- Aire
-	AirSpeed = 22,
-	AirAcceleration = 110,
+	AirSpeed = 27,
+	AirAcceleration = 150,
 	AirDeceleration = 40, -- bajo = conserva el impulso en el aire
 
 	-- Saltos

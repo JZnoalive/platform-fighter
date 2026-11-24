@@ -2,7 +2,7 @@
 -- Reglas generales de la partida. Solo datos, sin lógica.
 
 local GameConfig = {
-	Version = "0.4.0-anim",
+	Version = "0.5.0-firmas",
 
 	-- Presentación
 	ShowOverheadPercent = false, -- etiqueta de % encima de la cabeza (el HUD de abajo ya lo muestra)
@@ -26,9 +26,9 @@ local GameConfig = {
 	AttackBufferWindow = 0.2, -- si pulsas atacar hasta 0.2 s antes de poder, el golpe sale en cuanto puedas
 
 	-- Hitlag (estilo Smash): atacante y golpeado se congelan un instante al impactar
-	HitlagBase = 0.035,
-	HitlagPerDamage = 0.0065, -- un pesado de 15 % congela ~0.13 s
-	HitlagMax = 0.17,
+	HitlagBase = 0.03,
+	HitlagPerDamage = 0.0045, -- un pesado de 15 % congela ~0.1 s (ágil, estilo Brawlhalla)
+	HitlagMax = 0.11,
 
 	-- Esquiva (estilo Brawlhalla): invulnerable mientras dura, luego enfriamiento
 	DodgeDuration = 0.3, -- segundos de esquiva (invulnerable)

@@ -89,9 +89,22 @@ local function attack(ctrl: Controller, moveName: string): boolean
 
 	CombatService.PerformAttack(fighter, data, moveName)
 	if data.selfImpulse then
-		local vel = fighter.root.AssemblyLinearVelocity
-		local x = if data.selfImpulse.X ~= 0 then data.selfImpulse.X * ctrl.facing else vel.X
-		fighter.root.AssemblyLinearVelocity = Vector3.new(x, data.selfImpulse.Y, 0)
+		local facing = ctrl.facing
+		local function push()
+			local vel = fighter.root.AssemblyLinearVelocity
+			local x = if data.selfImpulse.X ~= 0 then data.selfImpulse.X * facing else vel.X
+			fighter.root.AssemblyLinearVelocity = Vector3.new(x, data.selfImpulse.Y, 0)
+		end
+		if data.impulseAtStartup then
+			-- Embestidas: el impulso sale con el golpe, no al empezar
+			task.delay(data.startup, function()
+				if fighter.model.Parent and FighterService.GetState(fighter) == "Attacking" then
+					push()
+				end
+			end)
+		else
+			push()
+		end
 	end
 	return true
 end

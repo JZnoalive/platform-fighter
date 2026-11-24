@@ -6,17 +6,19 @@
 --     speed = studs/segundo, range = studs que recorre antes de desaparecer,
 --     angle = dirección del disparo (0 = adelante, 90 = arriba, -90 = abajo),
 --     size  = Vector3 (el largo va en Z, en la dirección del disparo),
---     color = HEX,
+--     color = HEX, count = disparos a la vez, spread = grados entre ellos (abanico),
 --   }
 --   Con projectile, hitbox.offset es desde dónde sale el disparo.
 
-local function shot(speed: number, range: number, angle: number, size: Vector3?)
+local function shot(speed: number, range: number, angle: number, size: Vector3?, count: number?, spread: number?)
 	return {
 		speed = speed,
 		range = range,
 		angle = angle,
 		size = size or Vector3.new(0.8, 0.8, 3),
 		color = "7DF9FF",
+		count = count or 1, -- varios disparos a la vez (abanico)
+		spread = spread or 0, -- grados entre disparos del abanico
 	}
 end
 
@@ -24,48 +26,48 @@ return {
 	---------------------------------------------------------------- LIGEROS EN EL SUELO
 	-- Disparo rápido hacia delante
 	Jab = {
-		startup = 0.08,
+		startup = 0.06,
 		active = 0.05,
-		recovery = 0.2,
+		recovery = 0.16,
 		damage = 3,
 		baseKnockback = 10,
 		knockbackScale = 0.08,
 		angle = 15,
-		projectile = shot(140, 45, 0),
+		projectile = shot(150, 22, 0), -- alcance corto (estilo Brawlhalla)
 		hitbox = { offset = Vector2.new(2, 0.5), size = Vector3.new(1, 1, 3) },
 	},
 
 	-- Disparo fuerte de largo alcance
 	SideLight = {
-		startup = 0.12,
+		startup = 0.08,
 		active = 0.05,
-		recovery = 0.28,
+		recovery = 0.22,
 		damage = 5,
 		baseKnockback = 18,
 		knockbackScale = 0.25,
 		angle = 20,
-		projectile = shot(160, 55, 0, Vector3.new(1, 1, 4)),
+		projectile = shot(170, 28, 0, Vector3.new(1, 1, 4)),
 		hitbox = { offset = Vector2.new(2, 0.5), size = Vector3.new(1, 1, 4) },
 	},
 
 	-- Disparo en diagonal hacia arriba (anti-aéreo)
 	UpLight = {
-		startup = 0.1,
+		startup = 0.07,
 		active = 0.05,
-		recovery = 0.24,
+		recovery = 0.19,
 		damage = 4,
 		baseKnockback = 22,
 		knockbackScale = 0.3,
 		angle = 85,
-		projectile = shot(130, 40, 65),
+		projectile = shot(140, 20, 65),
 		hitbox = { offset = Vector2.new(1, 2), size = Vector3.new(1, 1, 3) },
 	},
 
 	-- Patada baja (cuerpo a cuerpo)
 	DownLight = {
-		startup = 0.07,
+		startup = 0.05,
 		active = 0.1,
-		recovery = 0.2,
+		recovery = 0.16,
 		damage = 5,
 		baseKnockback = 18,
 		knockbackScale = 0.16,
@@ -75,39 +77,39 @@ return {
 
 	---------------------------------------------------------------- LIGEROS EN EL AIRE
 	AirLight = {
-		startup = 0.08,
+		startup = 0.06,
 		active = 0.05,
-		recovery = 0.2,
+		recovery = 0.16,
 		damage = 3,
 		baseKnockback = 12,
 		knockbackScale = 0.1,
 		angle = 30,
-		projectile = shot(140, 40, 0),
+		projectile = shot(150, 20, 0),
 		hitbox = { offset = Vector2.new(2, 0), size = Vector3.new(1, 1, 3) },
 	},
 
 	AirUpLight = {
-		startup = 0.08,
+		startup = 0.06,
 		active = 0.05,
-		recovery = 0.2,
+		recovery = 0.16,
 		damage = 4,
 		baseKnockback = 22,
 		knockbackScale = 0.3,
 		angle = 85,
-		projectile = shot(130, 35, 90),
+		projectile = shot(140, 18, 90),
 		hitbox = { offset = Vector2.new(0, 2.5), size = Vector3.new(1, 1, 3) },
 	},
 
 	-- Disparo hacia abajo (castiga desde arriba)
 	AirDownLight = {
-		startup = 0.1,
+		startup = 0.07,
 		active = 0.05,
-		recovery = 0.24,
+		recovery = 0.19,
 		damage = 5,
 		baseKnockback = 18,
 		knockbackScale = 0.28,
 		angle = -60,
-		projectile = shot(130, 35, -90),
+		projectile = shot(140, 18, -90),
 		hitbox = { offset = Vector2.new(0, -2.5), size = Vector3.new(1, 1, 3) },
 	},
 
@@ -117,11 +119,11 @@ return {
 		startup = 0.4,
 		active = 0.06,
 		recovery = 0.45,
-		damage = 14,
+		damage = 9, -- por disparo (abanico de 3)
 		baseKnockback = 42,
 		knockbackScale = 0.95,
 		angle = 35,
-		projectile = shot(110, 60, 0, Vector3.new(2.6, 2.6, 4)),
+		projectile = shot(130, 26, 0, Vector3.new(1.6, 1.6, 3.5), 3, 14), -- RÁFAGA: 3 disparos en abanico
 		hitbox = { offset = Vector2.new(2.5, 0.5), size = Vector3.new(2.6, 2.6, 4) },
 	},
 
@@ -138,16 +140,20 @@ return {
 	},
 
 	-- Giro a ras de suelo a los dos lados
+	-- FIRMA "Lluvia de balas": gira disparando a los dos lados (3 impactos)
 	DownHeavy = {
 		startup = 0.26,
-		active = 0.16,
+		active = 0.3,
 		recovery = 0.45,
-		damage = 12,
+		hits = 3,
+		damage = 4,
 		baseKnockback = 38,
 		knockbackScale = 0.88,
 		angle = 30,
+		linkKnockback = 8,
+		linkAngle = 40,
 		awayFromAttacker = true,
-		hitbox = { offset = Vector2.new(0, -1.5), size = Vector3.new(10, 3, 6) },
+		hitbox = { offset = Vector2.new(0, -1), size = Vector3.new(12, 3, 6) },
 	},
 
 	-- Dispara hacia abajo y sale impulsado hacia arriba

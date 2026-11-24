@@ -5,9 +5,9 @@
 return {
 	---------------------------------------------------------------- LIGEROS EN EL SUELO
 	Jab = {
-		startup = 0.09,
+		startup = 0.06,
 		active = 0.08,
-		recovery = 0.18,
+		recovery = 0.14,
 		damage = 5,
 		baseKnockback = 16,
 		knockbackScale = 0.14,
@@ -17,9 +17,9 @@ return {
 	},
 
 	SideLight = {
-		startup = 0.14,
+		startup = 0.10,
 		active = 0.1,
-		recovery = 0.26,
+		recovery = 0.21,
 		damage = 8,
 		baseKnockback = 22,
 		knockbackScale = 0.4,
@@ -29,9 +29,9 @@ return {
 	},
 
 	UpLight = {
-		startup = 0.1,
+		startup = 0.07,
 		active = 0.12,
-		recovery = 0.22,
+		recovery = 0.18,
 		damage = 7,
 		baseKnockback = 26,
 		knockbackScale = 0.35,
@@ -41,9 +41,9 @@ return {
 	},
 
 	DownLight = {
-		startup = 0.1,
+		startup = 0.07,
 		active = 0.1,
-		recovery = 0.24,
+		recovery = 0.19,
 		damage = 6,
 		baseKnockback = 18,
 		knockbackScale = 0.16,
@@ -54,9 +54,9 @@ return {
 
 	---------------------------------------------------------------- LIGEROS EN EL AIRE
 	AirLight = {
-		startup = 0.09,
+		startup = 0.06,
 		active = 0.14,
-		recovery = 0.2,
+		recovery = 0.16,
 		damage = 7,
 		baseKnockback = 22,
 		knockbackScale = 0.3,
@@ -66,9 +66,9 @@ return {
 	},
 
 	AirUpLight = {
-		startup = 0.09,
+		startup = 0.06,
 		active = 0.14,
-		recovery = 0.2,
+		recovery = 0.16,
 		damage = 7,
 		baseKnockback = 24,
 		knockbackScale = 0.3,
@@ -78,9 +78,9 @@ return {
 	},
 
 	AirDownLight = {
-		startup = 0.12,
+		startup = 0.08,
 		active = 0.14,
-		recovery = 0.24,
+		recovery = 0.19,
 		damage = 8,
 		baseKnockback = 20,
 		knockbackScale = 0.3,
@@ -90,16 +90,18 @@ return {
 	},
 
 	---------------------------------------------------------------- PESADOS
+	-- FIRMA "Embestida": cruza hacia delante con un tajo cargado
 	Heavy = {
-		startup = 0.38,
-		active = 0.14,
-		recovery = 0.45,
-		damage = 17,
-		baseKnockback = 48,
-		knockbackScale = 1.05,
-		angle = 38,
-		hitbox = { offset = Vector2.new(5, 0.5), size = Vector3.new(8, 4, 6) },
-		animationId = nil,
+		startup = 0.26,
+		active = 0.2,
+		recovery = 0.42,
+		damage = 16,
+		baseKnockback = 46,
+		knockbackScale = 1.0,
+		angle = 35,
+		selfImpulse = Vector2.new(75, 3),
+		impulseAtStartup = true,
+		hitbox = { offset = Vector2.new(4, 0.5), size = Vector3.new(8, 4, 6) },
 	},
 
 	UpHeavy = {
@@ -114,17 +116,20 @@ return {
 		animationId = nil,
 	},
 
+	-- FIRMA "Torbellino": giro a ras de suelo con 2 tajos a los dos lados
 	DownHeavy = {
 		startup = 0.3,
-		active = 0.16,
+		active = 0.28,
 		recovery = 0.5,
-		damage = 15,
+		hits = 2,
+		damage = 8,
 		baseKnockback = 42,
 		knockbackScale = 0.95,
 		angle = 28,
+		linkKnockback = 12,
+		linkAngle = 60,
 		awayFromAttacker = true,
 		hitbox = { offset = Vector2.new(0, -1.5), size = Vector3.new(13, 3, 6) },
-		animationId = nil,
 	},
 
 	-- Recovery en diagonal (un poco hacia delante)

@@ -25,6 +25,8 @@ type ModelState = {
 	currentKey: string?,
 	loop: AnimationTrack?, -- pista de locomoción sonando (guardia / carrera)
 	loopKey: string?,
+	predictedAt: number?, -- cuándo se predijo el último ataque (respuesta instantánea)
+	duration: number?, -- duración que debe tener la pista de acción actual
 }
 
 local states: { [Model]: ModelState } = {}
@@ -82,11 +84,7 @@ end
 
 local function playAction(model: Model, st: ModelState, key: string, animationId: string, duration: number?, looped: boolean)
 	if st.currentKey == key then
-		-- Si la duración real llegó tarde (la animación aún cargaba), se ajusta.
-		if st.current and duration and st.current.IsPlaying then
-			st.current:AdjustSpeed(speedFor(st.current, duration))
-		end
-		return
+		return -- ya suena (la velocidad la ajusta applyActionSpeed cada frame)
 	end
 	if st.current then
 		st.current:Stop(0.06)
@@ -94,10 +92,25 @@ local function playAction(model: Model, st: ModelState, key: string, animationId
 	local track = getTrack(model, st, animationId)
 	st.current = track
 	st.currentKey = key
+	st.duration = duration
 	if track then
 		track.Priority = Enum.AnimationPriority.Action4
 		track.Looped = looped
 		track:Play(0.05, 1, if duration then speedFor(track, duration) else 1)
+	end
+end
+
+-- Velocidad que debe llevar la pista de acción (0 durante el hitlag: "congelada").
+local function applyActionSpeed(model: Model, st: ModelState)
+	local track = st.current
+	if not track or not track.IsPlaying then
+		return
+	end
+	local frozenUntil = model:GetAttribute("FrozenUntil")
+	if type(frozenUntil) == "number" and workspace:GetServerTimeNow() < frozenUntil then
+		track:AdjustSpeed(0)
+	else
+		track:AdjustSpeed(if st.duration then speedFor(track, st.duration) else 1)
 	end
 end
 
@@ -150,11 +163,18 @@ local function updateModel(model: Model)
 		local move = model:GetAttribute("Move")
 		local animationId = AnimationController.GetAttackAnimation(model:GetAttribute("Weapon"), move)
 		if animationId then
-			local key = `atk:{move}:{model:GetAttribute("MoveTime")}`
-			playAction(model, st, key, animationId, attackDuration(model), false)
+			local key = `atk:{move}:{model:GetAttribute("MoveId")}`
+			if st.currentKey == `pred:{move}` and os.clock() - (st.predictedAt or 0) < 0.5 then
+				-- Ya la empezamos al pulsar (predicción): no reiniciarla.
+				st.currentKey = key
+			else
+				playAction(model, st, key, animationId, attackDuration(model), false)
+			end
 		else
 			stopAction(st)
 		end
+	elseif st.currentKey and string.sub(st.currentKey, 1, 5) == "pred:" and os.clock() - (st.predictedAt or 0) < 0.35 then
+		-- Predicción en curso: el servidor aún no ha confirmado el ataque. Se deja sonar.
 	elseif state == "Hitstun" and Animations.States.Hurt then
 		playAction(model, st, "hurt", Animations.States.Hurt, nil, true)
 	elseif state == "Dodging" and Animations.States.Dodge then
@@ -162,6 +182,7 @@ local function updateModel(model: Model)
 	elseif st.currentKey ~= "victory" then
 		stopAction(st)
 	end
+	applyActionSpeed(model, st)
 
 	-- Locomoción: guardia o carrera según la velocidad (solo en el suelo).
 	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -174,6 +195,29 @@ local function updateModel(model: Model)
 			playLoop(model, st, "idle", Animations.States.Idle, 1)
 		end
 	end
+end
+
+-- Respuesta instantánea: al pulsar un ataque, MI personaje empieza la animación YA,
+-- sin esperar al servidor (como en Brawlhalla). Cuando llega la confirmación, sigue
+-- la misma animación sin reiniciarla.
+function AnimationController.PredictAttack(moveName: string)
+	local character = Players.LocalPlayer.Character
+	if not character then
+		return
+	end
+	local animationId = AnimationController.GetAttackAnimation(character:GetAttribute("Weapon"), moveName)
+	local moveset = Movesets[character:GetAttribute("Weapon")]
+	local data = moveset and moveset[moveName]
+	if not animationId or not data then
+		return
+	end
+	local st = states[character]
+	if not st then
+		st = { tracks = {} }
+		states[character] = st
+	end
+	st.predictedAt = os.clock()
+	playAction(character, st, `pred:{moveName}`, animationId, data.startup + data.active + data.recovery, false)
 end
 
 -- El ganador hace su pose de victoria.

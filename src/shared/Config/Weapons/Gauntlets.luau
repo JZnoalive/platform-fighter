@@ -26,9 +26,9 @@ return {
 	---------------------------------------------------------------- LIGEROS EN EL SUELO
 	-- Golpe rápido sin dirección
 	Jab = {
-		startup = 0.06,
+		startup = 0.04,
 		active = 0.08,
-		recovery = 0.14,
+		recovery = 0.11,
 		damage = 4,
 		baseKnockback = 14,
 		knockbackScale = 0.12,
@@ -39,9 +39,9 @@ return {
 
 	-- Ligero con A/D: más alcance
 	SideLight = {
-		startup = 0.1,
+		startup = 0.07,
 		active = 0.1,
-		recovery = 0.22,
+		recovery = 0.18,
 		damage = 7,
 		baseKnockback = 22,
 		knockbackScale = 0.4,
@@ -52,9 +52,9 @@ return {
 
 	-- Ligero con W: anti-aéreo, pega por encima de la cabeza
 	UpLight = {
-		startup = 0.08,
+		startup = 0.06,
 		active = 0.1,
-		recovery = 0.18,
+		recovery = 0.14,
 		damage = 6,
 		baseKnockback = 24,
 		knockbackScale = 0.3,
@@ -65,9 +65,9 @@ return {
 
 	-- Ligero con S: barrida baja
 	DownLight = {
-		startup = 0.07,
+		startup = 0.05,
 		active = 0.1,
-		recovery = 0.2,
+		recovery = 0.16,
 		damage = 5,
 		baseKnockback = 18,
 		knockbackScale = 0.16,
@@ -78,9 +78,9 @@ return {
 
 	---------------------------------------------------------------- LIGEROS EN EL AIRE
 	AirLight = {
-		startup = 0.07,
+		startup = 0.05,
 		active = 0.12,
-		recovery = 0.18,
+		recovery = 0.14,
 		damage = 6,
 		baseKnockback = 20,
 		knockbackScale = 0.3,
@@ -90,9 +90,9 @@ return {
 	},
 
 	AirUpLight = {
-		startup = 0.07,
+		startup = 0.05,
 		active = 0.12,
-		recovery = 0.18,
+		recovery = 0.14,
 		damage = 6,
 		baseKnockback = 22,
 		knockbackScale = 0.3,
@@ -103,9 +103,9 @@ return {
 
 	-- Pega hacia abajo (spike): manda al rival hacia el vacío
 	AirDownLight = {
-		startup = 0.1,
+		startup = 0.07,
 		active = 0.12,
-		recovery = 0.22,
+		recovery = 0.18,
 		damage = 7,
 		baseKnockback = 22,
 		knockbackScale = 0.3,
@@ -116,32 +116,44 @@ return {
 
 	---------------------------------------------------------------- PESADOS
 	-- Pesado hacia delante (suelo o aire): el que hace KO de lado
+	-- FIRMA "Ráfaga de pistones": embiste hacia delante con 3 puñetazos seguidos;
+	-- los 2 primeros enganchan y el último remata.
 	Heavy = {
-		startup = 0.3,
-		active = 0.12,
-		recovery = 0.4,
-		damage = 15,
+		startup = 0.22,
+		active = 0.36,
+		recovery = 0.38,
+		hits = 3,
+		damage = 5, -- por golpe (15 % en total)
 		baseKnockback = 45,
 		knockbackScale = 1.0,
-		angle = 40,
-		hitbox = { offset = Vector2.new(3.5, 0.5), size = Vector3.new(6, 4, 6) },
-		animationId = nil,
+		angle = 38,
+		linkKnockback = 12,
+		linkAngle = 20,
+		selfImpulse = Vector2.new(45, 4),
+		impulseAtStartup = true,
+		hitbox = { offset = Vector2.new(3, 0.5), size = Vector3.new(6, 4, 6) },
 	},
 
 	-- Pesado con W en el suelo: manda hacia arriba
+	-- FIRMA "Martillo ascendente": salta golpeando hacia arriba (2 impactos)
 	UpHeavy = {
-		startup = 0.28,
-		active = 0.14,
+		startup = 0.24,
+		active = 0.3,
 		recovery = 0.4,
-		damage = 14,
+		hits = 2,
+		damage = 7,
 		baseKnockback = 42,
 		knockbackScale = 0.95,
 		angle = 88,
-		hitbox = { offset = Vector2.new(0, 5), size = Vector3.new(6, 6, 6) },
-		animationId = nil,
+		linkKnockback = 18,
+		linkAngle = 85,
+		selfImpulse = Vector2.new(0, 45),
+		impulseAtStartup = true,
+		hitbox = { offset = Vector2.new(0.5, 5), size = Vector3.new(6, 7, 6) },
 	},
 
 	-- Pesado con S en el suelo: golpe al suelo que pega a los dos lados
+	-- FIRMA "Onda sísmica": golpe al suelo que barre a los dos lados
 	DownHeavy = {
 		startup = 0.25,
 		active = 0.14,
@@ -151,8 +163,7 @@ return {
 		knockbackScale = 0.9,
 		angle = 30,
 		awayFromAttacker = true,
-		hitbox = { offset = Vector2.new(0, -1.5), size = Vector3.new(10, 3, 6) },
-		animationId = nil,
+		hitbox = { offset = Vector2.new(0, -1.5), size = Vector3.new(14, 3, 6) },
 	},
 
 	-- Pesado con W en el aire: impulso hacia arriba para volver al escenario.
