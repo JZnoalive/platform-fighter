@@ -33,7 +33,11 @@
 | 2026-11-24 | W salta Y apunta arriba ("tap-jump"): espera 0.05 s por si llega un ataque; Space salta al instante | Bloquear W restaba velocidad; así se combinan según la situación |
 | 2026-11-24 | Caída rápida con S en el aire | Física estilo Brawlhalla |
 | 2026-11-24 | Datos de Blade creados ya (12 ataques) | Para que las animaciones se puedan hacer en paralelo con sus tiempos |
-| 2026-11-24 | Arte en paralelo con otra IA vía `docs/PROMPTS_OTRA_IA.md`; nunca toca `src/` | Avanzar más rápido sin pisar el código |
+| 2026-11-24 | Arte en paralelo con otra IA; nunca toca `src/` | Avanzar más rápido sin pisar el código |
+| 2026-11-24 | Una especialidad por IA: Claude = código; Gemini = todo lo creativo; ChatGPT fuera (como mucho textos de redes). Ver `docs/EQUIPO.md` | Evitar dos "arquitectos" y versiones contradictorias |
+| 2026-11-24 | Todos los IDs (animaciones, audio) se apuntan solo en `docs/ENTREGAS.md` | Un único lugar; nada de IDs inventados o sueltos |
+| 2026-11-24 | Animaciones y audios se publican con el mismo dueño que el juego (recomendado: Grupo de Roblox) | Si el dueño es distinto, Roblox no los reproduce en el juego |
+| 2026-11-24 | Sonidos propios (jsfxr) o catálogo con licencia de Roblox; herramientas gratis solo si su licencia permite uso comercial | El juego tendrá ingresos |
 | 2026-11-24 | Mientras solo programa JZnoalive, commits directos a `main` | Rama + PR cuando entren más programadores |
 | 2026-11-24 | Arriba/abajo y recovery se hacen en M4b, después de M4 | Petición de JZnoalive; M4 primero para cerrar el ciclo de partida |
 | 2026-11-24 | Plano de juego: X = izquierda/derecha, Y = arriba/abajo, Z siempre 0 | Una sola convención para cámara, movimiento y hitboxes |

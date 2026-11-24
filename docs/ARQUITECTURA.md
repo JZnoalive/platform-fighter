@@ -61,7 +61,8 @@ ServerStorage
 ```
 
 Las tareas de arte (modelos, animaciones, decoración, sonidos) se hacen en paralelo
-con los prompts de `docs/PROMPTS_OTRA_IA.md`; entregan IDs y modelos, nunca código.
+con los prompts de `docs/PROMPTS_GEMINI.md`; entregan IDs y modelos, nunca código.
+Los IDs se leen solo de `docs/ENTREGAS.md`.
 
 ### Medidas de la arena de la demo (M1)
 

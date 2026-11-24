@@ -18,7 +18,9 @@ nombres, arte y código **propios**.
 | [docs/REGLAS.md](docs/REGLAS.md) | Reglas legales y de trabajo en equipo (leer antes de tocar nada) |
 | [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md) | Estructura de carpetas, cliente vs servidor, contratos entre módulos |
 | [DECISIONES.md](DECISIONES.md) | Registro de decisiones, sistemas terminados y problemas pendientes |
-| [docs/PROMPTS_OTRA_IA.md](docs/PROMPTS_OTRA_IA.md) | Prompts listos para el arte en paralelo: diseño, modelo 3D, animaciones, escenario, sonidos, tráiler |
+| [docs/EQUIPO.md](docs/EQUIPO.md) | Quién hace qué (Claude = código, Gemini = creativo), cómo viajan las entregas, herramientas gratis y sus licencias |
+| [docs/PROMPTS_GEMINI.md](docs/PROMPTS_GEMINI.md) | Prompts listos para Gemini: diseño, modelo 3D, animaciones, escenario, sonidos, tráiler |
+| [docs/ENTREGAS.md](docs/ENTREGAS.md) | El único lugar para apuntar IDs de animaciones, sonidos y el estado de los modelos |
 
 ## Instalación (una sola vez por persona)
 
