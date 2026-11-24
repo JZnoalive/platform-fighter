@@ -12,17 +12,23 @@ local UserInputService = game:GetService("UserInputService")
 
 local InputController = {}
 
-local BINDINGS: { [string]: { Enum.KeyCode } } = {
+local BINDINGS: { [string]: { any } } = {
 	Left = { Enum.KeyCode.A, Enum.KeyCode.Left },
 	Right = { Enum.KeyCode.D, Enum.KeyCode.Right },
 	Down = { Enum.KeyCode.S, Enum.KeyCode.Down },
 	Jump = { Enum.KeyCode.Space, Enum.KeyCode.W, Enum.KeyCode.Up },
+	Light = { Enum.KeyCode.J, Enum.UserInputType.MouseButton1 },
+	Heavy = { Enum.KeyCode.K, Enum.UserInputType.MouseButton2 },
 }
+
+-- Acciones que avisan en el momento de pulsar (ataques).
+local PRESS_ACTIONS = { Light = true, Heavy = true }
 
 local PRIORITY = Enum.ContextActionPriority.High.Value + 1
 
-local held = { Left = false, Right = false, Down = false, Jump = false }
+local held = { Left = false, Right = false, Down = false, Jump = false, Light = false, Heavy = false }
 local lastJumpPressedAt = -math.huge
+local pressListeners: { (string) -> () } = {}
 
 function InputController.GetMoveX(): number
 	return (if held.Right then 1 else 0) - (if held.Left then 1 else 0)
@@ -40,19 +46,29 @@ function InputController.ClearJump()
 	lastJumpPressedAt = -math.huge
 end
 
+-- Registra una función que se llama con "Light" o "Heavy" al pulsar.
+function InputController.OnPress(callback: (string) -> ())
+	table.insert(pressListeners, callback)
+end
+
 function InputController.Start()
-	for action, keys in BINDINGS do
+	for action, inputs in BINDINGS do
 		ContextActionService:BindActionAtPriority("PF_" .. action, function(_, state)
 			if state == Enum.UserInputState.Begin then
 				if action == "Jump" and not held.Jump then
 					lastJumpPressedAt = os.clock()
+				end
+				if PRESS_ACTIONS[action] and not held[action] then
+					for _, callback in pressListeners do
+						task.spawn(callback, action)
+					end
 				end
 				held[action] = true
 			elseif state == Enum.UserInputState.End or state == Enum.UserInputState.Cancel then
 				held[action] = false
 			end
 			return Enum.ContextActionResult.Sink
-		end, false, PRIORITY, table.unpack(keys))
+		end, false, PRIORITY, table.unpack(inputs))
 	end
 
 	-- Si la ventana pierde el foco, se sueltan todas las teclas.

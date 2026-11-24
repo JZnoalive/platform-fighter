@@ -54,11 +54,11 @@ Regla: **no se empieza un hito hasta que el anterior pasa su prueba.**
 | **M0 Proyecto** | Repo, Rojo, place nuevo, scripts de prueba | Con 2 clientes, Output muestra `[Server] listo` y `[Client] listo` ×2 |
 | **M1 Arena y cámara** | Arena, plano 2D (Z bloqueado), cámara lateral | 60 s corriendo y saltando: Z siempre ≈ 0, la cámara encuadra bien |
 | **M2 Movimiento** | Correr, salto, salto aéreo, gravedad, control aéreo | Dos jugadores se mueven a la vez sin tirones; el movimiento "se siente bien" |
-| **M3 Combate vs dummy** | 4 ataques de Brawler, hitbox, %, knockback, hitstun, hitlag | 10 golpes al dummy: % exacto, 1 impacto por ataque, KB crece con el % |
+| **M3 Combate vs dummy** | 4 ataques de Brawler, hitbox, %, knockback, hitstun | 10 golpes al dummy: % exacto, 1 impacto por ataque, KB crece con el % |
 | **M4 KO y partida** | Blast zone, KO, stocks, respawn, victoria, reinicio | 5 partidas seguidas sin errores ni estados pegados |
 | **M5 Segundo luchador** | Moveset de Blade (solo datos + modelo provisional) | Blade jugable por un 2º jugador; sus ataques usan su propia tabla |
 | **M6 CPU** | IA simple que controla a Blade | La CPU acerca, ataca en rango, vuelve al escenario; gana a veces |
-| **M7 Pulido para tráiler** | HUD de %, animaciones provisionales, VFX de golpe/KO, sonido | Checklist del tráiler completa |
+| **M7 Pulido para tráiler** | HUD de %, animaciones, hitlag, VFX de golpe/KO, sonido | Checklist del tráiler completa |
 | **M8 Grabación** | Arena decorada, cámara de grabación, build estable | Tráiler + partida handcam grabados |
 
 ## Cómo se ve el éxito

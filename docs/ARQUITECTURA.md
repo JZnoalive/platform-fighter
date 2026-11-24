@@ -24,17 +24,20 @@ repo/
     │       └── Knockback.luau         (M3) fórmula de knockback
     ├── server/   → ServerScriptService.Server
     │   ├── Main.server.luau           arranca los servicios en orden
+    │   ├── Remotes.luau               (M3) crea Shared.Remotes al arrancar
     │   └── Services/
     │       ├── FighterService.luau    (M3) registro de luchadores, estado, daño
     │       ├── CombatService.luau     (M3) ataques, ventanas activas, hitboxes
+    │       ├── TrainingService.luau   (M3) crea y resetea el dummy por código
     │       ├── MatchService.luau      (M4) spawns, blast zone, KO, stocks, victoria
     │       └── CpuService.luau        (M6) IA de la CPU
     └── client/   → StarterPlayer.StarterPlayerScripts.Client
         ├── Main.client.luau           arranca los controladores
         └── Controllers/
             ├── CameraController.luau   (M1)
-            ├── MovementController.luau (M1/M2) plano 2D, saltos, orientación
+            ├── MovementController.luau (M1/M2/M3) plano 2D, saltos, knockback recibido
             ├── InputController.luau    (M2) teclas → acciones
+            ├── CombatController.luau   (M3) elige el ataque y lo pide al servidor
             └── HudController.luau      (M7)
 ```
 

@@ -10,10 +10,12 @@ local Controllers = script.Parent:WaitForChild("Controllers")
 local CameraController = require(Controllers.CameraController)
 local InputController = require(Controllers.InputController)
 local MovementController = require(Controllers.MovementController)
+local CombatController = require(Controllers.CombatController)
 
 -- La cámara va primero: si otro controlador falla, al menos se ve el juego.
 CameraController.Start()
 InputController.Start()
 MovementController.Start()
+CombatController.Start()
 
 print(`[Client] listo — {Players.LocalPlayer.Name} — versión {GameConfig.Version}`)

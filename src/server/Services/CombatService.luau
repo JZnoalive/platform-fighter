@@ -1,0 +1,136 @@
+-- ServerScriptService.Server.Services.CombatService
+-- Ataques: valida la petición del cliente, controla startup/active/recovery,
+-- crea la hitbox y decide quién recibe el golpe.
+-- El cliente solo dice "quiero hacer Jab"; el servidor decide todo lo demás.
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+
+local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
+local FighterService = require(script.Parent.FighterService)
+local Remotes = require(script.Parent.Parent.Remotes)
+
+local Movesets = {
+	Brawler = require(ReplicatedStorage.Shared.Config.Fighters.Brawler),
+}
+
+local CombatService = {}
+
+local function getFacing(root: BasePart): number
+	return if root.CFrame.LookVector.X >= 0 then 1 else -1
+end
+
+local function hitboxCFrame(fighter: FighterService.Fighter, attack): CFrame
+	local facing = getFacing(fighter.root)
+	local offset = attack.hitbox.offset
+	local pos = fighter.root.Position
+	return CFrame.new(pos.X + offset.X * facing, pos.Y + offset.Y, 0)
+end
+
+local function makeDebugPart(size: Vector3): BasePart
+	local part = Instance.new("Part")
+	part.Name = "DebugHitbox"
+	part.Anchored = true
+	part.CanCollide = false
+	part.CanQuery = false
+	part.CanTouch = false
+	part.CastShadow = false
+	part.Color = Color3.fromRGB(255, 40, 40)
+	part.Transparency = 0.5
+	part.Size = size
+	part.Parent = workspace
+	return part
+end
+
+-- Ejecuta un ataque completo. Funciona igual para jugador o CPU.
+function CombatService.PerformAttack(fighter: FighterService.Fighter, attack)
+	fighter.attackToken += 1
+	local token = fighter.attackToken
+	FighterService.SetState(fighter, "Attacking")
+
+	local function stillAttacking(): boolean
+		return fighter.attackToken == token
+			and fighter.model.Parent ~= nil
+			and FighterService.GetState(fighter) == "Attacking"
+	end
+
+	task.spawn(function()
+		-- 1. Startup
+		task.wait(attack.startup)
+		if not stillAttacking() then
+			return
+		end
+
+		-- 2. Active: la hitbox busca objetivos cada frame
+		local alreadyHit: { [Model]: boolean } = {}
+		local debugPart = if GameConfig.DebugHitboxes then makeDebugPart(attack.hitbox.size) else nil
+		local params = OverlapParams.new()
+		params.FilterType = Enum.RaycastFilterType.Include
+
+		local activeEnd = os.clock() + attack.active
+		while os.clock() < activeEnd and stillAttacking() do
+			local boxCFrame = hitboxCFrame(fighter, attack)
+			if debugPart then
+				debugPart.CFrame = boxCFrame
+			end
+
+			-- Solo luchadores registrados, nunca el propio atacante.
+			local targets = {}
+			for _, model in FighterService.GetModels() do
+				if model ~= fighter.model and not alreadyHit[model] then
+					table.insert(targets, model)
+				end
+			end
+
+			if #targets > 0 then
+				params.FilterDescendantsInstances = targets
+				local parts = workspace:GetPartBoundsInBox(boxCFrame, attack.hitbox.size, params)
+				for _, part in parts do
+					local target = FighterService.GetFromInstance(part)
+					if target and not alreadyHit[target.model] then
+						alreadyHit[target.model] = true -- un objetivo, un golpe por ataque
+						FighterService.ApplyHit(target, attack, getFacing(fighter.root))
+					end
+				end
+			end
+
+			RunService.Heartbeat:Wait()
+		end
+
+		if debugPart then
+			debugPart:Destroy()
+		end
+		if not stillAttacking() then
+			return
+		end
+
+		-- 3. Recovery
+		task.wait(attack.recovery)
+		if stillAttacking() then
+			FighterService.SetState(fighter, "Idle")
+		end
+	end)
+end
+
+local function onActionRequest(player: Player, payload: any)
+	-- Validación: nunca confiar en lo que manda el cliente.
+	if type(payload) ~= "table" or payload.action ~= "Attack" or type(payload.move) ~= "string" then
+		return
+	end
+	local fighter = FighterService.Get(player.Character)
+	if not fighter or FighterService.GetState(fighter) ~= "Idle" then
+		return
+	end
+	local moveset = Movesets[fighter.fighterId]
+	local attack = moveset and moveset[payload.move]
+	if not attack then
+		return
+	end
+	CombatService.PerformAttack(fighter, attack)
+end
+
+function CombatService.Start()
+	Remotes.ActionRequest.OnServerEvent:Connect(onActionRequest)
+end
+
+return CombatService
