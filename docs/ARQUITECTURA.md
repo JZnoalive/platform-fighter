@@ -50,8 +50,6 @@ Workspace
     ├── SpawnPoints      (Folder) Parts: Spawn1, Spawn2, RespawnTop
     └── BlastZone        (Part, anclada, invisible, CanCollide=false)
                          su tamaño define los límites; fuera = KO
-ServerStorage
-└── FighterTemplates     (M3) modelos de dummy / Blade que clona el servidor
 ```
 
 ### Medidas de la arena de la demo (M1)
@@ -71,8 +69,8 @@ La cámara mira desde Z positivo hacia Z negativo.
 
 Límites resultantes de la BlastZone: X de -100 a 100, Y de -40 a 100.
 
-Nunca hay dummies ni NPC sueltos en Workspace: los crea el servidor desde
-`ServerStorage` y los registra en FighterService.
+Nunca hay dummies ni NPC colocados a mano en Workspace: los crea el servidor
+por código (TrainingService) y los registra en FighterService.
 
 ## Quién hace qué
 
