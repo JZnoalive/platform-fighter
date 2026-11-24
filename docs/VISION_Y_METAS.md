@@ -51,6 +51,11 @@ Escudo, agarres, dash, plataformas atravesables, bordes, paredes, armas recogibl
 más personajes, 4 jugadores, selección de personaje, online público, móvil,
 monetización.
 
+### Fecha límite
+
+**La demo debe estar lista antes del 4 de diciembre de 2026.** Todo lo que no sea
+necesario para grabar el tráiler y la handcam queda para después.
+
 ## Hitos paso a paso
 
 Regla: **no se empieza un hito hasta que el anterior pasa su prueba.**
@@ -67,7 +72,7 @@ Regla: **no se empieza un hito hasta que el anterior pasa su prueba.**
 | **M4d Esquiva** | Esquiva en suelo y aire con invulnerabilidad y enfriamiento (estilo Brawlhalla) | Esquivar un pesado lo atraviesa sin recibir daño |
 | **M5 CPU + menú de práctica** | El dummy pasa a ser Blade controlado por CPU; menú: Quieta / Caminar / Saltar / Atacar / Pelear, fijar %, reiniciar, hitboxes on/off | Cada opción del menú cambia lo que hace la CPU al instante |
 | **M5b Partida contra la CPU** | Modo 1 jugador vs CPU con 3 vidas, KO, victoria y reinicio (para la handcam) | 3 partidas completas contra la CPU en "Pelear" sin errores |
-| **M6 Personajes y animaciones** | Importar modelos de `ServerStorage.FighterModels` y reproducir animaciones por ataque (IDs de `docs/ENTREGAS.md`) | Brawler y Blade con su modelo; cada ataque reproduce su animación |
+| **M6 Personajes y animaciones** | Opción A: personajes de bloque estilizado por código (colores + piezas) y reproducción de animaciones de ataque cuando haya IDs en `docs/ENTREGAS.md` | Jugador = Brawler (guanteletes, gafas), CPU = Blade (espadón); los ataques con ID reproducen su animación |
 | **M7 Pulido para tráiler** | HUD de %, hitlag, sacudida de cámara, VFX de golpe/KO, sonido, música | Checklist del tráiler completa |
 | **M8 Grabación** | Arena decorada, cámara de grabación, build estable | Tráiler + partida handcam grabados |
 

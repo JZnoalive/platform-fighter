@@ -10,7 +10,11 @@ Claude se encarga del **código**. Ver [`EQUIPO.md`](EQUIPO.md).
 3. Después pega el **prompt de la tarea**.
 4. Lo que Gemini te entregue, apúntalo en [`ENTREGAS.md`](ENTREGAS.md) y avisa a Claude.
 
-Orden recomendado: **1 → 2 → 3** (son las que más tardan), y en ratos libres 4, 5 y 6.
+**Para la demo (antes del 4 de diciembre):** la Tarea 2 (modelo 3D) **ya no hace falta**:
+los personajes se hacen con bloques por código. En la Tarea 3, anima sobre el **rig R15
+estándar de Roblox** (Avatar → Rig Builder → R15 → Block Rig), no sobre un modelo importado.
+
+Orden recomendado para la demo: **3 (animaciones de ataque) → 5 (sonidos) → 4 (escenario) → 6 (tráiler)**.
 
 ---
 

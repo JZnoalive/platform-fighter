@@ -19,6 +19,7 @@ local RunService = game:GetService("RunService")
 local CpuConfig = require(ReplicatedStorage.Shared.Config.CpuConfig)
 local FighterService = require(script.Parent.FighterService)
 local CpuService = require(script.Parent.CpuService)
+local AppearanceService = require(script.Parent.AppearanceService)
 local Remotes = require(script.Parent.Parent.Remotes)
 
 local TrainingService = {}
@@ -39,18 +40,6 @@ end
 
 local function isValidBehavior(name: any): boolean
 	return type(name) == "string" and table.find(CpuConfig.Behaviors, name) ~= nil
-end
-
--- Colores provisionales de Blade (paleta de docs/PERSONAJES.md) hasta tener su modelo (M6).
-local function makeDescription(): HumanoidDescription
-	local desc = Instance.new("HumanoidDescription")
-	desc.HeadColor = Color3.fromHex("DDD6FE")
-	desc.TorsoColor = Color3.fromHex("7C3AED")
-	desc.LeftArmColor = Color3.fromHex("1E1B2E")
-	desc.RightArmColor = Color3.fromHex("1E1B2E")
-	desc.LeftLegColor = Color3.fromHex("110E1B")
-	desc.RightLegColor = Color3.fromHex("110E1B")
-	return desc
 end
 
 local function resetCpu(fighter: FighterService.Fighter)
@@ -75,7 +64,10 @@ local function spawnCpu()
 	end
 
 	local ok, model = pcall(function()
-		return Players:CreateHumanoidModelFromDescription(makeDescription(), Enum.HumanoidRigType.R15)
+		return Players:CreateHumanoidModelFromDescription(
+			AppearanceService.GetDescription("Blade"),
+			Enum.HumanoidRigType.R15
+		)
 	end)
 	if not ok or not model then
 		warn("[TrainingService] no se pudo crear la CPU:", model)
@@ -91,6 +83,11 @@ local function spawnCpu()
 	spawnCFrame = CFrame.new(spawnPart.Position.X, spawnPart.Position.Y + 3, 0) * FACE_LEFT
 	model.Name = "CPU_Blade"
 	model:PivotTo(spawnCFrame :: CFrame)
+	AppearanceService.AddGear(model, "Blade") -- espadón, pelo, cuello (estilo bloque)
+	local humanoid = model:FindFirstChildOfClass("Humanoid")
+	if humanoid then
+		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+	end
 	model.Parent = workspace
 
 	local fighter = FighterService.Register(model, "Cpu", "Blade", nil)

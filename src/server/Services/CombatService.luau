@@ -40,12 +40,54 @@ local function makeDebugPart(size: Vector3): BasePart
 	return part
 end
 
+-- Animaciones de ataque: se reproducen desde el servidor (se ven en todos los clientes).
+-- Solo si el ataque tiene animationId (IDs en docs/ENTREGAS.md). Sin ID, no pasa nada.
+local animationTracks: { [Model]: { [string]: AnimationTrack } } = {}
+
+local function playAttackAnimation(fighter: FighterService.Fighter, attack)
+	local id = attack.animationId
+	if not id then
+		return
+	end
+	local animator = fighter.humanoid:FindFirstChildOfClass("Animator")
+	if not animator then
+		return
+	end
+	local assetId = `rbxassetid://{id}`
+	local cache = animationTracks[fighter.model]
+	if not cache then
+		cache = {}
+		animationTracks[fighter.model] = cache
+		fighter.model.Destroying:Connect(function()
+			animationTracks[fighter.model] = nil
+		end)
+	end
+	local track = cache[assetId]
+	if not track then
+		local animation = Instance.new("Animation")
+		animation.AnimationId = assetId
+		local ok, result = pcall(function()
+			return animator:LoadAnimation(animation)
+		end)
+		if not ok then
+			warn("[CombatService] no se pudo cargar la animación", assetId, result)
+			return
+		end
+		track = result
+		track.Priority = Enum.AnimationPriority.Action
+		track.Looped = false
+		cache[assetId] = track
+	end
+	track:Play(0.05)
+end
+
 -- Ejecuta un ataque completo. Funciona igual para jugador o CPU.
 function CombatService.PerformAttack(fighter: FighterService.Fighter, attack)
 	fighter.attackToken += 1
 	local token = fighter.attackToken
 	fighter.queuedAttack = nil
 	FighterService.SetState(fighter, "Attacking")
+	playAttackAnimation(fighter, attack)
 
 	local function stillAttacking(): boolean
 		return fighter.attackToken == token

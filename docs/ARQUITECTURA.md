@@ -1,7 +1,7 @@
 # Arquitectura
 
 Pequeña, modular y fácil de depurar. **Crece solo cuando un hito lo necesita.**
-Cada archivo indica el hito en que aparece. Hoy existen los de M0 a M5;
+Cada archivo indica el hito en que aparece. Hoy existen los de M0 a M6;
 los marcados *(M5)*, *(M6)* o *(M7)* todavía no existen.
 
 ## Estructura del repositorio → Roblox
@@ -19,6 +19,7 @@ repo/
     │   │   ├── CameraConfig.luau      (M1) zoom y suavidad de la cámara
     │   │   ├── MovementConfig.luau    (M2) velocidades, gravedad, saltos, esquiva
     │   │   ├── CpuConfig.luau         (M5) comportamientos e "inteligencia" de la CPU
+    │   │   ├── CharacterStyles.luau   (M6) colores y piezas de cada luchador (estilo bloque)
     │   │   └── Fighters/              (M3) un archivo de datos por luchador
     │   │       ├── Brawler.luau
     │   │       └── Blade.luau         (M4c datos; lo usa la CPU en M5)
@@ -34,7 +35,8 @@ repo/
     │       ├── CombatService.luau     (M3) ataques, ventanas activas, hitboxes
     │       ├── TrainingService.luau   (M3/M5) modo práctica: crea la CPU y atiende el menú
     │       ├── MatchService.luau      (M4) spawns, blast zone, KO, stocks, victoria
-    │       └── CpuService.luau        (M5) controla a la CPU (6 comportamientos)
+    │       ├── CpuService.luau        (M5) controla a la CPU (6 comportamientos)
+    │       └── AppearanceService.luau (M6) viste a jugador (Brawler) y CPU (Blade)
     └── client/   → StarterPlayer.StarterPlayerScripts.Client
         ├── Main.client.luau           arranca los controladores
         └── Controllers/
@@ -57,10 +59,13 @@ Workspace
                          su tamaño define los límites; fuera = KO
 └── Decor                (M6, opcional) decoración; nunca colisiona ni tapa la cámara
 ServerStorage
-└── FighterModels        (M6) modelos R15 importados
-    ├── Brawler          (Model con Humanoid y HumanoidRootPart)
-    └── Blade
+└── FighterModels        (FUTURO, opcional) modelos 3D propios si algún día se hacen
 ```
+
+**Aspecto en la demo (M6, Opción A):** sin modelos 3D. Cada luchador es un cuerpo R15
+básico con los colores de su paleta + piezas pegadas por código (`CharacterStyles.luau`
+y `AppearanceService.luau`). Las piezas tienen `CanQuery = false`: no afectan a las hitboxes.
+Requisito de Studio: Game Settings → Avatar → Avatar Type = **R15**.
 
 Las tareas de arte (modelos, animaciones, decoración, sonidos) se hacen en paralelo
 con los prompts de `docs/PROMPTS_GEMINI.md`; entregan IDs y modelos, nunca código.

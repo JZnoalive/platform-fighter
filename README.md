@@ -5,8 +5,11 @@ Juego de lucha de plataformas 2D **original** para Roblox. Inspirado en el géne
 nombres, arte y código **propios**.
 
 > **Estado:** M0–M4 terminados (proyecto, arena/cámara, movimiento, combate, partida).
-> M4b (arriba/abajo, recovery), M4c (combos, W salta, caída rápida), M4d (esquiva)
-> y M5 (CPU + menú de práctica) en pruebas.
+> M4b (arriba/abajo, recovery), M4c (combos, W salta, caída rápida), M4d (esquiva),
+> M5 (CPU + menú de práctica) y M6 (personajes de bloque) en pruebas.
+> **Fecha límite de la demo: 4 de diciembre de 2026.**
+>
+> Ajuste de Studio necesario (una vez): **Home → Game Settings → Avatar → Avatar Type: R15**.
 > Ver [DECISIONES.md](DECISIONES.md).
 > **Meta actual:** una mini demo jugable (1 personaje jugable vs 1 CPU, 1 arena)
 > para grabar un tráiler de mecánicas y una partida con handcam.

@@ -10,7 +10,9 @@ local FighterService = require(Services.FighterService)
 local CombatService = require(Services.CombatService)
 local TrainingService = require(Services.TrainingService)
 local MatchService = require(Services.MatchService)
+local AppearanceService = require(Services.AppearanceService)
 
+AppearanceService.Start() -- primero: desactiva la ropa del avatar antes de que aparezcan
 FighterService.Start()
 CombatService.Start()
 TrainingService.Start()

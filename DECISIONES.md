@@ -43,6 +43,9 @@
 | 2026-11-24 | Menú de práctica: comportamiento de la CPU, % (0/50/100/150), reiniciar, hitboxes; solo en modo libre | Recupera la idea del "mod menu" del prototipo viejo |
 | 2026-11-24 | La CPU usa el mismo combate que el jugador (PerformAttack, TryStartDodge) | Sin trampas; un solo sistema que mantener |
 | 2026-11-24 | M4b–M5 se programaron seguidos y se prueban juntos al final | Petición de JZnoalive para avanzar más rápido |
+| 2026-11-24 | Demo con personajes de bloque estilizado hechos por código (Opción A), sin modelos 3D | JZnoalive trabaja solo y el rig 3D (Mixamo, escala 100x) frenaba la demo. Fecha límite: 4 de diciembre |
+| 2026-11-24 | Jugadores sin ropa/accesorios de su avatar (`LoadCharacterAppearance = false`) | Todos se ven como el luchador, como en un juego de pelea |
+| 2026-11-24 | Animaciones de ataque desde el servidor, solo si hay `animationId` | Se ven en todos los clientes; sin ID no pasa nada |
 | 2026-11-24 | Mientras solo programa JZnoalive, commits directos a `main` | Rama + PR cuando entren más programadores |
 | 2026-11-24 | Arriba/abajo y recovery se hacen en M4b, después de M4 | Petición de JZnoalive; M4 primero para cerrar el ciclo de partida |
 | 2026-11-24 | Plano de juego: X = izquierda/derecha, Y = arriba/abajo, Z siempre 0 | Una sola convención para cámara, movimiento y hitboxes |
@@ -59,7 +62,8 @@
 
 ## Problemas pendientes
 
-- [ ] M4b, M4c, M4d y M5 subidos sin probar en Studio (prueba conjunta pendiente)
+- [ ] M4b, M4c, M4d, M5 y M6 subidos sin probar en Studio (prueba conjunta pendiente)
+- [ ] La CPU no tiene animaciones de caminar/idle (el script Animate de Roblox solo corre en jugadores) → M7
 - [ ] Falta el modo "1 jugador contra la CPU con 3 vidas" para la handcam (siguiente: M5b)
 
 - [ ] Un 3er jugador que entra a mitad de partida no tiene vidas (la demo es 1v1; se revisa si hace falta)
