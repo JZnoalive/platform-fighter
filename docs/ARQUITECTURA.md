@@ -23,6 +23,7 @@ repo/
     │   │       └── Blade.luau         (M5)
     │   └── Modules/
     │       ├── Movement.luau          (M6) cálculo de movimiento compartido jugador/CPU
+    │       ├── Movesets.luau          (M4b) lista FighterId → moveset (cliente y servidor)
     │       └── Knockback.luau         (M3) fórmula de knockback
     ├── server/   → ServerScriptService.Server
     │   ├── Main.server.luau           arranca los servicios en orden
@@ -137,6 +138,16 @@ Jab = {
     animationId = nil, -- se rellena en M7
 }
 ```
+
+Campos opcionales *(M4b)*:
+- `awayFromAttacker = true`: el knockback va hacia el lado donde está el rival
+  (golpes que pegan a los dos lados, como `DownHeavy`).
+- `selfImpulse = Vector2.new(adelante, arriba)`: impulso que se da el atacante
+  (`Recovery`, `GroundPound`). Lo aplica su cliente, que es dueño de su física.
+
+Nombres de ataques válidos: `Jab`, `SideLight`, `UpLight`, `DownLight`, `AirLight`,
+`AirUpLight`, `AirDownLight`, `Heavy`, `UpHeavy`, `DownHeavy`, `Recovery`, `GroundPound`.
+Cada luchador nuevo debe definir los 12.
 
 ### Fórmula de knockback de la demo *(M3)*
 

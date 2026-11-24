@@ -15,8 +15,9 @@ local InputController = {}
 local BINDINGS: { [string]: { any } } = {
 	Left = { Enum.KeyCode.A, Enum.KeyCode.Left },
 	Right = { Enum.KeyCode.D, Enum.KeyCode.Right },
+	Up = { Enum.KeyCode.W, Enum.KeyCode.Up },
 	Down = { Enum.KeyCode.S, Enum.KeyCode.Down },
-	Jump = { Enum.KeyCode.Space, Enum.KeyCode.W, Enum.KeyCode.Up },
+	Jump = { Enum.KeyCode.Space },
 	Light = { Enum.KeyCode.J, Enum.UserInputType.MouseButton1 },
 	Heavy = { Enum.KeyCode.K, Enum.UserInputType.MouseButton2 },
 }
@@ -26,12 +27,16 @@ local PRESS_ACTIONS = { Light = true, Heavy = true }
 
 local PRIORITY = Enum.ContextActionPriority.High.Value + 1
 
-local held = { Left = false, Right = false, Down = false, Jump = false, Light = false, Heavy = false }
+local held = { Left = false, Right = false, Up = false, Down = false, Jump = false, Light = false, Heavy = false }
 local lastJumpPressedAt = -math.huge
 local pressListeners: { (string) -> () } = {}
 
 function InputController.GetMoveX(): number
 	return (if held.Right then 1 else 0) - (if held.Left then 1 else 0)
+end
+
+function InputController.IsUpHeld(): boolean
+	return held.Up
 end
 
 function InputController.IsDownHeld(): boolean

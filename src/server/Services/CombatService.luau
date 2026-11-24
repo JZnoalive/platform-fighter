@@ -10,9 +10,7 @@ local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 local FighterService = require(script.Parent.FighterService)
 local Remotes = require(script.Parent.Parent.Remotes)
 
-local Movesets = {
-	Brawler = require(ReplicatedStorage.Shared.Config.Fighters.Brawler),
-}
+local Movesets = require(ReplicatedStorage.Shared.Modules.Movesets)
 
 local CombatService = {}
 
@@ -89,7 +87,12 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack)
 					local target = FighterService.GetFromInstance(part)
 					if target and not alreadyHit[target.model] then
 						alreadyHit[target.model] = true -- un objetivo, un golpe por ataque
-						FighterService.ApplyHit(target, attack, getFacing(fighter.root))
+						local direction = getFacing(fighter.root)
+						if attack.awayFromAttacker then
+							-- Golpes a los dos lados: empujar hacia donde está el rival.
+							direction = if target.root.Position.X >= fighter.root.Position.X then 1 else -1
+						end
+						FighterService.ApplyHit(target, attack, direction)
 					end
 				end
 			end

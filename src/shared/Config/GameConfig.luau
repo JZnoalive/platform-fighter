@@ -2,7 +2,7 @@
 -- Reglas generales de la partida. Solo datos, sin lógica.
 
 local GameConfig = {
-	Version = "0.0.5-m4",
+	Version = "0.0.6-m4b",
 
 	-- Partida
 	MinPlayersForMatch = 2, -- con menos jugadores: modo libre (KO sin perder vidas)

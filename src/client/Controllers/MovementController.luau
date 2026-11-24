@@ -23,9 +23,25 @@ local groundJumpAvailable = true
 local lastGroundedAt = -math.huge
 local inHitstun = false
 local hitstunUntil = 0
+local recoveryAvailable = true -- el Recovery se usa 1 vez por vuelo
 
 function MovementController.GetFacing(): number
 	return facing
+end
+
+function MovementController.IsGrounded(): boolean
+	local character = Players.LocalPlayer.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	return humanoid ~= nil and humanoid.FloorMaterial ~= Enum.Material.Air
+end
+
+-- Devuelve true y lo gasta si el Recovery está disponible.
+function MovementController.TryUseRecovery(): boolean
+	if not recoveryAvailable then
+		return false
+	end
+	recoveryAvailable = false
+	return true
 end
 
 local function approach(current: number, target: number, maxStep: number): number
@@ -52,9 +68,27 @@ function MovementController.ApplyKnockback(velocity: Vector3, hitstun: number)
 	inHitstun = true
 	hitstunUntil = os.clock() + hitstun
 	InputController.ClearJump()
+	-- Como en el género: recibir un golpe devuelve los saltos aéreos y el Recovery.
+	airJumpsLeft = MovementConfig.MaxAirJumps
+	recoveryAvailable = true
 	-- Estado Physics: el Humanoid deja de frenar al personaje mientras vuela.
 	humanoid:ChangeState(Enum.HumanoidStateType.Physics)
 	root.AssemblyLinearVelocity = velocity
+end
+
+-- Impulso propio de un ataque (Recovery, GroundPound). forward/up según selfImpulse.
+-- forward = 0 conserva la velocidad horizontal actual.
+function MovementController.ApplySelfImpulse(forward: number, up: number)
+	local root = getBody()
+	if not root then
+		return
+	end
+	local vel = root.AssemblyLinearVelocity
+	local x = if forward ~= 0 then forward * facing else vel.X
+	if forward ~= 0 then
+		speedX = x
+	end
+	root.AssemblyLinearVelocity = Vector3.new(x, up, 0)
 end
 
 -- Lo llama el servidor (remote FighterReset) tras un respawn: empezar de cero.
@@ -63,6 +97,7 @@ function MovementController.ResetMotion()
 	inHitstun = false
 	airJumpsLeft = MovementConfig.MaxAirJumps
 	groundJumpAvailable = true
+	recoveryAvailable = true
 	InputController.ClearJump()
 	local root, humanoid = getBody()
 	if root and humanoid then
@@ -89,6 +124,7 @@ local function onCharacterAdded(character: Model)
 	speedX = 0
 	airJumpsLeft = MovementConfig.MaxAirJumps
 	groundJumpAvailable = true
+	recoveryAvailable = true
 	inHitstun = false
 end
 
@@ -117,6 +153,7 @@ local function step(dt: number)
 		lastGroundedAt = now
 		airJumpsLeft = MovementConfig.MaxAirJumps
 		groundJumpAvailable = true
+		recoveryAvailable = true
 	end
 
 	local character = root.Parent :: Model

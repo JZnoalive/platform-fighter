@@ -13,7 +13,7 @@
 | 2026-11-24 | Tiempos de ataque en segundos, no en frames | El servidor de Roblox no garantiza FPS fijos |
 | 2026-11-24 | KOService queda dentro de MatchService | Se separa solo si crece |
 | 2026-11-24 | Movimiento horizontal con aceleración propia, aplicado vía `Humanoid:Move` + `WalkSpeed` | El Humanoid sigue gestionando suelo y animaciones |
-| 2026-11-24 | Controles M2: A/D o flechas = mover, Space/W/↑ = saltar, S/↓ = abajo | Controles de Roblox desactivados; todo pasa por InputController |
+| 2026-11-24 | Controles M2: A/D o flechas = mover, Space/W/↑ = saltar, S/↓ = abajo (cambiado en M4b) | Controles de Roblox desactivados; todo pasa por InputController |
 | 2026-11-24 | Input con ContextActionService (prioridad alta + Sink), sin PlayerModule | PlayerModule no existe en este place y bloqueaba el cliente |
 | 2026-11-24 | El dummy se crea por código (TrainingService), no a mano | Evita el bug de golpear a varios dummies; nada que crear en Studio |
 | 2026-11-24 | Hitlag se mueve de M3 a M7 | M3 se centra en que los golpes conecten bien; el "feeling" va en el pulido |
@@ -23,6 +23,10 @@
 | 2026-11-24 | Respawn = anclar arriba (RespawnTop) 1 s + invulnerable con brillo blanco; sin LoadCharacter | Rápido, sin recargar scripts; se ve claro quién es invulnerable |
 | 2026-11-24 | Con menos de 2 jugadores: modo libre (KO sin perder vidas) | Se puede entrenar solo contra el dummy |
 | 2026-11-24 | El dummy solo existe en modo libre; se retira al empezar una partida | Revisión: aparecía en Spawn2 encima del jugador 2 y estorbaba en el 1v1 |
+| 2026-11-24 | M4b: 12 ataques por luchador (7 ligeros, 5 pesados) elegidos por dirección y suelo/aire | Estructura del género; un luchador nuevo = solo un archivo de datos |
+| 2026-11-24 | Saltar = solo Space; W/↑ = dirección arriba | Sin esto no se pueden hacer ataques hacia arriba |
+| 2026-11-24 | Recovery 1 vez por vuelo; recibir un golpe recarga saltos aéreos y Recovery | Convención del género; da opciones para volver al escenario |
+| 2026-11-24 | El impulso de Recovery/GroundPound lo aplica el cliente | El jugador es dueño de su física. Riesgo aceptado para la demo: el servidor no lo valida |
 | 2026-11-24 | Mientras solo programa JZnoalive, commits directos a `main` | Rama + PR cuando entren más programadores |
 | 2026-11-24 | Arriba/abajo y recovery se hacen en M4b, después de M4 | Petición de JZnoalive; M4 primero para cerrar el ciclo de partida |
 | 2026-11-24 | Plano de juego: X = izquierda/derecha, Y = arriba/abajo, Z siempre 0 | Una sola convención para cámara, movimiento y hitboxes |
@@ -35,10 +39,10 @@
 | 2026-11-24 | M1 Arena y cámara | Cámara lateral encuadra a 2 jugadores; Z fijo en 0; se puede caer por el borde |
 | 2026-11-24 | M2 Movimiento | Correr, salto, 2 saltos aéreos, 2 jugadores. Pendiente: verificar la aceleración al mantener la tecla |
 | 2026-11-24 | M3 Combate vs dummy | Golpes conectan, % sube, knockback, dummy por código; probado con avatar y dummy |
+| 2026-11-24 | M4 KO y partida | 2 jugadores: dummy se retira, partida, ganador y reinicio automático sin errores |
 
 ## Problemas pendientes
 
-- [ ] Knockback jugador contra jugador aún sin probar (M3 se probó contra el dummy) → se prueba en M4
 - [ ] Un 3er jugador que entra a mitad de partida no tiene vidas (la demo es 1v1; se revisa si hace falta)
 
 - [ ] Nombre definitivo del juego

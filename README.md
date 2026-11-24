@@ -4,8 +4,8 @@ Juego de lucha de plataformas 2D **original** para Roblox. Inspirado en el géne
 (porcentaje de daño, knockback, expulsar al rival del escenario), con personajes,
 nombres, arte y código **propios**.
 
-> **Estado:** M0–M3 terminados (proyecto, arena/cámara, movimiento, combate).
-> M4 (KO, vidas y partida) en pruebas. Ver [DECISIONES.md](DECISIONES.md).
+> **Estado:** M0–M4 terminados (proyecto, arena/cámara, movimiento, combate, partida).
+> M4b (ataques arriba/abajo y recovery) en pruebas. Ver [DECISIONES.md](DECISIONES.md).
 > **Meta actual:** una mini demo jugable (1 personaje jugable vs 1 CPU, 1 arena)
 > para grabar un tráiler de mecánicas y una partida con handcam.
 
@@ -51,9 +51,14 @@ nombres, arte y código **propios**.
 | Acción | Teclas |
 |---|---|
 | Moverse | A/D o ←/→ |
-| Saltar (1 en suelo + 2 en el aire) | Space, W o ↑ (en M4b: solo Space) |
-| Ligero (Jab / lateral con A/D / aéreo) | J o clic izquierdo |
-| Pesado | K o clic derecho |
+| Dirección arriba / abajo (para ataques) | W/↑ y S/↓ |
+| Saltar (1 en suelo + 2 en el aire) | Space |
+| Ligero | J o clic izquierdo (+ W/S/A/D para cambiar el ataque) |
+| Pesado | K o clic derecho (+ W/S/A/D) |
+| Recovery (impulso hacia arriba, 1 por vuelo) | W + K en el aire |
+
+La tabla completa de qué ataque sale con cada combinación está al principio de
+`src/client/Controllers/CombatController.luau`.
 
 ### Qué está en Git y qué no
 
