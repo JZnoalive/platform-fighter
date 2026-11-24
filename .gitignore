@@ -1,0 +1,13 @@
+# Archivos de place de Roblox (el mapa vive en Studio / Team Create)
+*.rbxl
+*.rbxlx
+*.rbxl.lock
+*.rbxlx.lock
+
+# Generados por herramientas
+sourcemap.json
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+.vscode/settings.json
