@@ -23,7 +23,7 @@ Cómo rellenar:
 
 | Modelo | Ruta en Studio | Estado |
 |---|---|---|
-| Brawler | `ServerStorage > FighterModels > Brawler` | ⬜ |
+| Brawler | `ServerStorage > FighterModels > Brawler` | ⚠️ Importado, pero hay que rehacerlo (2026-11-24): esqueleto Mixamo (`mixamorig:*`) en vez de R15 de Roblox, y unas 100 veces más grande (≈ 500 studs; debe medir ≈ 5.2). Arreglo: Avatar Auto Setup de Studio |
 | Blade | `ServerStorage > FighterModels > Blade` | ⬜ |
 
 ## Animaciones de Brawler
