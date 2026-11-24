@@ -51,6 +51,23 @@ ServerStorage
 └── FighterTemplates     (M3) modelos de dummy / Blade que clona el servidor
 ```
 
+### Medidas de la arena de la demo (M1)
+
+Convención: **X = izquierda/derecha, Y = arriba/abajo, Z = 0 siempre.**
+La cámara mira desde Z positivo hacia Z negativo.
+
+| Objeto | Clase | Size | Position | Otras propiedades |
+|---|---|---|---|---|
+| `Platforms/MainStage` | Part | 80, 4, 12 | 0, 0, 0 | Anchored |
+| `Platforms/PlatformLeft` | Part | 16, 1, 12 | -20, 14, 0 | Anchored |
+| `Platforms/PlatformRight` | Part | 16, 1, 12 | 20, 14, 0 | Anchored |
+| `SpawnPoints/Spawn1` | Part | 2, 1, 2 | -15, 6, 0 | Anchored, CanCollide off, Transparency 1 |
+| `SpawnPoints/Spawn2` | Part | 2, 1, 2 | 15, 6, 0 | Anchored, CanCollide off, Transparency 1 |
+| `SpawnPoints/RespawnTop` | Part | 2, 1, 2 | 0, 30, 0 | Anchored, CanCollide off, Transparency 1 |
+| `BlastZone` | Part | 200, 140, 20 | 0, 30, 0 | Anchored, CanCollide/CanTouch/CanQuery off, Transparency 1 |
+
+Límites resultantes de la BlastZone: X de -100 a 100, Y de -40 a 100.
+
 Nunca hay dummies ni NPC sueltos en Workspace: los crea el servidor desde
 `ServerStorage` y los registra en FighterService.
 
