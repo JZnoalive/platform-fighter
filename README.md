@@ -26,6 +26,7 @@ nombres, arte y código **propios**.
 | [docs/EQUIPO.md](docs/EQUIPO.md) | Quién hace qué (Claude = código, Gemini = creativo), cómo viajan las entregas, herramientas gratis y sus licencias |
 | [docs/PROMPTS_GEMINI.md](docs/PROMPTS_GEMINI.md) | Prompts listos para Gemini: diseño, modelo 3D, animaciones, escenario, sonidos, tráiler |
 | [docs/PERSONAJES.md](docs/PERSONAJES.md) | Diseños finales de Brawler ("Forja Cinética") y Blade ("Vórtice Amatista") |
+| [docs/COMBOS.md](docs/COMBOS.md) | Combos por arma (estilo Brawlhalla) y consejos para grabar |
 | [docs/ENTREGAS.md](docs/ENTREGAS.md) | El único lugar para apuntar IDs de animaciones, sonidos y el estado de los modelos |
 
 ## Instalación (una sola vez por persona)

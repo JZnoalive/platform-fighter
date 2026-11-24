@@ -23,6 +23,7 @@ return {
 	Brawler = {
 		hudColor = "D94E28", -- color de su tarjeta en el HUD
 		defaultWeapon = "Gauntlets", -- arma con la que aparece (ver WeaponStyles.luau)
+		headScale = 1.18, -- cabeza algo más grande (estilo juego de lucha / anime)
 		bodyColors = {
 			head = "E8B796", -- piel
 			torso = "EDE6D6", -- camiseta blanco hueso
@@ -75,6 +76,7 @@ return {
 	Blade = {
 		hudColor = "7C3AED",
 		defaultWeapon = "Sword",
+		headScale = 1.15,
 		bodyColors = {
 			head = "F2D7C9", -- piel
 			torso = "1E1B2E", -- chaqueta bolero titanio oscuro

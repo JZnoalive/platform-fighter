@@ -81,18 +81,23 @@ local function broadcast(kind: string, data: { [string]: any })
 	Remotes.MatchEvent:FireAllClients(kind, data)
 end
 
-local function setInvulnerable(fighter: FighterService.Fighter, seconds: number)
+local function setInvulnerable(fighter: FighterService.Fighter, seconds: number, showGlow: boolean?)
 	local model = fighter.model
 	invulnerableTokens[model] = (invulnerableTokens[model] or 0) + 1
 	local token = invulnerableTokens[model]
 
 	model:SetAttribute("Invulnerable", true)
 	local highlight = model:FindFirstChild("InvulnerableHighlight") :: Highlight?
-	if not highlight then
+	if showGlow == false then
+		if highlight then
+			highlight:Destroy()
+			highlight = nil
+		end
+	elseif not highlight then
 		local newHighlight = Instance.new("Highlight")
 		newHighlight.Name = "InvulnerableHighlight"
 		newHighlight.FillColor = Color3.new(1, 1, 1)
-		newHighlight.FillTransparency = 0.5
+		newHighlight.FillTransparency = 0.75 -- brillo suave, se sigue viendo el personaje
 		newHighlight.OutlineColor = Color3.new(1, 1, 1)
 		newHighlight.Parent = model
 		highlight = newHighlight
@@ -139,11 +144,15 @@ local function placeAt(fighter: FighterService.Fighter, cframe: CFrame, freezeSe
 	end
 end
 
-local function respawn(fighter: FighterService.Fighter, cframe: CFrame)
+-- freezeSeconds: cuánto se queda congelado antes de poder jugar (por defecto RespawnDelay;
+-- al empezar la partida, la cuenta atrás).
+local function respawn(fighter: FighterService.Fighter, cframe: CFrame, freezeSeconds: number?)
+	local freeze = freezeSeconds or GameConfig.RespawnDelay
 	FighterService.Reset(fighter)
 	FighterService.SetState(fighter, "Respawning")
-	setInvulnerable(fighter, GameConfig.RespawnDelay + GameConfig.RespawnInvulnerability)
-	placeAt(fighter, cframe, GameConfig.RespawnDelay)
+	-- En la cuenta atrás no hace falta el brillo (están quietos): solo tras un KO.
+	setInvulnerable(fighter, freeze + GameConfig.RespawnInvulnerability, freezeSeconds == nil)
+	placeAt(fighter, cframe, freeze)
 	if fighter.model.Parent and FighterService.GetState(fighter) == "Respawning" then
 		FighterService.SetState(fighter, "Idle")
 	end
@@ -240,11 +249,17 @@ local function startMatch(mode: string, fighters: { FighterService.Fighter })
 		local spawnCFrame = spawnCFrames[((index - 1) % #spawnCFrames) + 1]
 		busy[fighter.model] = true
 		task.spawn(function()
-			respawn(fighter, spawnCFrame)
+			respawn(fighter, spawnCFrame, GameConfig.StartCountdown) -- quietos durante "3, 2, 1"
 			busy[fighter.model] = nil
 		end)
 	end
-	broadcast("Start", { mode = mode })
+	-- "3, 2, 1, ¡YA!" (estilo Smash): los clientes muestran la cuenta y "Start" al terminar.
+	broadcast("Countdown", { seconds = GameConfig.StartCountdown, mode = mode })
+	task.delay(GameConfig.StartCountdown, function()
+		if matchState == "Playing" and matchMode == mode then
+			broadcast("Start", { mode = mode })
+		end
+	end)
 end
 
 -- Pedido desde el menú de práctica: el jugador contra la CPU.
@@ -291,9 +306,24 @@ function MatchService.Start()
 	end
 
 	blastZone = zone
+	-- Aparecer DE PIE sobre la plataforma (estilo Smash en la cuenta atrás):
+	-- se busca el suelo debajo de cada spawn y se coloca la cadera a 3 studs.
+	local platforms = arena:FindFirstChild("Platforms")
+	local function groundY(spawn: BasePart): number
+		if platforms then
+			local params = RaycastParams.new()
+			params.FilterType = Enum.RaycastFilterType.Include
+			params.FilterDescendantsInstances = { platforms }
+			local hit = workspace:Raycast(spawn.Position, Vector3.new(0, -60, 0), params)
+			if hit then
+				return hit.Position.Y + 3
+			end
+		end
+		return spawn.Position.Y + 3
+	end
 	spawnCFrames = {
-		CFrame.new(spawn1.Position.X, spawn1.Position.Y + 3, 0) * FACE_RIGHT,
-		CFrame.new(spawn2.Position.X, spawn2.Position.Y + 3, 0) * FACE_LEFT,
+		CFrame.new(spawn1.Position.X, groundY(spawn1), 0) * FACE_RIGHT,
+		CFrame.new(spawn2.Position.X, groundY(spawn2), 0) * FACE_LEFT,
 	}
 	respawnCFrame = CFrame.new(top.Position.X, top.Position.Y, 0) * FACE_RIGHT
 

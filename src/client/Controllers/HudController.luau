@@ -16,6 +16,7 @@ local CharacterStyles = require(ReplicatedStorage.Shared.Config.CharacterStyles)
 local HudController = {}
 
 local messageLabel: TextLabel
+local messageScale: UIScale
 local cardsFrame: Frame
 local showToken = 0
 
@@ -206,6 +207,8 @@ local function createGui()
 	messageLabel.TextStrokeTransparency = 0
 	messageLabel.Visible = false
 	messageLabel.Parent = gui
+	messageScale = Instance.new("UIScale")
+	messageScale.Parent = messageLabel
 
 	comboLabel = Instance.new("TextLabel")
 	comboLabel.AnchorPoint = Vector2.new(1, 0)
@@ -240,11 +243,17 @@ local function createGui()
 end
 
 -- duration = nil → se queda hasta el próximo mensaje.
-local function show(text: string, duration: number?)
+-- big = true → texto enorme que entra con un "golpe" (cuenta atrás, ¡GAME!).
+local function show(text: string, duration: number?, big: boolean?)
 	showToken += 1
 	local token = showToken
 	messageLabel.Text = text
 	messageLabel.Visible = true
+	messageLabel.Size = if big then UDim2.fromScale(0.7, 0.22) else UDim2.fromScale(0.6, 0.12)
+	messageScale.Scale = if big then 1.6 else 1
+	if big then
+		TweenService:Create(messageScale, TweenInfo.new(0.25, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+	end
 	if duration then
 		task.delay(duration, function()
 			if showToken == token then
@@ -252,11 +261,20 @@ local function show(text: string, duration: number?)
 			end
 		end)
 	end
+	return token
 end
 
 local function onMatchEvent(kind: string, data: { [string]: any })
-	if kind == "Start" then
-		show(if data.mode == "VsCpu" then "¡Contra la CPU! ¡A pelear!" else "¡A pelear!", 1.5)
+	if kind == "Countdown" then
+		-- "3, 2, 1" (el "¡YA!" llega con Start)
+		task.spawn(function()
+			for n = data.seconds or 3, 1, -1 do
+				show(tostring(n), 0.9, true)
+				task.wait(1)
+			end
+		end)
+	elseif kind == "Start" then
+		show("¡YA!", 0.9, true)
 	elseif kind == "KO" then
 		local text = `¡KO! {data.name}`
 		if data.stocks ~= nil then
@@ -264,7 +282,13 @@ local function onMatchEvent(kind: string, data: { [string]: any })
 		end
 		show(text, 1.5)
 	elseif kind == "Victory" then
-		show(if data.name then `¡{data.name} gana!` else "Sin ganador", nil)
+		-- "¡GAME!" y luego el ganador
+		local token = show("¡GAME!", nil, true)
+		task.delay(1.6, function()
+			if showToken == token then
+				show(if data.name then `¡{data.name} gana!` else "Sin ganador", nil)
+			end
+		end)
 	end
 end
 

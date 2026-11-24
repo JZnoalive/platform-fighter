@@ -173,6 +173,7 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack, mo
 		-- 2b. Active: la hitbox busca objetivos cada frame (no en los disparos)
 		local alreadyHit: { [Model]: boolean } = {}
 		local landedHit = false
+		local hitlagExtra = 0
 		local debugPart = if workspace:GetAttribute("DebugHitboxes") and not attack.projectile
 			then makeDebugPart(attack.hitbox.size)
 			else nil
@@ -201,13 +202,23 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack, mo
 					local target = FighterService.GetFromInstance(part)
 					if target and not alreadyHit[target.model] then
 						alreadyHit[target.model] = true -- un objetivo, un golpe por ataque
-						landedHit = true
 						local direction = getFacing(fighter.root)
 						if attack.awayFromAttacker then
 							-- Golpes a los dos lados: empujar hacia donde está el rival.
 							direction = if target.root.Position.X >= fighter.root.Position.X then 1 else -1
 						end
-						FighterService.ApplyHit(target, attack, direction)
+						FighterService.ApplyHit(target, attack, direction, fighter)
+						if not landedHit then
+							-- Hitlag: el ataque del atacante se "pausa" ese instante.
+							-- (Se desplaza MoveTime para que la pose también se quede quieta.)
+							hitlagExtra = FighterService.ComputeHitlag(attack)
+							local moveTime = fighter.model:GetAttribute("MoveTime")
+							if type(moveTime) == "number" then
+								fighter.model:SetAttribute("MoveTime", moveTime + hitlagExtra)
+							end
+							activeEnd += hitlagExtra
+						end
+						landedHit = true
 					end
 				end
 			end

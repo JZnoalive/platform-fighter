@@ -239,7 +239,16 @@ local function step(ctrl: Controller)
 	local vel = root.AssemblyLinearVelocity
 	local moveX = 0
 
-	if state == "Idle" or state == "Attacking" then
+	-- Hitlag como atacante: quieta un instante al acertar (FrozenUntil lo pone FighterService).
+	local frozenUntil = fighter.model:GetAttribute("FrozenUntil")
+	local frozen = state ~= "Hitstun"
+		and type(frozenUntil) == "number"
+		and workspace:GetServerTimeNow() < frozenUntil
+
+	if frozen then
+		humanoid:Move(Vector3.zero)
+		root.AssemblyLinearVelocity = Vector3.zero
+	elseif state == "Idle" or state == "Attacking" then
 		moveX = decide(ctrl, state, grounded, pos, vel)
 		if state == "Attacking" and grounded then
 			moveX = 0

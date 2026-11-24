@@ -14,6 +14,7 @@ local TweenService = game:GetService("TweenService")
 
 local AudioConfig = require(ReplicatedStorage.Shared.Config.AudioConfig)
 local CameraController = require(script.Parent.CameraController)
+local MovementController = require(script.Parent.MovementController)
 
 local EffectsController = {}
 
@@ -79,7 +80,46 @@ local function flashScreen(color: Color3, duration: number)
 	TweenService:Create(flashFrame, TweenInfo.new(duration), { BackgroundTransparency = 1 }):Play()
 end
 
-local function onHit(targetModel: Model?, position: Vector3, force: number)
+-- Estela de humo detrás de quien sale volando fuerte (estilo Smash).
+local LAUNCH_TRAIL_FORCE = 55
+local function launchTrail(model: Model, duration: number)
+	task.spawn(function()
+		local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
+		local untilTime = os.clock() + math.min(duration, 1.2)
+		while root and root.Parent and os.clock() < untilTime do
+			if root.AssemblyLinearVelocity.Magnitude > 8 then
+				local puff = Instance.new("Part")
+				puff.Shape = Enum.PartType.Ball
+				puff.Material = Enum.Material.SmoothPlastic
+				puff.Color = Color3.fromRGB(235, 230, 240)
+				puff.Size = Vector3.one * 1.6
+				puff.Position = Vector3.new(root.Position.X, root.Position.Y, -0.5)
+				puff.Anchored = true
+				puff.CanCollide = false
+				puff.CanQuery = false
+				puff.CanTouch = false
+				puff.CastShadow = false
+				puff.Transparency = 0.2
+				puff.Parent = effectsFolder
+				local tween = TweenService:Create(puff, TweenInfo.new(0.5), { Size = Vector3.one * 3.5, Transparency = 1 })
+				tween:Play()
+				tween.Completed:Connect(function()
+					puff:Destroy()
+				end)
+			end
+			task.wait(0.04)
+		end
+	end)
+end
+
+local function onHit(targetModel: Model?, position: Vector3, force: number, duration: number?, attackerModel: Model?)
+	-- Si el golpe lo di yo: activa la chase dodge (esquiva recargada antes).
+	if attackerModel and attackerModel == Players.LocalPlayer.Character then
+		MovementController.NotifyLandedHit()
+	end
+	if targetModel and force >= LAUNCH_TRAIL_FORCE then
+		launchTrail(targetModel, duration or 0.5)
+	end
 	local heavy = force >= HEAVY_FORCE
 	if heavy then
 		burst(position, Color3.fromRGB(255, 150, 60), 1.5, 9, 0.22)
@@ -101,6 +141,32 @@ local function onMatchEvent(kind: string, data: { [string]: any })
 		-- Explosión en el borde de la pantalla por donde salió.
 		local pos = data.position :: Vector3
 		local clamped = Vector3.new(math.clamp(pos.X, -95, 95), math.clamp(pos.Y, -35, 95), 0)
+		-- Rayo de KO estilo Smash: haz de luz desde el borde hacia el centro del escenario.
+		local toCenter = (Vector3.new(0, 15, 0) - clamped)
+		if toCenter.Magnitude > 1 then
+			local dir = toCenter.Unit
+			local length = 70
+			local beam = Instance.new("Part")
+			beam.Anchored = true
+			beam.CanCollide = false
+			beam.CanQuery = false
+			beam.CanTouch = false
+			beam.CastShadow = false
+			beam.Material = Enum.Material.Neon
+			beam.Color = Color3.fromRGB(255, 200, 90)
+			beam.Size = Vector3.new(7, 7, length)
+			beam.CFrame = CFrame.lookAt(clamped + dir * (length / 2), clamped + dir * length)
+			beam.Parent = effectsFolder
+			local tween = TweenService:Create(
+				beam,
+				TweenInfo.new(0.55, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+				{ Size = Vector3.new(0.2, 0.2, length * 1.3), Transparency = 1 }
+			)
+			tween:Play()
+			tween.Completed:Connect(function()
+				beam:Destroy()
+			end)
+		end
 		burst(clamped, Color3.fromRGB(255, 120, 40), 4, 40, 0.6)
 		burst(clamped, Color3.fromRGB(255, 255, 200), 2, 18, 0.35)
 		flashScreen(Color3.new(1, 1, 1), 0.3)

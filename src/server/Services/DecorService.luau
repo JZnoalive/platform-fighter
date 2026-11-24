@@ -85,6 +85,14 @@ local function styleArena(decor: Folder)
 				Material = Enum.Material.Neon,
 				Color = TRIM,
 			})
+			-- Franja de hierba en el borde delantero de arriba (lejos de donde pisan, Z = 0)
+			makePart(decor, {
+				Name = platform.Name .. "_Grass",
+				Size = Vector3.new(size.X, 0.4, 2.2),
+				CFrame = cf * CFrame.new(0, size.Y / 2 + 0.2, size.Z / 2 - 1.25),
+				Material = Enum.Material.Grass,
+				Color = Color3.fromRGB(125, 175, 105),
+			})
 		end
 	end
 	-- Roca colgando bajo la plataforma principal (detrás, para no tapar a nadie).

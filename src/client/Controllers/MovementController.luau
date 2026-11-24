@@ -31,6 +31,9 @@ local dodgeVelocity = Vector3.zero
 local dodgeOnGround = false
 local lastDodgeAt = -math.huge
 local airDodgeAvailable = true -- la esquiva aérea se usa 1 vez por vuelo
+local pendingKnockback: Vector3? = nil -- se aplica al terminar el hitlag
+local knockbackAt = 0
+local lastLandedAt = -math.huge -- último golpe que acerté (chase dodge)
 
 function MovementController.GetFacing(): number
 	return facing
@@ -67,13 +70,17 @@ local function getBody(): (BasePart?, Humanoid?)
 end
 
 -- Lo llama el servidor (remote ApplyKnockback) cuando nos golpean.
-function MovementController.ApplyKnockback(velocity: Vector3, hitstun: number)
+-- hitlag: segundos congelado ANTES de salir volando (estilo Smash).
+function MovementController.ApplyKnockback(velocity: Vector3, hitstun: number, hitlag: number?)
 	local root, humanoid = getBody()
 	if not root or not humanoid then
 		return
 	end
+	local lag = hitlag or 0
 	inHitstun = true
-	hitstunUntil = os.clock() + hitstun
+	hitstunUntil = os.clock() + lag + hitstun
+	pendingKnockback = velocity
+	knockbackAt = os.clock() + lag
 	InputController.ClearJump()
 	inDodge = false
 	-- Como en el género: recibir un golpe devuelve los saltos aéreos, el Recovery
@@ -83,7 +90,12 @@ function MovementController.ApplyKnockback(velocity: Vector3, hitstun: number)
 	airDodgeAvailable = true
 	-- Estado Physics: el Humanoid deja de frenar al personaje mientras vuela.
 	humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-	root.AssemblyLinearVelocity = velocity
+	root.AssemblyLinearVelocity = Vector3.zero -- quieto durante el hitlag
+end
+
+-- Avisado por EffectsController cuando YO acierto un golpe (para la chase dodge).
+function MovementController.NotifyLandedHit()
+	lastLandedAt = os.clock()
 end
 
 -- Impulso propio de un ataque (Recovery, GroundPound). forward/up según selfImpulse.
@@ -106,7 +118,11 @@ function MovementController.CanDodge(): boolean
 	if inHitstun or inDodge then
 		return false
 	end
-	if os.clock() - lastDodgeAt < GameConfig.DodgeCooldown then
+	local now = os.clock()
+	local cooldown = if now - lastLandedAt <= GameConfig.ChaseDodgeWindow
+		then GameConfig.ChaseDodgeCooldown
+		else GameConfig.DodgeCooldown
+	if now - lastDodgeAt < cooldown then
 		return false
 	end
 	return MovementController.IsGrounded() or airDodgeAvailable
@@ -147,6 +163,7 @@ function MovementController.ResetMotion()
 	speedX = 0
 	inHitstun = false
 	inDodge = false
+	pendingKnockback = nil
 	airDodgeAvailable = true
 	airJumpsLeft = MovementConfig.MaxAirJumps
 	groundJumpAvailable = true
@@ -190,11 +207,19 @@ local function step(dt: number)
 	end
 	local now = os.clock()
 
-	-- 0. Hitstun: sin control, solo se vuela.
+	-- 0. Hitstun: sin control. Primero congelado (hitlag), luego sale volando.
 	if inHitstun then
 		if now < hitstunUntil then
 			humanoid.WalkSpeed = 0
 			humanoid:Move(Vector3.zero)
+			if pendingKnockback then
+				if now >= knockbackAt then
+					root.AssemblyLinearVelocity = pendingKnockback
+					pendingKnockback = nil
+				else
+					root.AssemblyLinearVelocity = Vector3.zero
+				end
+			end
 			lockToPlane(root, MovementConfig.MaxFallSpeed)
 			return
 		end
@@ -221,6 +246,18 @@ local function step(dt: number)
 		humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
 	end
 
+	local character = root.Parent :: Model
+
+	-- 0c. Hitlag como ATACANTE: quieto un instante al acertar (el servidor pone FrozenUntil).
+	local frozenUntil = character:GetAttribute("FrozenUntil")
+	if type(frozenUntil) == "number" and workspace:GetServerTimeNow() < frozenUntil then
+		humanoid.WalkSpeed = 0
+		humanoid:Move(Vector3.zero)
+		root.AssemblyLinearVelocity = Vector3.zero
+		lockToPlane(root, MovementConfig.MaxFallSpeed)
+		return
+	end
+
 	local grounded = humanoid.FloorMaterial ~= Enum.Material.Air
 	if grounded then
 		lastGroundedAt = now
@@ -230,7 +267,6 @@ local function step(dt: number)
 		airDodgeAvailable = true
 	end
 
-	local character = root.Parent :: Model
 	local attacking = character:GetAttribute("State") == "Attacking"
 
 	-- 1. Horizontal: acelerar hacia la velocidad objetivo.

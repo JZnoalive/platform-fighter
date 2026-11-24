@@ -27,6 +27,7 @@ export type Fighter = {
 	queuedMove: string?, -- su nombre ("Jab"...)
 	queuedAt: number, -- cuándo se pidió
 	lastDodgeAt: number, -- para el enfriamiento de la esquiva
+	lastLandedAt: number, -- último golpe acertado (chase dodge)
 }
 
 local fighters: { [Model]: Fighter } = {}
@@ -94,6 +95,7 @@ function FighterService.Register(model: Model, kind: string, fighterId: string, 
 		queuedMove = nil,
 		queuedAt = 0,
 		lastDodgeAt = -math.huge,
+		lastLandedAt = -math.huge,
 	}
 	fighters[model] = fighter
 	if GameConfig.ShowOverheadPercent then
@@ -172,9 +174,15 @@ function FighterService.Reset(fighter: Fighter)
 	fighter.model:SetAttribute("State", "Idle")
 end
 
--- Aplica un golpe: suma %, calcula knockback y pone en hitstun.
+-- Hitlag (estilo Smash): congelación breve al impactar, más larga cuanto más daño.
+function FighterService.ComputeHitlag(attack): number
+	return math.min(GameConfig.HitlagBase + attack.damage * GameConfig.HitlagPerDamage, GameConfig.HitlagMax)
+end
+
+-- Aplica un golpe: suma %, congela un instante (hitlag), y luego knockback + hitstun.
 -- facing: hacia dónde mira el ATACANTE (1 derecha, -1 izquierda).
-function FighterService.ApplyHit(target: Fighter, attack, facing: number)
+-- attacker: quien golpea (se congela también); nil para proyectiles.
+function FighterService.ApplyHit(target: Fighter, attack, facing: number, attacker: Fighter?)
 	local state = FighterService.GetState(target)
 	if
 		target.model:GetAttribute("Invulnerable")
@@ -199,9 +207,24 @@ function FighterService.ApplyHit(target: Fighter, attack, facing: number)
 	end
 
 	local velocity, hitstun = Knockback.Compute(attack, percent, facing)
+	local hitlag = FighterService.ComputeHitlag(attack)
 
-	-- Efectos visuales (chispa, destello, sacudida): los pinta cada cliente.
-	Remotes.HitEvent:FireAllClients(target.model, target.root.Position, velocity.Magnitude)
+	-- Congelar a los dos durante el hitlag (lo leen MovementController y CpuService).
+	local frozenUntil = workspace:GetServerTimeNow() + hitlag
+	target.model:SetAttribute("FrozenUntil", frozenUntil)
+	if attacker then
+		attacker.model:SetAttribute("FrozenUntil", frozenUntil)
+		attacker.lastLandedAt = os.clock() -- para la chase dodge
+	end
+
+	-- Efectos visuales (chispa, destello, sacudida, estela de humo): los pinta cada cliente.
+	Remotes.HitEvent:FireAllClients(
+		target.model,
+		target.root.Position,
+		velocity.Magnitude,
+		hitlag + hitstun,
+		if attacker then attacker.model else nil
+	)
 
 	target.hitToken += 1
 	local token = target.hitToken
@@ -209,15 +232,21 @@ function FighterService.ApplyHit(target: Fighter, attack, facing: number)
 	target.model:SetAttribute("State", "Hitstun")
 
 	if target.player then
-		-- El jugador es dueño de la física de su personaje: el knockback lo aplica su cliente.
-		Remotes.ApplyKnockback:FireClient(target.player, velocity, hitstun)
+		-- El jugador es dueño de la física de su personaje: el knockback lo aplica su cliente
+		-- después del hitlag.
+		Remotes.ApplyKnockback:FireClient(target.player, velocity, hitstun, hitlag)
 	else
-		-- Dummy / CPU: el servidor es su dueño, se aplica aquí.
+		-- Dummy / CPU: el servidor es su dueño. Quieto durante el hitlag, luego sale volando.
 		target.humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-		target.root.AssemblyLinearVelocity = velocity
+		target.root.AssemblyLinearVelocity = Vector3.zero
+		task.delay(hitlag, function()
+			if target.hitToken == token and target.model.Parent then
+				target.root.AssemblyLinearVelocity = velocity
+			end
+		end)
 	end
 
-	task.delay(hitstun, function()
+	task.delay(hitlag + hitstun, function()
 		if target.hitToken ~= token or not target.model.Parent then
 			return -- recibió otro golpe o ya no existe
 		end
@@ -236,7 +265,11 @@ function FighterService.TryStartDodge(fighter: Fighter): boolean
 		return false
 	end
 	local now = os.clock()
-	if now - fighter.lastDodgeAt < GameConfig.DodgeCooldown then
+	-- Chase dodge (Brawlhalla): justo después de acertar un golpe, el enfriamiento es corto.
+	local cooldown = if now - fighter.lastLandedAt <= GameConfig.ChaseDodgeWindow
+		then GameConfig.ChaseDodgeCooldown
+		else GameConfig.DodgeCooldown
+	if now - fighter.lastDodgeAt < cooldown then
 		return false
 	end
 	fighter.lastDodgeAt = now

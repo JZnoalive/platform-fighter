@@ -57,6 +57,8 @@ function AppearanceService.GetDescription(fighterId: string): HumanoidDescriptio
 		desc.RightArmColor = Color3.fromHex(colors.arms)
 		desc.LeftLegColor = Color3.fromHex(colors.legs)
 		desc.RightLegColor = Color3.fromHex(colors.legs)
+		-- Proporciones "de juego de lucha": cabeza algo más grande, más expresivo y legible.
+		desc.HeadScale = style.headScale or 1
 	end
 	return desc
 end

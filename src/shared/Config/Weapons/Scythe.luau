@@ -45,9 +45,9 @@ return {
 		active = 0.12,
 		recovery = 0.24,
 		damage = 6,
-		baseKnockback = 16,
-		knockbackScale = 0.25,
-		angle = 20,
+		baseKnockback = 18,
+		knockbackScale = 0.16,
+		angle = 55,
 		hitbox = { offset = Vector2.new(5, -2), size = Vector3.new(9, 2, 6) },
 	},
 

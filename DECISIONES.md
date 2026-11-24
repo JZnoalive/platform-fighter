@@ -60,6 +60,10 @@
 | 2026-11-24 | Las poses aceptan `AnimationConstraint` además de `Motor6D` | Los avatares nuevos de Roblox usan AnimationConstraint: antes las poses no se aplicaban |
 | 2026-11-24 | Cámara con 9° de inclinación desde arriba; fondo lejano (islas, nubes, sol) y contorno negro en los luchadores | Aspecto más cercano a Smash; probado con el MCP de Studio |
 | 2026-11-24 | Pruebas con el MCP de Roblox Studio (Claude arranca el juego, pulsa teclas y hace capturas) | Menos ida y vuelta de videos y logs |
+| 2026-11-24 | Hitlag estilo Smash: atacante y golpeado se congelan 0.04–0.17 s según el daño (atributo `FrozenUntil`) | Lo que da "peso" a los golpes |
+| 2026-11-24 | Estela de humo al salir volando fuerte, rayo de luz en el KO, "3, 2, 1, ¡YA!" y "¡GAME!" | Firma visual de Smash |
+| 2026-11-24 | Ligero abajo levanta al rival (ángulo 55°) en las 4 armas; chase dodge (esquiva recarga en 0.35 s tras acertar) | Strings estilo Brawlhalla (ligero abajo → aéreo). Guía en `docs/COMBOS.md` |
+| 2026-11-24 | Cabeza 1.15–1.18x y aparición de pie sobre el suelo en la cuenta atrás | Aspecto más de juego de lucha |
 | 2026-11-24 | Mientras solo programa JZnoalive, commits directos a `main` | Rama + PR cuando entren más programadores |
 | 2026-11-24 | Arriba/abajo y recovery se hacen en M4b, después de M4 | Petición de JZnoalive; M4 primero para cerrar el ciclo de partida |
 | 2026-11-24 | Plano de juego: X = izquierda/derecha, Y = arriba/abajo, Z siempre 0 | Una sola convención para cámara, movimiento y hitboxes |
