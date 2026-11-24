@@ -14,8 +14,10 @@ Cómo rellenar:
 |---|---|
 | Nombre del juego | ⬜ |
 | Dueño del juego en Roblox (cuenta o grupo) | ⬜ |
-| Nombre final de "Brawler" | ⬜ |
-| Nombre final de "Blade" | ⬜ |
+| Diseño de "Brawler" | ✅ "Forja Cinética" — paleta `#D94E28` `#C87D4B` `#4A4E54` `#EDE6D6` `#1E2022` (ver [PERSONAJES.md](PERSONAJES.md)) |
+| Diseño de "Blade" | ✅ "Vórtice Amatista" — paleta `#7C3AED` `#F43F8E` `#1E1B2E` `#DDD6FE` `#110E1B` (ver [PERSONAJES.md](PERSONAJES.md)) |
+| Nombre propio del personaje Brawler (el que verá el jugador) | ⬜ (por ahora "Forja Cinética" es el nombre del concepto) |
+| Nombre propio del personaje Blade (el que verá el jugador) | ⬜ (por ahora "Vórtice Amatista" es el nombre del concepto) |
 
 ## Modelos
 
