@@ -2,7 +2,7 @@
 -- Reglas generales de la partida. Solo datos, sin lógica.
 
 local GameConfig = {
-	Version = "0.0.1-m0",
+	Version = "0.0.2-m1",
 	Stocks = 3,
 	RespawnInvulnerability = 1.5, -- segundos
 }
