@@ -6,6 +6,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 local Knockback = require(ReplicatedStorage.Shared.Modules.Knockback)
 local Remotes = require(script.Parent.Parent.Remotes)
 
@@ -22,6 +23,7 @@ export type Fighter = {
 	attackToken: number, -- cambia con cada ataque iniciado
 	queuedAttack: any?, -- ataque pedido durante otro ataque (búfer de combos)
 	queuedAt: number, -- cuándo se pidió
+	lastDodgeAt: number, -- para el enfriamiento de la esquiva
 }
 
 local fighters: { [Model]: Fighter } = {}
@@ -81,6 +83,7 @@ function FighterService.Register(model: Model, kind: string, fighterId: string, 
 		attackToken = 0,
 		queuedAttack = nil,
 		queuedAt = 0,
+		lastDodgeAt = -math.huge,
 	}
 	fighters[model] = fighter
 	createPercentLabel(fighter)
@@ -112,6 +115,14 @@ function FighterService.GetFromInstance(instance: Instance): Fighter?
 		current = current.Parent
 	end
 	return nil
+end
+
+function FighterService.GetAll(): { Fighter }
+	local list = {}
+	for _, fighter in fighters do
+		table.insert(list, fighter)
+	end
+	return list
 end
 
 function FighterService.GetModels(): { Model }
@@ -148,7 +159,13 @@ end
 -- facing: hacia dónde mira el ATACANTE (1 derecha, -1 izquierda).
 function FighterService.ApplyHit(target: Fighter, attack, facing: number)
 	local state = FighterService.GetState(target)
-	if target.model:GetAttribute("Invulnerable") or state == "KO" or state == "Respawning" or state == "Eliminated" then
+	if
+		target.model:GetAttribute("Invulnerable")
+		or state == "Dodging"
+		or state == "KO"
+		or state == "Respawning"
+		or state == "Eliminated"
+	then
 		return
 	end
 
@@ -180,6 +197,49 @@ function FighterService.ApplyHit(target: Fighter, attack, facing: number)
 			target.humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
 		end
 	end)
+end
+
+-- Esquiva: solo desde Idle y respetando el enfriamiento. Mientras dura, State = "Dodging"
+-- y ApplyHit no hace nada. El MOVIMIENTO de la esquiva lo pone quien controla el cuerpo:
+-- el cliente (jugador) o CpuService (CPU). Devuelve true si empezó.
+function FighterService.TryStartDodge(fighter: Fighter): boolean
+	if FighterService.GetState(fighter) ~= "Idle" then
+		return false
+	end
+	local now = os.clock()
+	if now - fighter.lastDodgeAt < GameConfig.DodgeCooldown then
+		return false
+	end
+	fighter.lastDodgeAt = now
+	fighter.queuedAttack = nil
+	FighterService.SetState(fighter, "Dodging")
+	local token = fighter.hitToken
+
+	-- Brillo azulado para que se vea la esquiva.
+	local highlight = Instance.new("Highlight")
+	highlight.Name = "DodgeHighlight"
+	highlight.FillColor = Color3.fromRGB(140, 200, 255)
+	highlight.FillTransparency = 0.6
+	highlight.OutlineColor = Color3.fromRGB(140, 200, 255)
+	highlight.Parent = fighter.model
+
+	if not fighter.player then
+		fighter.humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+	end
+
+	task.delay(GameConfig.DodgeDuration, function()
+		highlight:Destroy()
+		if fighter.hitToken ~= token or not fighter.model.Parent then
+			return -- KO o respawn en medio: otro sistema manda
+		end
+		if FighterService.GetState(fighter) == "Dodging" then
+			FighterService.SetState(fighter, "Idle")
+			if not fighter.player then
+				fighter.humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+			end
+		end
+	end)
+	return true
 end
 
 local function onPlayerAdded(player: Player)

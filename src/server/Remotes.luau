@@ -15,7 +15,8 @@ local function make(name: string): RemoteEvent
 end
 
 local Remotes = {
-	ActionRequest = make("ActionRequest"), -- cliente → servidor: { action = "Attack", move = "Jab" }
+	ActionRequest = make("ActionRequest"), -- cliente → servidor: { action = "Attack", move = "Jab" } o { action = "Dodge" }
+	PracticeCommand = make("PracticeCommand"), -- cliente → servidor: (command, value) del menú de práctica
 	ApplyKnockback = make("ApplyKnockback"), -- servidor → cliente víctima: (velocity, hitstun)
 	FighterReset = make("FighterReset"), -- servidor → cliente: "te acabo de recolocar, reinicia tu movimiento"
 	MatchEvent = make("MatchEvent"), -- servidor → todos: (kind, data) con kind = "Start" | "KO" | "Victory"

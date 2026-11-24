@@ -66,6 +66,7 @@ Regla: **no se empieza un hito hasta que el anterior pasa su prueba.**
 | **M4c Sensación de combate** | Combos (más hitstun, recovery corto al acertar, búfer de ataques), W también salta (tap-jump), caída rápida con S | Jab→Jab→SideLight conecta seguido contra el dummy; W sola salta, W+J sale UpLight |
 | **M4d Esquiva** | Esquiva en suelo y aire con invulnerabilidad y enfriamiento (estilo Brawlhalla) | Esquivar un pesado lo atraviesa sin recibir daño |
 | **M5 CPU + menú de práctica** | El dummy pasa a ser Blade controlado por CPU; menú: Quieta / Caminar / Saltar / Atacar / Pelear, fijar %, reiniciar, hitboxes on/off | Cada opción del menú cambia lo que hace la CPU al instante |
+| **M5b Partida contra la CPU** | Modo 1 jugador vs CPU con 3 vidas, KO, victoria y reinicio (para la handcam) | 3 partidas completas contra la CPU en "Pelear" sin errores |
 | **M6 Personajes y animaciones** | Importar modelos de `ServerStorage.FighterModels` y reproducir animaciones por ataque (IDs de `docs/ENTREGAS.md`) | Brawler y Blade con su modelo; cada ataque reproduce su animación |
 | **M7 Pulido para tráiler** | HUD de %, hitlag, sacudida de cámara, VFX de golpe/KO, sonido, música | Checklist del tráiler completa |
 | **M8 Grabación** | Arena decorada, cámara de grabación, build estable | Tráiler + partida handcam grabados |

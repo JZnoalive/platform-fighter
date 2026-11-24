@@ -23,14 +23,24 @@ local BINDINGS: { [string]: { any } } = {
 	Jump = { Enum.KeyCode.Space },
 	Light = { Enum.KeyCode.J, Enum.UserInputType.MouseButton1 },
 	Heavy = { Enum.KeyCode.K, Enum.UserInputType.MouseButton2 },
+	Dodge = { Enum.KeyCode.LeftShift, Enum.KeyCode.L },
 }
 
--- Acciones que avisan en el momento de pulsar (ataques).
-local PRESS_ACTIONS = { Light = true, Heavy = true }
+-- Acciones que avisan en el momento de pulsar (ataques y esquiva).
+local PRESS_ACTIONS = { Light = true, Heavy = true, Dodge = true }
 
 local PRIORITY = Enum.ContextActionPriority.High.Value + 1
 
-local held = { Left = false, Right = false, Up = false, Down = false, Jump = false, Light = false, Heavy = false }
+local held = {
+	Left = false,
+	Right = false,
+	Up = false,
+	Down = false,
+	Jump = false,
+	Light = false,
+	Heavy = false,
+	Dodge = false,
+}
 local lastJumpPressedAt = -math.huge
 local tapJumpAt: number? = nil -- W pulsada: salto pendiente durante TapJumpWindow
 local pressListeners: { (string) -> () } = {}
@@ -62,7 +72,7 @@ function InputController.ClearJump()
 	tapJumpAt = nil
 end
 
--- Registra una función que se llama con "Light" o "Heavy" al pulsar.
+-- Registra una función que se llama con "Light", "Heavy" o "Dodge" al pulsar.
 function InputController.OnPress(callback: (string) -> ())
 	table.insert(pressListeners, callback)
 end

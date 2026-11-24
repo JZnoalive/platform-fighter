@@ -13,6 +13,7 @@
 --          A/D  Heavy                          Heavy
 --           -   Heavy                          Heavy
 -- Si se pulsan W y S a la vez, gana W.
+-- Esquiva (Shift / L): en el sitio, o hacia A/D (y W/S en el aire).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -79,6 +80,21 @@ function CombatController.Start()
 		InputController.OnPress(function(action)
 			local character = Players.LocalPlayer.Character
 			local state = character and character:GetAttribute("State")
+
+			-- Esquiva (Shift / L): solo desde Idle. Dirección con A/D (y W/S en el aire).
+			if action == "Dodge" then
+				if state ~= "Idle" or not MovementController.CanDodge() then
+					return
+				end
+				actionRequest:FireServer({ action = "Dodge" })
+				local dirY = if InputController.IsUpHeld()
+					then 1
+					elseif InputController.IsDownHeld() then -1
+					else 0
+				MovementController.StartDodge(InputController.GetMoveX(), dirY)
+				return
+			end
+
 			-- Idle: ataque normal. Attacking: el servidor lo guarda en su búfer (combos).
 			-- Hitstun, KO, reapareciendo...: no se pide nada.
 			if state ~= "Idle" and state ~= "Attacking" then

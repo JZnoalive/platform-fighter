@@ -23,6 +23,10 @@ local MovementConfig = {
 	FastFallSpeed = 115,
 	FastFallTrigger = 10, -- se activa cuando ya no subes rápido (velocidad vertical < 10)
 
+	-- Esquiva (tiempos en GameConfig)
+	DodgeSpeed = 55, -- esquiva con dirección en el suelo (rodar)
+	AirDodgeSpeed = 45, -- esquiva en el aire (1 por vuelo)
+
 	-- Ayudas para que los controles se sientan justos
 	CoyoteTime = 0.08, -- puedes saltar desde el suelo un instante después de dejarlo
 	JumpBuffer = 0.1, -- si pulsas saltar justo antes de aterrizar, cuenta

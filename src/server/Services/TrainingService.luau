@@ -1,16 +1,25 @@
 -- ServerScriptService.Server.Services.TrainingService
--- Crea UN dummy de entrenamiento por código y lo registra en FighterService.
--- Nunca hay dummies colocados a mano en Workspace (así no se repite el bug
+-- MODO PRÁCTICA: crea UNA CPU (Blade) por código, la registra en FighterService,
+-- se la da a CpuService y atiende los comandos del menú de práctica.
+-- Nunca hay luchadores colocados a mano en Workspace (así no se repite el bug
 -- de golpear a varios dummies a la vez).
--- Si el dummy sale de la BlastZone, vuelve a su spawn con 0 %.
+-- Si la CPU sale de la BlastZone, vuelve a su spawn con 0 %.
 --
--- El dummy solo existe en modo libre (menos de 2 jugadores). MatchService lo
--- quita al empezar una partida (SetActive(false)) y lo devuelve al terminar.
+-- Solo existe en modo libre (menos de 2 jugadores). MatchService la quita al
+-- empezar una partida (SetActive(false)) y la devuelve al terminar.
+--
+-- Atributos que publica en Workspace (los lee el menú del cliente):
+--   PracticeActive (bool), CpuBehavior (string). DebugHitboxes lo crea CombatService.
 
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local CpuConfig = require(ReplicatedStorage.Shared.Config.CpuConfig)
 local FighterService = require(script.Parent.FighterService)
+local CpuService = require(script.Parent.CpuService)
+local Remotes = require(script.Parent.Parent.Remotes)
 
 local TrainingService = {}
 
@@ -18,7 +27,9 @@ local FACE_LEFT = CFrame.Angles(0, math.pi / 2, 0)
 
 local wantActive = false
 local spawning = false
-local dummyModel: Model? = nil
+local cpuFighter: FighterService.Fighter? = nil
+local spawnCFrame: CFrame? = nil
+local currentBehavior = CpuConfig.DefaultBehavior
 
 local function isInside(position: Vector3, zone: BasePart): boolean
 	local half = zone.Size / 2
@@ -26,7 +37,34 @@ local function isInside(position: Vector3, zone: BasePart): boolean
 	return math.abs(position.X - center.X) <= half.X and math.abs(position.Y - center.Y) <= half.Y
 end
 
-local function spawnDummy()
+local function isValidBehavior(name: any): boolean
+	return type(name) == "string" and table.find(CpuConfig.Behaviors, name) ~= nil
+end
+
+-- Colores provisionales de Blade (paleta de docs/PERSONAJES.md) hasta tener su modelo (M6).
+local function makeDescription(): HumanoidDescription
+	local desc = Instance.new("HumanoidDescription")
+	desc.HeadColor = Color3.fromHex("DDD6FE")
+	desc.TorsoColor = Color3.fromHex("7C3AED")
+	desc.LeftArmColor = Color3.fromHex("1E1B2E")
+	desc.RightArmColor = Color3.fromHex("1E1B2E")
+	desc.LeftLegColor = Color3.fromHex("110E1B")
+	desc.RightLegColor = Color3.fromHex("110E1B")
+	return desc
+end
+
+local function resetCpu(fighter: FighterService.Fighter)
+	if not spawnCFrame then
+		return
+	end
+	fighter.model:PivotTo(spawnCFrame)
+	fighter.root.AssemblyLinearVelocity = Vector3.zero
+	FighterService.Reset(fighter)
+	fighter.humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+	CpuService.ResetState(fighter)
+end
+
+local function spawnCpu()
 	local arena = workspace:FindFirstChild("Arena")
 	local spawnPoints = arena and arena:FindFirstChild("SpawnPoints")
 	local spawnPart = spawnPoints and spawnPoints:FindFirstChild("Spawn2")
@@ -37,10 +75,10 @@ local function spawnDummy()
 	end
 
 	local ok, model = pcall(function()
-		return Players:CreateHumanoidModelFromDescription(Instance.new("HumanoidDescription"), Enum.HumanoidRigType.R15)
+		return Players:CreateHumanoidModelFromDescription(makeDescription(), Enum.HumanoidRigType.R15)
 	end)
 	if not ok or not model then
-		warn("[TrainingService] no se pudo crear el dummy:", model)
+		warn("[TrainingService] no se pudo crear la CPU:", model)
 		return
 	end
 
@@ -50,70 +88,96 @@ local function spawnDummy()
 		return
 	end
 
-	local spawnCFrame = CFrame.new(spawnPart.Position.X, spawnPart.Position.Y + 3, 0) * FACE_LEFT
-	model.Name = "TrainingDummy"
-	model:PivotTo(spawnCFrame)
+	spawnCFrame = CFrame.new(spawnPart.Position.X, spawnPart.Position.Y + 3, 0) * FACE_LEFT
+	model.Name = "CPU_Blade"
+	model:PivotTo(spawnCFrame :: CFrame)
 	model.Parent = workspace
 
-	local fighter = FighterService.Register(model, "Dummy", "Dummy", nil)
+	local fighter = FighterService.Register(model, "Cpu", "Blade", nil)
 	if not fighter then
 		model:Destroy()
 		return
 	end
 	fighter.root:SetNetworkOwner(nil) -- el servidor controla su física
-	dummyModel = model
+	CollectionService:AddTag(model, "CameraTarget") -- la cámara también la encuadra
+	CpuService.Attach(fighter, currentBehavior)
+	cpuFighter = fighter
 
+	workspace:SetAttribute("CpuBehavior", currentBehavior)
+	workspace:SetAttribute("PracticeActive", true)
+
+	-- Fuera de la BlastZone: vuelve a su sitio con 0 %.
 	local connection
 	connection = RunService.Heartbeat:Connect(function()
 		if not model.Parent then
 			connection:Disconnect()
 			return
 		end
-		local root = fighter.root
-		local pos = root.Position
-
-		if not isInside(pos, blastZone) then
-			model:PivotTo(spawnCFrame)
-			root.AssemblyLinearVelocity = Vector3.zero
-			FighterService.Reset(fighter)
-			fighter.humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
-			return
+		if not isInside(fighter.root.Position, blastZone) then
+			resetCpu(fighter)
 		end
-
-		-- Plano 2D, mirando a la izquierda
-		root.CFrame = CFrame.new(pos.X, pos.Y, 0) * FACE_LEFT
-		local vel = root.AssemblyLinearVelocity
-		root.AssemblyLinearVelocity = Vector3.new(vel.X, vel.Y, 0)
-		root.AssemblyAngularVelocity = Vector3.zero
 	end)
 
-	print("[TrainingService] dummy listo")
+	print("[TrainingService] CPU lista (modo práctica)")
 end
 
--- true = debe haber dummy; false = se quita.
+local function onPracticeCommand(player: Player, command: any, value: any)
+	local fighter = cpuFighter
+	if not wantActive or not fighter or not fighter.model.Parent then
+		return -- solo en modo práctica
+	end
+
+	if command == "Behavior" then
+		if isValidBehavior(value) then
+			currentBehavior = value
+			CpuService.SetBehavior(fighter, value)
+			workspace:SetAttribute("CpuBehavior", value)
+		end
+	elseif command == "Percent" then
+		if type(value) == "number" and value >= 0 and value <= 300 then
+			fighter.model:SetAttribute("Percent", math.floor(value))
+		end
+	elseif command == "Reset" then
+		resetCpu(fighter)
+		local playerFighter = FighterService.Get(player.Character)
+		if playerFighter then
+			playerFighter.model:SetAttribute("Percent", 0)
+		end
+	elseif command == "Hitboxes" then
+		if type(value) == "boolean" then
+			workspace:SetAttribute("DebugHitboxes", value)
+		end
+	end
+end
+
+-- true = debe haber CPU de práctica; false = se quita.
 function TrainingService.SetActive(active: boolean)
 	wantActive = active
 
 	if not active then
-		if dummyModel then
-			dummyModel:Destroy() -- FighterService lo da de baja solo (AncestryChanged)
-			dummyModel = nil
-			print("[TrainingService] dummy retirado (empieza partida)")
+		workspace:SetAttribute("PracticeActive", false)
+		if cpuFighter then
+			cpuFighter.model:Destroy() -- FighterService y CpuService la dan de baja solos
+			cpuFighter = nil
+			print("[TrainingService] CPU retirada (empieza partida)")
 		end
 		return
 	end
 
-	if dummyModel and dummyModel.Parent or spawning then
-		return -- ya hay uno o se está creando
+	if (cpuFighter and cpuFighter.model.Parent) or spawning then
+		return -- ya hay una o se está creando
 	end
 	spawning = true
 	task.spawn(function()
-		spawnDummy()
+		spawnCpu()
 		spawning = false
 	end)
 end
 
 function TrainingService.Start()
+	workspace:SetAttribute("PracticeActive", false)
+	workspace:SetAttribute("CpuBehavior", currentBehavior)
+	Remotes.PracticeCommand.OnServerEvent:Connect(onPracticeCommand)
 	TrainingService.SetActive(true)
 end
 

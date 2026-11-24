@@ -63,7 +63,7 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack)
 		-- 2. Active: la hitbox busca objetivos cada frame
 		local alreadyHit: { [Model]: boolean } = {}
 		local landedHit = false
-		local debugPart = if GameConfig.DebugHitboxes then makeDebugPart(attack.hitbox.size) else nil
+		local debugPart = if workspace:GetAttribute("DebugHitboxes") then makeDebugPart(attack.hitbox.size) else nil
 		local params = OverlapParams.new()
 		params.FilterType = Enum.RaycastFilterType.Include
 
@@ -132,11 +132,19 @@ end
 
 local function onActionRequest(player: Player, payload: any)
 	-- Validación: nunca confiar en lo que manda el cliente.
-	if type(payload) ~= "table" or payload.action ~= "Attack" or type(payload.move) ~= "string" then
+	if type(payload) ~= "table" then
 		return
 	end
 	local fighter = FighterService.Get(player.Character)
 	if not fighter then
+		return
+	end
+
+	if payload.action == "Dodge" then
+		FighterService.TryStartDodge(fighter) -- valida estado y enfriamiento
+		return
+	end
+	if payload.action ~= "Attack" or type(payload.move) ~= "string" then
 		return
 	end
 	local moveset = Movesets[fighter.fighterId]
@@ -156,6 +164,8 @@ local function onActionRequest(player: Player, payload: any)
 end
 
 function CombatService.Start()
+	-- Valor inicial de las cajas rojas; el menú de práctica puede cambiarlo.
+	workspace:SetAttribute("DebugHitboxes", GameConfig.DebugHitboxes)
 	Remotes.ActionRequest.OnServerEvent:Connect(onActionRequest)
 end
 

@@ -38,6 +38,11 @@
 | 2026-11-24 | Todos los IDs (animaciones, audio) se apuntan solo en `docs/ENTREGAS.md` | Un único lugar; nada de IDs inventados o sueltos |
 | 2026-11-24 | Animaciones y audios se publican con el mismo dueño que el juego (recomendado: Grupo de Roblox) | Si el dueño es distinto, Roblox no los reproduce en el juego |
 | 2026-11-24 | Sonidos propios (jsfxr) o catálogo con licencia de Roblox; herramientas gratis solo si su licencia permite uso comercial | El juego tendrá ingresos |
+| 2026-11-24 | Esquiva: Shift/L, 0.3 s invulnerable (State `Dodging`), enfriamiento 1 s; esquiva aérea 1 por vuelo | Física estilo Brawlhalla; el movimiento lo pone quien controla el cuerpo (cliente o CpuService) |
+| 2026-11-24 | El dummy pasa a ser la CPU `CPU_Blade` con 6 comportamientos (CpuService) | Base para la partida contra la IA de la demo |
+| 2026-11-24 | Menú de práctica: comportamiento de la CPU, % (0/50/100/150), reiniciar, hitboxes; solo en modo libre | Recupera la idea del "mod menu" del prototipo viejo |
+| 2026-11-24 | La CPU usa el mismo combate que el jugador (PerformAttack, TryStartDodge) | Sin trampas; un solo sistema que mantener |
+| 2026-11-24 | M4b–M5 se programaron seguidos y se prueban juntos al final | Petición de JZnoalive para avanzar más rápido |
 | 2026-11-24 | Mientras solo programa JZnoalive, commits directos a `main` | Rama + PR cuando entren más programadores |
 | 2026-11-24 | Arriba/abajo y recovery se hacen en M4b, después de M4 | Petición de JZnoalive; M4 primero para cerrar el ciclo de partida |
 | 2026-11-24 | Plano de juego: X = izquierda/derecha, Y = arriba/abajo, Z siempre 0 | Una sola convención para cámara, movimiento y hitboxes |
@@ -54,7 +59,8 @@
 
 ## Problemas pendientes
 
-- [ ] M4b y M4c subidos sin probar en Studio
+- [ ] M4b, M4c, M4d y M5 subidos sin probar en Studio (prueba conjunta pendiente)
+- [ ] Falta el modo "1 jugador contra la CPU con 3 vidas" para la handcam (siguiente: M5b)
 
 - [ ] Un 3er jugador que entra a mitad de partida no tiene vidas (la demo es 1v1; se revisa si hace falta)
 

@@ -1,7 +1,7 @@
 # Arquitectura
 
 Pequeña, modular y fácil de depurar. **Crece solo cuando un hito lo necesita.**
-Cada archivo indica el hito en que aparece. Hoy existen los de M0 a M4;
+Cada archivo indica el hito en que aparece. Hoy existen los de M0 a M5;
 los marcados *(M5)*, *(M6)* o *(M7)* todavía no existen.
 
 ## Estructura del repositorio → Roblox
@@ -17,7 +17,8 @@ repo/
     │   ├── Config/
     │   │   ├── GameConfig.luau        reglas generales (stocks, tiempos de respawn)
     │   │   ├── CameraConfig.luau      (M1) zoom y suavidad de la cámara
-    │   │   ├── MovementConfig.luau    (M2) velocidades, gravedad, saltos
+    │   │   ├── MovementConfig.luau    (M2) velocidades, gravedad, saltos, esquiva
+    │   │   ├── CpuConfig.luau         (M5) comportamientos e "inteligencia" de la CPU
     │   │   └── Fighters/              (M3) un archivo de datos por luchador
     │   │       ├── Brawler.luau
     │   │       └── Blade.luau         (M4c datos; lo usa la CPU en M5)
@@ -31,17 +32,18 @@ repo/
     │   └── Services/
     │       ├── FighterService.luau    (M3) registro de luchadores, estado, daño
     │       ├── CombatService.luau     (M3) ataques, ventanas activas, hitboxes
-    │       ├── TrainingService.luau   (M3) dummy por código; solo en modo libre (M4)
+    │       ├── TrainingService.luau   (M3/M5) modo práctica: crea la CPU y atiende el menú
     │       ├── MatchService.luau      (M4) spawns, blast zone, KO, stocks, victoria
-    │       └── CpuService.luau        (M6) IA de la CPU
+    │       └── CpuService.luau        (M5) controla a la CPU (6 comportamientos)
     └── client/   → StarterPlayer.StarterPlayerScripts.Client
         ├── Main.client.luau           arranca los controladores
         └── Controllers/
             ├── CameraController.luau   (M1)
             ├── MovementController.luau (M1/M2/M3) plano 2D, saltos, knockback recibido
             ├── InputController.luau    (M2) teclas → acciones
-            ├── CombatController.luau   (M3) elige el ataque y lo pide al servidor
-            └── HudController.luau      (M4) mensajes de partida; HUD completo en M7
+            ├── CombatController.luau   (M3) elige el ataque/esquiva y lo pide al servidor
+            ├── HudController.luau      (M4) mensajes de partida; HUD completo en M7
+            └── PracticeController.luau (M5) menú de práctica (tecla P)
 ```
 
 ### Mundo (creado en Studio, NO en Git)
@@ -82,7 +84,8 @@ La cámara mira desde Z positivo hacia Z negativo.
 Límites resultantes de la BlastZone: X de -100 a 100, Y de -40 a 100.
 
 Nunca hay dummies ni NPC colocados a mano en Workspace: los crea el servidor
-por código (TrainingService) y los registra en FighterService.
+por código (TrainingService) y los registra en FighterService. Desde M5 el
+"dummy" es la CPU `CPU_Blade` (kind `Cpu`, FighterId `Blade`).
 
 ## Quién hace qué
 
@@ -113,16 +116,28 @@ busca objetivos **en el registro**, nunca recorriendo Workspace.
 | Atributo | Tipo | Quién lo escribe | Hito |
 |---|---|---|---|
 | `Percent` | number | servidor | M3 |
-| `State` | string: `Idle`, `Attacking`, `Hitstun`, `KO`, `Respawning`, `Eliminated` | servidor | M3/M4 |
+| `State` | string: `Idle`, `Attacking`, `Hitstun`, `Dodging`, `KO`, `Respawning`, `Eliminated` | servidor | M3/M4/M4d |
 | `Stocks` | number | servidor | M4 |
 | `Invulnerable` | boolean | servidor | M4 |
-| `FighterId` | string: `Brawler`, `Blade`, `Dummy` | servidor | M3 |
+| `FighterId` | string: `Brawler`, `Blade` | servidor | M3 |
+
+### Atributos en Workspace (estado global, los escribe el servidor)
+
+| Atributo | Tipo | Quién lo escribe | Para qué |
+|---|---|---|---|
+| `DebugHitboxes` | boolean | CombatService (inicio) / menú de práctica | Mostrar cajas rojas |
+| `PracticeActive` | boolean | TrainingService | El cliente muestra el menú de práctica |
+| `CpuBehavior` | string (`Idle`, `Walk`, `Jump`, `Dodge`, `Attack`, `Fight`) | TrainingService | Botón resaltado del menú |
+
+Etiqueta (CollectionService) `CameraTarget`: luchadores no jugadores que la cámara
+también encuadra (la CPU).
 
 ### Remotes (en `ReplicatedStorage.Shared.Remotes`, los crea el servidor)
 
 | Nombre | Tipo | Dirección | Datos | Hito |
 |---|---|---|---|---|
-| `ActionRequest` | RemoteEvent | cliente → servidor | `{ action = "Attack", move = "Jab" }` | M3 |
+| `ActionRequest` | RemoteEvent | cliente → servidor | `{ action = "Attack", move = "Jab" }` o `{ action = "Dodge" }` | M3/M4d |
+| `PracticeCommand` | RemoteEvent | cliente → servidor | `("Behavior", nombre)`, `("Percent", n)`, `("Reset")`, `("Hitboxes", bool)` | M5 |
 | `ApplyKnockback` | RemoteEvent | servidor → cliente víctima | `velocity: Vector3, hitstun: number` | M3 |
 | `FighterReset` | RemoteEvent | servidor → cliente | (nada): reinicia velocidad y saltos tras un respawn | M4 |
 | `MatchEvent` | RemoteEvent | servidor → todos | `kind: "Start" \| "KO" \| "Victory", data` | M4 |

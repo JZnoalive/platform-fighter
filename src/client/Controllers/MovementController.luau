@@ -1,13 +1,14 @@
 -- StarterPlayer.StarterPlayerScripts.Client.Controllers.MovementController
 -- Movimiento del personaje local: correr con aceleración, salto, saltos aéreos,
--- caída máxima, bloqueo en el plano Z = 0 y knockback recibido (hitstun).
+-- caída máxima, caída rápida, esquiva, bloqueo en el plano Z = 0 y knockback recibido.
 -- Corre en el cliente porque Roblox da al jugador la física de su propio personaje.
--- Todos los números están en Shared.Config.MovementConfig.
+-- Números en Shared.Config.MovementConfig (y tiempos de esquiva en GameConfig).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 local MovementConfig = require(ReplicatedStorage.Shared.Config.MovementConfig)
 local InputController = require(script.Parent.InputController)
 
@@ -24,6 +25,12 @@ local lastGroundedAt = -math.huge
 local inHitstun = false
 local hitstunUntil = 0
 local recoveryAvailable = true -- el Recovery se usa 1 vez por vuelo
+local inDodge = false
+local dodgeUntil = 0
+local dodgeVelocity = Vector3.zero
+local dodgeOnGround = false
+local lastDodgeAt = -math.huge
+local airDodgeAvailable = true -- la esquiva aérea se usa 1 vez por vuelo
 
 function MovementController.GetFacing(): number
 	return facing
@@ -68,9 +75,12 @@ function MovementController.ApplyKnockback(velocity: Vector3, hitstun: number)
 	inHitstun = true
 	hitstunUntil = os.clock() + hitstun
 	InputController.ClearJump()
-	-- Como en el género: recibir un golpe devuelve los saltos aéreos y el Recovery.
+	inDodge = false
+	-- Como en el género: recibir un golpe devuelve los saltos aéreos, el Recovery
+	-- y la esquiva aérea.
 	airJumpsLeft = MovementConfig.MaxAirJumps
 	recoveryAvailable = true
+	airDodgeAvailable = true
 	-- Estado Physics: el Humanoid deja de frenar al personaje mientras vuela.
 	humanoid:ChangeState(Enum.HumanoidStateType.Physics)
 	root.AssemblyLinearVelocity = velocity
@@ -91,10 +101,53 @@ function MovementController.ApplySelfImpulse(forward: number, up: number)
 	root.AssemblyLinearVelocity = Vector3.new(x, up, 0)
 end
 
+-- ¿Se puede esquivar ahora? (enfriamiento + 1 esquiva aérea por vuelo)
+function MovementController.CanDodge(): boolean
+	if inHitstun or inDodge then
+		return false
+	end
+	if os.clock() - lastDodgeAt < GameConfig.DodgeCooldown then
+		return false
+	end
+	return MovementController.IsGrounded() or airDodgeAvailable
+end
+
+-- Empieza la esquiva. dirX: -1/0/1 (A/D). dirY: -1/0/1 (S/W, solo cuenta en el aire).
+-- Sin dirección = esquiva en el sitio. La invulnerabilidad la decide el servidor.
+function MovementController.StartDodge(dirX: number, dirY: number)
+	local root, humanoid = getBody()
+	if not root or not humanoid then
+		return
+	end
+	local grounded = humanoid.FloorMaterial ~= Enum.Material.Air
+	if grounded then
+		dirY = 0
+	else
+		airDodgeAvailable = false
+	end
+
+	lastDodgeAt = os.clock()
+	dodgeUntil = lastDodgeAt + GameConfig.DodgeDuration
+	inDodge = true
+	dodgeOnGround = grounded
+	InputController.ClearJump()
+
+	if dirX == 0 and dirY == 0 then
+		dodgeVelocity = Vector3.zero
+	else
+		local dir = Vector2.new(dirX, dirY).Unit
+		local speed = if grounded then MovementConfig.DodgeSpeed else MovementConfig.AirDodgeSpeed
+		dodgeVelocity = Vector3.new(dir.X * speed, dir.Y * speed, 0)
+	end
+	humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+end
+
 -- Lo llama el servidor (remote FighterReset) tras un respawn: empezar de cero.
 function MovementController.ResetMotion()
 	speedX = 0
 	inHitstun = false
+	inDodge = false
+	airDodgeAvailable = true
 	airJumpsLeft = MovementConfig.MaxAirJumps
 	groundJumpAvailable = true
 	recoveryAvailable = true
@@ -125,7 +178,9 @@ local function onCharacterAdded(character: Model)
 	airJumpsLeft = MovementConfig.MaxAirJumps
 	groundJumpAvailable = true
 	recoveryAvailable = true
+	airDodgeAvailable = true
 	inHitstun = false
+	inDodge = false
 end
 
 local function step(dt: number)
@@ -148,12 +203,31 @@ local function step(dt: number)
 		humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
 	end
 
+	-- 0b. Esquiva: velocidad fija durante DodgeDuration, sin control.
+	if inDodge then
+		if now < dodgeUntil then
+			humanoid.WalkSpeed = 0
+			humanoid:Move(Vector3.zero)
+			local vel = root.AssemblyLinearVelocity
+			-- En el suelo se conserva la gravedad (para no flotar si ruedas fuera del borde);
+			-- en el aire la esquiva "congela" la caída, como en el género.
+			local y = if dodgeOnGround then vel.Y else dodgeVelocity.Y
+			root.AssemblyLinearVelocity = Vector3.new(dodgeVelocity.X, y, 0)
+			lockToPlane(root, MovementConfig.MaxFallSpeed)
+			return
+		end
+		inDodge = false
+		speedX = dodgeVelocity.X * 0.3
+		humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+	end
+
 	local grounded = humanoid.FloorMaterial ~= Enum.Material.Air
 	if grounded then
 		lastGroundedAt = now
 		airJumpsLeft = MovementConfig.MaxAirJumps
 		groundJumpAvailable = true
 		recoveryAvailable = true
+		airDodgeAvailable = true
 	end
 
 	local character = root.Parent :: Model

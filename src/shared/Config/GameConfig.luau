@@ -2,7 +2,7 @@
 -- Reglas generales de la partida. Solo datos, sin lógica.
 
 local GameConfig = {
-	Version = "0.0.7-m4c",
+	Version = "0.0.8-m5",
 
 	-- Partida
 	MinPlayersForMatch = 2, -- con menos jugadores: modo libre (KO sin perder vidas)
@@ -20,7 +20,12 @@ local GameConfig = {
 	RecoveryOnHitMultiplier = 0.5, -- si el ataque acierta, su recovery dura la mitad
 	AttackBufferWindow = 0.2, -- si pulsas atacar hasta 0.2 s antes de poder, el golpe sale en cuanto puedas
 
-	-- Depuración: muestra las hitboxes como cajas rojas mientras están activas
+	-- Esquiva (estilo Brawlhalla): invulnerable mientras dura, luego enfriamiento
+	DodgeDuration = 0.3, -- segundos de esquiva (invulnerable)
+	DodgeCooldown = 1.0, -- segundos desde que empieza una esquiva hasta poder hacer otra
+
+	-- Depuración: muestra las hitboxes como cajas rojas mientras están activas.
+	-- Es el valor inicial; en modo práctica se puede cambiar desde el menú.
 	DebugHitboxes = true,
 }
 

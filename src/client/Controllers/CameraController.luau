@@ -2,6 +2,7 @@
 -- Cámara lateral que encuadra a todos los luchadores.
 -- Mira desde Z positivo hacia Z negativo: +X es la derecha de la pantalla.
 
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -17,6 +18,13 @@ local function getFighterPositions(): { Vector3 }
 		local root = character and character:FindFirstChild("HumanoidRootPart")
 		-- Los eliminados (sin vidas) no cuentan para el encuadre.
 		if root and character:GetAttribute("State") ~= "Eliminated" then
+			table.insert(positions, root.Position)
+		end
+	end
+	-- Luchadores que no son jugadores (la CPU): el servidor les pone la etiqueta "CameraTarget".
+	for _, model in CollectionService:GetTagged("CameraTarget") do
+		local root = model:FindFirstChild("HumanoidRootPart")
+		if root and model:IsDescendantOf(workspace) then
 			table.insert(positions, root.Position)
 		end
 	end
