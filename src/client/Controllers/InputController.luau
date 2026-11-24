@@ -8,7 +8,10 @@
 -- (No dependemos de PlayerModule, que no siempre existe.)
 
 local ContextActionService = game:GetService("ContextActionService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
+
+local MovementConfig = require(ReplicatedStorage.Shared.Config.MovementConfig)
 
 local InputController = {}
 
@@ -29,6 +32,7 @@ local PRIORITY = Enum.ContextActionPriority.High.Value + 1
 
 local held = { Left = false, Right = false, Up = false, Down = false, Jump = false, Light = false, Heavy = false }
 local lastJumpPressedAt = -math.huge
+local tapJumpAt: number? = nil -- W pulsada: salto pendiente durante TapJumpWindow
 local pressListeners: { (string) -> () } = {}
 
 function InputController.GetMoveX(): number
@@ -44,11 +48,18 @@ function InputController.IsDownHeld(): boolean
 end
 
 function InputController.HasBufferedJump(buffer: number): boolean
-	return os.clock() - lastJumpPressedAt <= buffer
+	local now = os.clock()
+	-- W ("tap jump"): si pasó la ventana sin pulsar ataque, se convierte en salto.
+	if tapJumpAt and now - tapJumpAt >= MovementConfig.TapJumpWindow then
+		lastJumpPressedAt = now
+		tapJumpAt = nil
+	end
+	return now - lastJumpPressedAt <= buffer
 end
 
 function InputController.ClearJump()
 	lastJumpPressedAt = -math.huge
+	tapJumpAt = nil
 end
 
 -- Registra una función que se llama con "Light" o "Heavy" al pulsar.
@@ -61,9 +72,14 @@ function InputController.Start()
 		ContextActionService:BindActionAtPriority("PF_" .. action, function(_, state)
 			if state == Enum.UserInputState.Begin then
 				if action == "Jump" and not held.Jump then
-					lastJumpPressedAt = os.clock()
+					lastJumpPressedAt = os.clock() -- Space: salto inmediato
+				end
+				if action == "Up" and not held.Up then
+					tapJumpAt = os.clock() -- W: salto tras TapJumpWindow, salvo que llegue un ataque
 				end
 				if PRESS_ACTIONS[action] and not held[action] then
+					-- W + ataque casi a la vez = ataque hacia arriba, sin saltar.
+					tapJumpAt = nil
 					for _, callback in pressListeners do
 						task.spawn(callback, action)
 					end

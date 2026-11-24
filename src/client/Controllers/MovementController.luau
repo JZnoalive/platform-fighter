@@ -106,13 +106,13 @@ function MovementController.ResetMotion()
 	end
 end
 
-local function lockToPlane(root: BasePart)
+local function lockToPlane(root: BasePart, maxFallSpeed: number)
 	local pos = root.Position
 	local rotation = if facing == 1 then FACE_RIGHT else FACE_LEFT
 	root.CFrame = CFrame.new(pos.X, pos.Y, 0) * rotation
 
 	local vel = root.AssemblyLinearVelocity
-	root.AssemblyLinearVelocity = Vector3.new(vel.X, math.max(vel.Y, -MovementConfig.MaxFallSpeed), 0)
+	root.AssemblyLinearVelocity = Vector3.new(vel.X, math.max(vel.Y, -maxFallSpeed), 0)
 	root.AssemblyAngularVelocity = Vector3.zero
 end
 
@@ -140,7 +140,7 @@ local function step(dt: number)
 		if now < hitstunUntil then
 			humanoid.WalkSpeed = 0
 			humanoid:Move(Vector3.zero)
-			lockToPlane(root)
+			lockToPlane(root, MovementConfig.MaxFallSpeed)
 			return
 		end
 		inHitstun = false
@@ -205,8 +205,18 @@ local function step(dt: number)
 		-- Si no se puede saltar, el salto queda guardado un instante (JumpBuffer).
 	end
 
-	-- 3. Plano 2D, orientación y caída máxima.
-	lockToPlane(root)
+	-- 3. Caída rápida: mantener S en el aire cuando ya no subes.
+	local maxFall = MovementConfig.MaxFallSpeed
+	if not grounded and InputController.IsDownHeld() then
+		maxFall = MovementConfig.FastFallSpeed
+		local vel = root.AssemblyLinearVelocity
+		if vel.Y < MovementConfig.FastFallTrigger then
+			root.AssemblyLinearVelocity = Vector3.new(vel.X, -MovementConfig.FastFallSpeed, 0)
+		end
+	end
+
+	-- 4. Plano 2D, orientación y caída máxima.
+	lockToPlane(root, maxFall)
 end
 
 function MovementController.Start()

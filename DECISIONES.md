@@ -27,6 +27,13 @@
 | 2026-11-24 | Saltar = solo Space; W/↑ = dirección arriba | Sin esto no se pueden hacer ataques hacia arriba |
 | 2026-11-24 | Recovery 1 vez por vuelo; recibir un golpe recarga saltos aéreos y Recovery | Convención del género; da opciones para volver al escenario |
 | 2026-11-24 | El impulso de Recovery/GroundPound lo aplica el cliente | El jugador es dueño de su física. Riesgo aceptado para la demo: el servidor no lo valida |
+| 2026-11-24 | Física y ritmo estilo Brawlhalla (no Smash); de Smash solo el % visible | Menos sistemas (sin escudo, agarres ni bordes), más fácil en Roblox, combate rápido para tráiler |
+| 2026-11-24 | Combos: hitstun mín. 0.25 s, recovery ×0.5 al acertar, búfer de ataques 0.2 s en el servidor | Antes el rival se recuperaba antes que el atacante: combos imposibles |
+| 2026-11-24 | Ligeros con poco knockback; los pesados son los que mandan lejos | Los ligeros encadenan, los pesados rematan (estructura del género) |
+| 2026-11-24 | W salta Y apunta arriba ("tap-jump"): espera 0.05 s por si llega un ataque; Space salta al instante | Bloquear W restaba velocidad; así se combinan según la situación |
+| 2026-11-24 | Caída rápida con S en el aire | Física estilo Brawlhalla |
+| 2026-11-24 | Datos de Blade creados ya (12 ataques) | Para que las animaciones se puedan hacer en paralelo con sus tiempos |
+| 2026-11-24 | Arte en paralelo con otra IA vía `docs/PROMPTS_OTRA_IA.md`; nunca toca `src/` | Avanzar más rápido sin pisar el código |
 | 2026-11-24 | Mientras solo programa JZnoalive, commits directos a `main` | Rama + PR cuando entren más programadores |
 | 2026-11-24 | Arriba/abajo y recovery se hacen en M4b, después de M4 | Petición de JZnoalive; M4 primero para cerrar el ciclo de partida |
 | 2026-11-24 | Plano de juego: X = izquierda/derecha, Y = arriba/abajo, Z siempre 0 | Una sola convención para cámara, movimiento y hitboxes |
@@ -42,6 +49,8 @@
 | 2026-11-24 | M4 KO y partida | 2 jugadores: dummy se retira, partida, ganador y reinicio automático sin errores |
 
 ## Problemas pendientes
+
+- [ ] M4b y M4c subidos sin probar en Studio
 
 - [ ] Un 3er jugador que entra a mitad de partida no tiene vidas (la demo es 1v1; se revisa si hace falta)
 

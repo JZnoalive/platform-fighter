@@ -19,9 +19,16 @@ local MovementConfig = {
 	MaxAirJumps = 2,
 	MaxFallSpeed = 90,
 
+	-- Caída rápida (mantener S en el aire)
+	FastFallSpeed = 115,
+	FastFallTrigger = 10, -- se activa cuando ya no subes rápido (velocidad vertical < 10)
+
 	-- Ayudas para que los controles se sientan justos
 	CoyoteTime = 0.08, -- puedes saltar desde el suelo un instante después de dejarlo
 	JumpBuffer = 0.1, -- si pulsas saltar justo antes de aterrizar, cuenta
+	-- W también salta, pero espera este instante: si en ese tiempo pulsas un
+	-- ataque, sale el ataque hacia arriba en vez de saltar. Space salta al instante.
+	TapJumpWindow = 0.05,
 }
 
 return MovementConfig

@@ -44,6 +44,7 @@ end
 function CombatService.PerformAttack(fighter: FighterService.Fighter, attack)
 	fighter.attackToken += 1
 	local token = fighter.attackToken
+	fighter.queuedAttack = nil
 	FighterService.SetState(fighter, "Attacking")
 
 	local function stillAttacking(): boolean
@@ -61,6 +62,7 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack)
 
 		-- 2. Active: la hitbox busca objetivos cada frame
 		local alreadyHit: { [Model]: boolean } = {}
+		local landedHit = false
 		local debugPart = if GameConfig.DebugHitboxes then makeDebugPart(attack.hitbox.size) else nil
 		local params = OverlapParams.new()
 		params.FilterType = Enum.RaycastFilterType.Include
@@ -87,6 +89,7 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack)
 					local target = FighterService.GetFromInstance(part)
 					if target and not alreadyHit[target.model] then
 						alreadyHit[target.model] = true -- un objetivo, un golpe por ataque
+						landedHit = true
 						local direction = getFacing(fighter.root)
 						if attack.awayFromAttacker then
 							-- Golpes a los dos lados: empujar hacia donde está el rival.
@@ -107,10 +110,22 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack)
 			return
 		end
 
-		-- 3. Recovery
-		task.wait(attack.recovery)
-		if stillAttacking() then
-			FighterService.SetState(fighter, "Idle")
+		-- 3. Recovery (más corto si el golpe acertó: así se encadenan combos)
+		local recovery = attack.recovery
+		if landedHit then
+			recovery *= GameConfig.RecoveryOnHitMultiplier
+		end
+		task.wait(recovery)
+		if not stillAttacking() then
+			return
+		end
+		FighterService.SetState(fighter, "Idle")
+
+		-- 4. Búfer: si se pidió otro ataque durante este, sale ya.
+		local queued = fighter.queuedAttack
+		fighter.queuedAttack = nil
+		if queued and os.clock() - fighter.queuedAt <= GameConfig.AttackBufferWindow then
+			CombatService.PerformAttack(fighter, queued)
 		end
 	end)
 end
@@ -121,7 +136,7 @@ local function onActionRequest(player: Player, payload: any)
 		return
 	end
 	local fighter = FighterService.Get(player.Character)
-	if not fighter or FighterService.GetState(fighter) ~= "Idle" then
+	if not fighter then
 		return
 	end
 	local moveset = Movesets[fighter.fighterId]
@@ -129,7 +144,15 @@ local function onActionRequest(player: Player, payload: any)
 	if not attack then
 		return
 	end
-	CombatService.PerformAttack(fighter, attack)
+
+	local state = FighterService.GetState(fighter)
+	if state == "Idle" then
+		CombatService.PerformAttack(fighter, attack)
+	elseif state == "Attacking" and not attack.selfImpulse then
+		-- Pedido durante otro ataque: se guarda y sale al terminar (si no caduca).
+		fighter.queuedAttack = attack
+		fighter.queuedAt = os.clock()
+	end
 end
 
 function CombatService.Start()

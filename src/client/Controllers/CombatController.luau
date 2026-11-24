@@ -24,7 +24,9 @@ local MovementController = require(script.Parent.MovementController)
 local CombatController = {}
 
 -- Devuelve el nombre del ataque, o nil si no hay ninguno válido (p. ej. Recovery gastado).
-local function chooseMove(action: string): string?
+-- canImpulse = false cuando se está atacando: los ataques con impulso propio
+-- (Recovery, GroundPound) no se guardan en el búfer.
+local function chooseMove(action: string, canImpulse: boolean): string?
 	local grounded = MovementController.IsGrounded()
 	local up = InputController.IsUpHeld()
 	local down = InputController.IsDownHeld() and not up
@@ -58,9 +60,12 @@ local function chooseMove(action: string): string?
 		return "Heavy"
 	end
 	if up then
+		if not canImpulse then
+			return nil
+		end
 		return if MovementController.TryUseRecovery() then "Recovery" else nil
 	elseif down then
-		return "GroundPound"
+		return if canImpulse then "GroundPound" else nil
 	end
 	return "Heavy"
 end
@@ -73,11 +78,15 @@ function CombatController.Start()
 
 		InputController.OnPress(function(action)
 			local character = Players.LocalPlayer.Character
-			if not character or character:GetAttribute("State") ~= "Idle" then
-				return -- atacando, en hitstun o reapareciendo: no se pide nada
+			local state = character and character:GetAttribute("State")
+			-- Idle: ataque normal. Attacking: el servidor lo guarda en su búfer (combos).
+			-- Hitstun, KO, reapareciendo...: no se pide nada.
+			if state ~= "Idle" and state ~= "Attacking" then
+				return
 			end
 
-			local moveName = chooseMove(action)
+			local isIdle = state == "Idle"
+			local moveName = chooseMove(action, isIdle)
 			if not moveName then
 				return
 			end
@@ -88,7 +97,7 @@ function CombatController.Start()
 			-- el jugador es dueño de la física de su personaje.
 			local moveset = Movesets[character:GetAttribute("FighterId")]
 			local attack = moveset and moveset[moveName]
-			if attack and attack.selfImpulse then
+			if isIdle and attack and attack.selfImpulse then
 				MovementController.ApplySelfImpulse(attack.selfImpulse.X, attack.selfImpulse.Y)
 			end
 		end)

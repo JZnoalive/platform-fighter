@@ -39,9 +39,15 @@ final lo define JZnoalive. No se hacen versiones "falsas" de personajes existent
 - [ ] Stocks, respawn con invulnerabilidad, pantalla de victoria
 - [ ] La CPU se mueve, ataca y vuelve al escenario
 
+### Estilo de física: Brawlhalla
+
+Decidido: la física y el ritmo siguen el estilo **Brawlhalla** (rápido, saltos
+limitados, caída rápida, esquiva con enfriamiento, combos de ligeros). De Smash
+solo se toma el **% visible como número**. Ver `DECISIONES.md`.
+
 ### Fuera de la demo (después)
 
-Esquiva, escudo, agarres, dash, plataformas atravesables, bordes, armas recogibles,
+Escudo, agarres, dash, plataformas atravesables, bordes, paredes, armas recogibles,
 más personajes, 4 jugadores, selección de personaje, online público, móvil,
 monetización.
 
@@ -57,9 +63,11 @@ Regla: **no se empieza un hito hasta que el anterior pasa su prueba.**
 | **M3 Combate vs dummy** | 4 ataques de Brawler, hitbox, %, knockback, hitstun | 10 golpes al dummy: % exacto, 1 impacto por ataque, KB crece con el % |
 | **M4 KO y partida** | Blast zone, KO, stocks, respawn, victoria, reinicio | 5 partidas seguidas sin errores ni estados pegados |
 | **M4b Moveset completo** | Ligeros y pesados arriba/abajo, recovery (pesado arriba en el aire = impulso, 1 vez por vuelo). Jump pasa a solo Space; W/↑ = dirección arriba | Cada ataque sale en su dirección con su hitbox; el recovery permite volver al escenario |
-| **M5 Segundo luchador** | Moveset de Blade (solo datos + modelo provisional) | Blade jugable por un 2º jugador; sus ataques usan su propia tabla |
-| **M6 CPU** | IA simple que controla a Blade | La CPU acerca, ataca en rango, vuelve al escenario; gana a veces |
-| **M7 Pulido para tráiler** | HUD de %, animaciones, hitlag, VFX de golpe/KO, sonido | Checklist del tráiler completa |
+| **M4c Sensación de combate** | Combos (más hitstun, recovery corto al acertar, búfer de ataques), W también salta (tap-jump), caída rápida con S | Jab→Jab→SideLight conecta seguido contra el dummy; W sola salta, W+J sale UpLight |
+| **M4d Esquiva** | Esquiva en suelo y aire con invulnerabilidad y enfriamiento (estilo Brawlhalla) | Esquivar un pesado lo atraviesa sin recibir daño |
+| **M5 CPU + menú de práctica** | El dummy pasa a ser Blade controlado por CPU; menú: Quieta / Caminar / Saltar / Atacar / Pelear, fijar %, reiniciar, hitboxes on/off | Cada opción del menú cambia lo que hace la CPU al instante |
+| **M6 Personajes y animaciones** | Importar modelos de `ServerStorage.FighterModels` y reproducir animaciones por ataque (IDs de `docs/PROMPTS_OTRA_IA.md`) | Brawler y Blade con su modelo; cada ataque reproduce su animación |
+| **M7 Pulido para tráiler** | HUD de %, hitlag, sacudida de cámara, VFX de golpe/KO, sonido, música | Checklist del tráiler completa |
 | **M8 Grabación** | Arena decorada, cámara de grabación, build estable | Tráiler + partida handcam grabados |
 
 ## Cómo se ve el éxito

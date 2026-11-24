@@ -9,4 +9,5 @@ local Fighters = ReplicatedStorage.Shared.Config.Fighters
 
 return {
 	Brawler = require(Fighters.Brawler),
+	Blade = require(Fighters.Blade),
 }

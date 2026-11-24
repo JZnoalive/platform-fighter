@@ -5,7 +5,8 @@ Juego de lucha de plataformas 2D **original** para Roblox. Inspirado en el géne
 nombres, arte y código **propios**.
 
 > **Estado:** M0–M4 terminados (proyecto, arena/cámara, movimiento, combate, partida).
-> M4b (ataques arriba/abajo y recovery) en pruebas. Ver [DECISIONES.md](DECISIONES.md).
+> M4b (arriba/abajo, recovery) + M4c (combos, W salta, caída rápida) en pruebas.
+> Ver [DECISIONES.md](DECISIONES.md).
 > **Meta actual:** una mini demo jugable (1 personaje jugable vs 1 CPU, 1 arena)
 > para grabar un tráiler de mecánicas y una partida con handcam.
 
@@ -17,6 +18,7 @@ nombres, arte y código **propios**.
 | [docs/REGLAS.md](docs/REGLAS.md) | Reglas legales y de trabajo en equipo (leer antes de tocar nada) |
 | [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md) | Estructura de carpetas, cliente vs servidor, contratos entre módulos |
 | [DECISIONES.md](DECISIONES.md) | Registro de decisiones, sistemas terminados y problemas pendientes |
+| [docs/PROMPTS_OTRA_IA.md](docs/PROMPTS_OTRA_IA.md) | Prompts listos para el arte en paralelo: diseño, modelo 3D, animaciones, escenario, sonidos, tráiler |
 
 ## Instalación (una sola vez por persona)
 
@@ -52,7 +54,8 @@ nombres, arte y código **propios**.
 |---|---|
 | Moverse | A/D o ←/→ |
 | Dirección arriba / abajo (para ataques) | W/↑ y S/↓ |
-| Saltar (1 en suelo + 2 en el aire) | Space |
+| Saltar (1 en suelo + 2 en el aire) | Space (al instante) o W/↑ (si no pulsas ataque justo después) |
+| Caída rápida | Mantener S/↓ en el aire |
 | Ligero | J o clic izquierdo (+ W/S/A/D para cambiar el ataque) |
 | Pesado | K o clic derecho (+ W/S/A/D) |
 | Recovery (impulso hacia arriba, 1 por vuelo) | W + K en el aire |

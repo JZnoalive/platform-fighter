@@ -20,7 +20,7 @@ repo/
     │   │   ├── MovementConfig.luau    (M2) velocidades, gravedad, saltos
     │   │   └── Fighters/              (M3) un archivo de datos por luchador
     │   │       ├── Brawler.luau
-    │   │       └── Blade.luau         (M5)
+    │   │       └── Blade.luau         (M4c datos; lo usa la CPU en M5)
     │   └── Modules/
     │       ├── Movement.luau          (M6) cálculo de movimiento compartido jugador/CPU
     │       ├── Movesets.luau          (M4b) lista FighterId → moveset (cliente y servidor)
@@ -53,7 +53,15 @@ Workspace
     ├── SpawnPoints      (Folder) Parts: Spawn1, Spawn2, RespawnTop
     └── BlastZone        (Part, anclada, invisible, CanCollide=false)
                          su tamaño define los límites; fuera = KO
+└── Decor                (M6, opcional) decoración; nunca colisiona ni tapa la cámara
+ServerStorage
+└── FighterModels        (M6) modelos R15 importados
+    ├── Brawler          (Model con Humanoid y HumanoidRootPart)
+    └── Blade
 ```
+
+Las tareas de arte (modelos, animaciones, decoración, sonidos) se hacen en paralelo
+con los prompts de `docs/PROMPTS_OTRA_IA.md`; entregan IDs y modelos, nunca código.
 
 ### Medidas de la arena de la demo (M1)
 

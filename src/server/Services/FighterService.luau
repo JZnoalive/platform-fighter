@@ -20,6 +20,8 @@ export type Fighter = {
 	humanoid: Humanoid,
 	hitToken: number, -- cambia con cada golpe recibido (invalida temporizadores viejos)
 	attackToken: number, -- cambia con cada ataque iniciado
+	queuedAttack: any?, -- ataque pedido durante otro ataque (búfer de combos)
+	queuedAt: number, -- cuándo se pidió
 }
 
 local fighters: { [Model]: Fighter } = {}
@@ -77,6 +79,8 @@ function FighterService.Register(model: Model, kind: string, fighterId: string, 
 		humanoid = humanoid,
 		hitToken = 0,
 		attackToken = 0,
+		queuedAttack = nil,
+		queuedAt = 0,
 	}
 	fighters[model] = fighter
 	createPercentLabel(fighter)
@@ -130,6 +134,7 @@ end
 function FighterService.CancelTimers(fighter: Fighter)
 	fighter.hitToken += 1
 	fighter.attackToken += 1
+	fighter.queuedAttack = nil
 end
 
 -- Vuelve a dejar al luchador como nuevo (0 %, Idle). Lo usan el dummy y el respawn.
@@ -154,6 +159,7 @@ function FighterService.ApplyHit(target: Fighter, attack, facing: number)
 
 	target.hitToken += 1
 	local token = target.hitToken
+	target.queuedAttack = nil -- un golpe recibido borra el ataque que tenía en cola
 	target.model:SetAttribute("State", "Hitstun")
 
 	if target.player then
