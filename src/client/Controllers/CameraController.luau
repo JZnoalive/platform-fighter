@@ -92,6 +92,14 @@ function CameraController.Start()
 	local camera = workspace.CurrentCamera
 	local baseCFrame = camera.CFrame -- posición sin sacudida (la que se suaviza)
 
+	-- Profundidad de campo (look "de consola"): luchadores nítidos, fondo desenfocado.
+	local dof = Instance.new("DepthOfFieldEffect")
+	dof.Name = "FighterDepthOfField"
+	dof.InFocusRadius = CameraConfig.FocusRadius or 45
+	dof.FarIntensity = CameraConfig.BackgroundBlur or 0.35
+	dof.NearIntensity = 0
+	dof.Parent = camera
+
 	RunService:BindToRenderStep("PlatformFighterCamera", Enum.RenderPriority.Camera.Value + 1, function(dt)
 		-- Roblox puede devolver la cámara a modo normal al reaparecer; se fuerza cada frame.
 		camera.CameraType = Enum.CameraType.Scriptable
@@ -108,6 +116,8 @@ function CameraController.Start()
 			offset = Vector3.new((math.random() * 2 - 1) * strength, (math.random() * 2 - 1) * strength, 0)
 		end
 		camera.CFrame = baseCFrame + offset
+		-- El foco sigue al plano de pelea (Z = 0)
+		dof.FocusDistance = math.max(baseCFrame.Position.Z, 10)
 	end)
 end
 

@@ -2,7 +2,7 @@
 -- Reglas generales de la partida. Solo datos, sin lógica.
 
 local GameConfig = {
-	Version = "0.3.0-smash",
+	Version = "0.4.0-anim",
 
 	-- Presentación
 	ShowOverheadPercent = false, -- etiqueta de % encima de la cabeza (el HUD de abajo ya lo muestra)

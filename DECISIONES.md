@@ -64,6 +64,9 @@
 | 2026-11-24 | Estela de humo al salir volando fuerte, rayo de luz en el KO, "3, 2, 1, ¡YA!" y "¡GAME!" | Firma visual de Smash |
 | 2026-11-24 | Ligero abajo levanta al rival (ángulo 55°) en las 4 armas; chase dodge (esquiva recarga en 0.35 s tras acertar) | Strings estilo Brawlhalla (ligero abajo → aéreo). Guía en `docs/COMBOS.md` |
 | 2026-11-24 | Cabeza 1.15–1.18x y aparición de pie sobre el suelo en la cuenta atrás | Aspecto más de juego de lucha |
+| 2026-11-24 | 34 animaciones reales generadas con la IA de Roblox (MCP generate_animation): ataques generales, por arma, golpe, esquiva, guardia, carrera y victoria (`Animations.luau`) | Las poses por código se veían toscas; ahora quedan solo como respaldo |
+| 2026-11-24 | AnimationController (cliente) anima a todos los luchadores; se apaga el Animate de Roblox del jugador | Control total del estilo (guardia de pelea en vez de reposo de Roblox) |
+| 2026-11-24 | Profundidad de campo (fondo desenfocado) y rayos de sol; iluminación Future recomendada (se pone a mano en Lighting) | Look más "de consola" |
 | 2026-11-24 | Mientras solo programa JZnoalive, commits directos a `main` | Rama + PR cuando entren más programadores |
 | 2026-11-24 | Arriba/abajo y recovery se hacen en M4b, después de M4 | Petición de JZnoalive; M4 primero para cerrar el ciclo de partida |
 | 2026-11-24 | Plano de juego: X = izquierda/derecha, Y = arriba/abajo, Z siempre 0 | Una sola convención para cámara, movimiento y hitboxes |

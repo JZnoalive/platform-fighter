@@ -15,6 +15,7 @@ local HudController = require(Controllers.HudController)
 local PracticeController = require(Controllers.PracticeController)
 local PoseController = require(Controllers.PoseController)
 local EffectsController = require(Controllers.EffectsController)
+local AnimationController = require(Controllers.AnimationController)
 
 -- La cámara va primero: si otro controlador falla, al menos se ve el juego.
 CameraController.Start()
@@ -23,7 +24,8 @@ MovementController.Start()
 CombatController.Start()
 HudController.Start()
 PracticeController.Start()
-PoseController.Start()
+AnimationController.Start() -- animaciones reales
+PoseController.Start() -- poses por código como respaldo (después, en Stepped)
 EffectsController.Start()
 
 print(`[Client] listo — {Players.LocalPlayer.Name} — versión {GameConfig.Version}`)

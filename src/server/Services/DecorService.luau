@@ -64,6 +64,13 @@ local function setupLighting()
 	bloom.Size = 24
 	bloom.Threshold = 1.3
 	bloom.Parent = Lighting
+
+	-- Rayos de sol suaves (look cinematográfico)
+	local rays = Lighting:FindFirstChild("DemoSunRays") or Instance.new("SunRaysEffect")
+	rays.Name = "DemoSunRays"
+	rays.Intensity = 0.06
+	rays.Spread = 0.7
+	rays.Parent = Lighting
 end
 
 local function styleArena(decor: Folder)

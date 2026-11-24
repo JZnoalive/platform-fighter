@@ -17,6 +17,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Animations = require(ReplicatedStorage.Shared.Config.Animations)
 local Movesets = require(ReplicatedStorage.Shared.Modules.Movesets)
 local Poses = require(ReplicatedStorage.Shared.Config.Poses)
 
@@ -170,18 +171,38 @@ local function applyPose(model: Model, pose)
 	end
 end
 
-local function updateModel(model: Model, isCpu: boolean, dt: number)
+-- ¿Hay animación REAL para este ataque? (entonces la pose por código no se usa)
+local function hasAttackAnimation(model: Model): boolean
+	local move = model:GetAttribute("Move")
+	local weapon = model:GetAttribute("Weapon")
+	local byWeapon = weapon and Animations.Weapons[weapon]
+	return move ~= nil and ((byWeapon and byWeapon[move]) or Animations.Generic[move]) ~= nil
+end
+
+local function updateModel(model: Model, _isCpu: boolean, dt: number)
 	local state = model:GetAttribute("State")
 	local pose = nil
+	-- Respaldo: las poses solo se usan si no hay animación real (Animations.luau).
 	if state == "Attacking" then
-		pose = attackPose(model)
+		if not hasAttackAnimation(model) then
+			pose = attackPose(model)
+		end
 	elseif state == "Hitstun" then
-		pose = Poses.States.Hitstun
+		if not Animations.States.Hurt then
+			pose = Poses.States.Hitstun
+		end
 	elseif state == "Dodging" then
-		pose = Poses.States.Dodging
-	end
-	if not pose and isCpu then
-		pose = locomotionPose(model, dt)
+		if not Animations.States.Dodge then
+			pose = Poses.States.Dodging
+		end
+	else
+		-- En el aire (saltando / cayendo) no hay animación: postura aérea por código.
+		local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if root and math.abs(root.AssemblyLinearVelocity.Y) > 4 then
+			pose = Poses.Locomotion.Air
+		elseif not Animations.States.Idle then
+			pose = locomotionPose(model, dt)
+		end
 	end
 	if pose then
 		applyPose(model, pose)
