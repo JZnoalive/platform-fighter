@@ -8,8 +8,10 @@ local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 
 local Controllers = script.Parent:WaitForChild("Controllers")
 local CameraController = require(Controllers.CameraController)
+local InputController = require(Controllers.InputController)
 local MovementController = require(Controllers.MovementController)
 
+InputController.Start()
 CameraController.Start()
 MovementController.Start()
 
