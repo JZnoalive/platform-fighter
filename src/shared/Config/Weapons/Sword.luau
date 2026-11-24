@@ -1,7 +1,6 @@
--- ReplicatedStorage.Shared.Config.Fighters.Blade
--- Moveset de "Blade" (nombre en clave): espada, MÁS alcance pero MÁS lento que Brawler.
--- Mismos 12 ataques y mismos campos que Brawler.luau (ver su cabecera).
--- Lo usará la CPU en M5; ya existe para que las animaciones se puedan hacer con sus tiempos.
+-- ReplicatedStorage.Shared.Config.Weapons.Sword
+-- Moveset del arma "Espada" (la de Blade por defecto): MÁS alcance pero MÁS lenta
+-- que los guanteletes. Mismos 12 ataques y campos que Gauntlets.luau (ver su cabecera).
 
 return {
 	---------------------------------------------------------------- LIGEROS EN EL SUELO

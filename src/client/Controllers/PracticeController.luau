@@ -3,22 +3,27 @@
 -- (Workspace.PracticeActive = true). Tecla P para ocultarlo/mostrarlo.
 -- El menú solo PIDE cosas al servidor (remote PracticeCommand); el servidor decide.
 
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local CpuConfig = require(ReplicatedStorage.Shared.Config.CpuConfig)
+local WeaponStyles = require(ReplicatedStorage.Shared.Config.WeaponStyles)
 
 local PracticeController = {}
 
 local COLOR_PANEL = Color3.fromRGB(20, 20, 28)
 local COLOR_BUTTON = Color3.fromRGB(45, 45, 60)
 local COLOR_SELECTED = Color3.fromRGB(217, 78, 40) -- naranja de Brawler
+local COLOR_CPU = Color3.fromRGB(124, 58, 237) -- violeta de Blade
 local COLOR_TEXT = Color3.new(1, 1, 1)
 
 local hiddenByUser = false
 local panel: Frame
 local behaviorButtons: { [string]: TextButton } = {}
+local myWeaponButtons: { [string]: TextButton } = {}
+local cpuWeaponButtons: { [string]: TextButton } = {}
 local hitboxButton: TextButton
 
 local function makeLabel(parent: Instance, text: string, order: number)
@@ -66,6 +71,51 @@ local function refreshHitboxes()
 	hitboxButton.Text = if workspace:GetAttribute("DebugHitboxes") then "Hitboxes: SÍ" else "Hitboxes: NO"
 end
 
+-- Fila de 4 botones de arma. onClick(weaponId). Devuelve los botones por arma.
+local function makeWeaponRow(order: number, onClick: (string) -> ()): { [string]: TextButton }
+	local row = Instance.new("Frame")
+	row.LayoutOrder = order
+	row.Size = UDim2.new(1, 0, 0, 26)
+	row.BackgroundTransparency = 1
+	row.Parent = panel
+	local layout = Instance.new("UIListLayout")
+	layout.FillDirection = Enum.FillDirection.Horizontal
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Padding = UDim.new(0, 3)
+	layout.Parent = row
+
+	local buttons = {}
+	local count = #WeaponStyles.Order
+	for index, weaponId in WeaponStyles.Order do
+		local button = makeButton(
+			row,
+			WeaponStyles[weaponId].label,
+			index,
+			UDim2.new(1 / count, -3 * (count - 1) / count, 1, 0)
+		)
+		button.TextSize = 11
+		button.Activated:Connect(function()
+			onClick(weaponId)
+		end)
+		buttons[weaponId] = button
+	end
+	return buttons
+end
+
+-- Resalta el arma actual de cada fila (lee el atributo "Weapon").
+local function refreshWeapons()
+	local character = Players.LocalPlayer.Character
+	local myWeapon = character and character:GetAttribute("Weapon")
+	local cpu = CollectionService:GetTagged("CameraTarget")[1]
+	local cpuWeapon = cpu and cpu:GetAttribute("Weapon")
+	for weaponId, button in myWeaponButtons do
+		button.BackgroundColor3 = if weaponId == myWeapon then COLOR_SELECTED else COLOR_BUTTON
+	end
+	for weaponId, button in cpuWeaponButtons do
+		button.BackgroundColor3 = if weaponId == cpuWeapon then COLOR_CPU else COLOR_BUTTON
+	end
+end
+
 local function build(practiceCommand: RemoteEvent)
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "PracticeMenu"
@@ -109,9 +159,30 @@ local function build(practiceCommand: RemoteEvent)
 		practiceCommand:FireServer("StartVsCpu")
 	end)
 
+	-- Armas (estilo Brawlhalla): cada arma tiene sus propios ataques.
+	makeLabel(panel, "Mi arma:", nextOrder())
+	myWeaponButtons = makeWeaponRow(nextOrder(), function(weaponId)
+		practiceCommand:FireServer("Weapon", weaponId)
+	end)
+	makeLabel(panel, "Arma de la CPU:", nextOrder())
+	cpuWeaponButtons = makeWeaponRow(nextOrder(), function(weaponId)
+		practiceCommand:FireServer("CpuWeapon", weaponId)
+	end)
+
+	-- Comportamiento de la CPU en 2 columnas para que el panel no sea tan alto.
 	makeLabel(panel, "CPU:", nextOrder())
-	for _, name in CpuConfig.Behaviors do
-		local button = makeButton(panel, CpuConfig.Labels[name] or name, nextOrder(), UDim2.new(1, 0, 0, 26))
+	local grid = Instance.new("Frame")
+	grid.LayoutOrder = nextOrder()
+	grid.Size = UDim2.new(1, 0, 0, math.ceil(#CpuConfig.Behaviors / 2) * 30)
+	grid.BackgroundTransparency = 1
+	grid.Parent = panel
+	local gridLayout = Instance.new("UIGridLayout")
+	gridLayout.CellSize = UDim2.new(0.5, -2, 0, 26)
+	gridLayout.CellPadding = UDim2.fromOffset(4, 4)
+	gridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	gridLayout.Parent = grid
+	for index, name in CpuConfig.Behaviors do
+		local button = makeButton(grid, CpuConfig.Labels[name] or name, index, UDim2.new(0.5, -2, 0, 26))
 		button.Activated:Connect(function()
 			practiceCommand:FireServer("Behavior", name)
 		end)
@@ -160,6 +231,12 @@ local function build(practiceCommand: RemoteEvent)
 	workspace:GetAttributeChangedSignal("PracticeActive"):Connect(refreshVisibility)
 	workspace:GetAttributeChangedSignal("CpuBehavior"):Connect(refreshBehavior)
 	workspace:GetAttributeChangedSignal("DebugHitboxes"):Connect(refreshHitboxes)
+	task.spawn(function()
+		while gui.Parent do
+			refreshWeapons()
+			task.wait(0.25)
+		end
+	end)
 
 	UserInputService.InputBegan:Connect(function(input, gameProcessed)
 		if not gameProcessed and input.KeyCode == Enum.KeyCode.P then

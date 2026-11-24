@@ -17,6 +17,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local CpuConfig = require(ReplicatedStorage.Shared.Config.CpuConfig)
+local CharacterStyles = require(ReplicatedStorage.Shared.Config.CharacterStyles)
+local WeaponStyles = require(ReplicatedStorage.Shared.Config.WeaponStyles)
 local FighterService = require(script.Parent.FighterService)
 local CpuService = require(script.Parent.CpuService)
 local AppearanceService = require(script.Parent.AppearanceService)
@@ -31,6 +33,7 @@ local spawning = false
 local cpuFighter: FighterService.Fighter? = nil
 local spawnCFrame: CFrame? = nil
 local currentBehavior = CpuConfig.DefaultBehavior
+local cpuWeapon = CharacterStyles.Blade.defaultWeapon -- se conserva aunque la CPU se recree
 local matchControl = false -- true = la CPU está en una partida "VsCpu" (la gestiona MatchService)
 local startVsCpuCallback: ((Player) -> ())? = nil
 
@@ -95,7 +98,8 @@ local function spawnCpu()
 	spawnCFrame = CFrame.new(spawnPart.Position.X, spawnPart.Position.Y + 3, 0) * FACE_LEFT
 	model.Name = "CPU_Blade"
 	model:PivotTo(spawnCFrame :: CFrame)
-	AppearanceService.AddGear(model, "Blade") -- espadón, pelo, cuello (estilo bloque)
+	AppearanceService.AddGear(model, "Blade") -- pelo, cuello, franja (estilo bloque)
+	AppearanceService.SetWeapon(model, cpuWeapon) -- espada por defecto (cambiable en el menú)
 	local humanoid = model:FindFirstChildOfClass("Humanoid")
 	if humanoid then
 		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
@@ -161,6 +165,20 @@ local function onPracticeCommand(player: Player, command: any, value: any)
 	elseif command == "Hitboxes" then
 		if type(value) == "boolean" then
 			workspace:SetAttribute("DebugHitboxes", value)
+		end
+	elseif command == "Weapon" then
+		-- Cambiar MI arma (solo en práctica). Se recuerda si reaparezco.
+		local playerFighter = FighterService.Get(player.Character)
+		if type(value) == "string" and WeaponStyles[value] and playerFighter then
+			if FighterService.GetState(playerFighter) == "Idle" then
+				AppearanceService.SetWeapon(playerFighter.model, value)
+				player:SetAttribute("PreferredWeapon", value)
+			end
+		end
+	elseif command == "CpuWeapon" then
+		if type(value) == "string" and WeaponStyles[value] then
+			cpuWeapon = value
+			AppearanceService.SetWeapon(fighter.model, value)
 		end
 	end
 end

@@ -22,9 +22,12 @@ repo/
     │   │   ├── CharacterStyles.luau   (M6) colores y piezas de cada luchador (estilo bloque)
     │   │   ├── Poses.luau             (M7) "animaciones por código": poses de ataques y estados
     │   │   ├── AudioConfig.luau       (M7) IDs de sonidos y música (vacío = silencio)
-    │   │   └── Fighters/              (M3) un archivo de datos por luchador
-    │   │       ├── Brawler.luau
-    │   │       └── Blade.luau         (M4c datos; lo usa la CPU en M5)
+    │   │   ├── WeaponStyles.luau      (armas) aspecto de cada arma y su nombre en el menú
+    │   │   └── Weapons/               (armas) un moveset (12 ataques) por ARMA
+    │   │       ├── Gauntlets.luau     Puños (Brawler por defecto)
+    │   │       ├── Sword.luau         Espada (Blade por defecto)
+    │   │       ├── Scythe.luau        Guadaña (alcance, gancho que tira hacia atrás)
+    │   │       └── Blasters.luau      Pistolas (disparos: campo projectile)
     │   └── Modules/
     │       ├── Movement.luau          (M6) cálculo de movimiento compartido jugador/CPU
     │       ├── Movesets.luau          (M4b) lista FighterId → moveset (cliente y servidor)
@@ -132,6 +135,8 @@ busca objetivos **en el registro**, nunca recorriendo Workspace.
 | `Invulnerable` | boolean | servidor | M4 |
 | `FighterId` | string: `Brawler`, `Blade` | servidor | M3 |
 | `DisplayName` | string (nombre en el HUD) | servidor | M7 |
+| `Weapon` | string: `Gauntlets`, `Sword`, `Scythe`, `Blasters` (decide el moveset) | AppearanceService | armas |
+| `ComboHits` / `ComboDamage` | number (golpes y % del combo actual) | FighterService | armas |
 | `Move` | string (ataque en curso, p. ej. `Jab`) | CombatService | M7 |
 | `MoveTime` | number (`workspace:GetServerTimeNow()` al empezar el ataque) | CombatService | M7 |
 
@@ -151,7 +156,7 @@ también encuadra (la CPU).
 | Nombre | Tipo | Dirección | Datos | Hito |
 |---|---|---|---|---|
 | `ActionRequest` | RemoteEvent | cliente → servidor | `{ action = "Attack", move = "Jab" }` o `{ action = "Dodge" }` | M3/M4d |
-| `PracticeCommand` | RemoteEvent | cliente → servidor | `("Behavior", nombre)`, `("Percent", n)`, `("Reset")`, `("Hitboxes", bool)`, `("StartVsCpu")` | M5/M5b |
+| `PracticeCommand` | RemoteEvent | cliente → servidor | `("Behavior", nombre)`, `("Percent", n)`, `("Reset")`, `("Hitboxes", bool)`, `("StartVsCpu")`, `("Weapon", id)`, `("CpuWeapon", id)` | M5/M5b/armas |
 | `HitEvent` | RemoteEvent | servidor → todos | `(targetModel, position, force)` solo para efectos | M7 |
 | `ApplyKnockback` | RemoteEvent | servidor → cliente víctima | `velocity: Vector3, hitstun: number` | M3 |
 | `FighterReset` | RemoteEvent | servidor → cliente | (nada): reinicia velocidad y saltos tras un respawn | M4 |
@@ -161,7 +166,7 @@ también encuadra (la CPU).
 
 Tiempos en segundos (no en frames: el servidor de Roblox no garantiza 60 FPS exactos).
 
-Ejemplo real: `src/shared/Config/Fighters/Brawler.luau`.
+Ejemplo real: `src/shared/Config/Weapons/Gauntlets.luau`. El moveset lo da el ARMA (atributo `Weapon`), no el personaje.
 
 ```lua
 Jab = {

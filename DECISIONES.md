@@ -51,6 +51,12 @@
 | 2026-11-24 | HUD abajo con tarjetas; etiqueta de % sobre la cabeza desactivada (`ShowOverheadPercent`) | Estilo del género, pantalla limpia para el tráiler |
 | 2026-11-24 | Escenario "templo al atardecer" generado por código (`DecorService`) | JZnoalive trabaja solo; se puede sustituir decorando a mano (crear Workspace.Decor) |
 | 2026-11-24 | Armas, poderes y personajes 2D/temáticos quedan para después de la demo | Fecha límite 4 de diciembre; personajes de franquicias ajenas no se usan |
+| 2026-11-24 | Armas estilo Brawlhalla: el moveset lo da el ARMA (atributo `Weapon`); 4 armas: Puños, Espada, Guadaña, Pistolas | Variedad para el tráiler sin hacer más personajes; cada arma = 1 archivo de datos + su aspecto |
+| 2026-11-24 | Cambio de arma solo en práctica (menú); se recuerda al reaparecer | Para mostrar los combos de cada arma |
+| 2026-11-24 | Pistolas con proyectiles decididos por el servidor (campo `projectile`) | Ataques a distancia sin trampas |
+| 2026-11-24 | Cajas rojas ocultas por defecto (se activan en el menú) | Imagen limpia para el tráiler |
+| 2026-11-24 | Poses estilo Smash: anticipación, giros de todo el cuerpo (Root), muñecas para apuntar, estelas en las armas | Que se vea mejor sin animaciones subidas |
+| 2026-11-24 | Contador de combo en el HUD ("COMBO x4 · 23%") | Los combos los crean los jugadores; así se ven en el tráiler |
 | 2026-11-24 | Mientras solo programa JZnoalive, commits directos a `main` | Rama + PR cuando entren más programadores |
 | 2026-11-24 | Arriba/abajo y recovery se hacen en M4b, después de M4 | Petición de JZnoalive; M4 primero para cerrar el ciclo de partida |
 | 2026-11-24 | Plano de juego: X = izquierda/derecha, Y = arriba/abajo, Z siempre 0 | Una sola convención para cámara, movimiento y hitboxes |

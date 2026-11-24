@@ -166,7 +166,7 @@ segundo va cada una y qué partes mover.
 | Recovery | salto en diagonal con tajo | 0.76 | 0.06 |
 | GroundPound | caída clavando la espada | 0.84 | 0.14 |
 
-> Estas tablas salen de `src/shared/Config/Fighters/*.luau`. Si Claude cambia un
+> Estas tablas salen de `src/shared/Config/Weapons/*.luau` (Brawler = Gauntlets, Blade = Sword). Si Claude cambia un
 > tiempo, actualiza también esta tabla y avisa.
 
 **A ENTREGAS.md:** el ID de cada animación en su fila.

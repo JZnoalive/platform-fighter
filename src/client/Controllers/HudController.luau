@@ -19,6 +19,12 @@ local messageLabel: TextLabel
 local cardsFrame: Frame
 local showToken = 0
 
+-- Contador de combo (arriba a la derecha): "COMBO x4 · 23%"
+local comboLabel: TextLabel
+local comboScale: UIScale
+local comboShownUntil = 0
+local lastComboHits = 0
+
 type Card = {
 	frame: Frame,
 	nameLabel: TextLabel,
@@ -158,6 +164,29 @@ local function syncCards()
 			cards[model] = nil
 		end
 	end
+
+	-- Combo: se muestra mientras alguien encadena golpes (2 o más) sin salir del hitstun.
+	local comboModel = nil
+	for model in alive do
+		if model:GetAttribute("State") == "Hitstun" and (model:GetAttribute("ComboHits") or 0) >= 2 then
+			comboModel = model
+			break
+		end
+	end
+	if comboModel then
+		local hits = comboModel:GetAttribute("ComboHits")
+		comboLabel.Text = `COMBO x{hits}  ·  {math.floor(comboModel:GetAttribute("ComboDamage") or 0)}%`
+		comboLabel.Visible = true
+		comboShownUntil = os.clock() + 1.2
+		if hits > lastComboHits then
+			comboScale.Scale = 1.3
+			TweenService:Create(comboScale, TweenInfo.new(0.15, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+		end
+		lastComboHits = hits
+	elseif os.clock() > comboShownUntil then
+		comboLabel.Visible = false
+		lastComboHits = 0
+	end
 end
 
 local function createGui()
@@ -177,6 +206,21 @@ local function createGui()
 	messageLabel.TextStrokeTransparency = 0
 	messageLabel.Visible = false
 	messageLabel.Parent = gui
+
+	comboLabel = Instance.new("TextLabel")
+	comboLabel.AnchorPoint = Vector2.new(1, 0)
+	comboLabel.Position = UDim2.new(1, -24, 0, 90)
+	comboLabel.Size = UDim2.fromOffset(320, 50)
+	comboLabel.BackgroundTransparency = 1
+	comboLabel.TextScaled = true
+	comboLabel.Font = Enum.Font.GothamBlack
+	comboLabel.TextColor3 = Color3.fromRGB(255, 210, 80)
+	comboLabel.TextStrokeTransparency = 0
+	comboLabel.TextXAlignment = Enum.TextXAlignment.Right
+	comboLabel.Visible = false
+	comboLabel.Parent = gui
+	comboScale = Instance.new("UIScale")
+	comboScale.Parent = comboLabel
 
 	cardsFrame = Instance.new("Frame")
 	cardsFrame.Name = "Cards"

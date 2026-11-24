@@ -10,7 +10,6 @@ local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 local FighterService = require(script.Parent.FighterService)
 local Remotes = require(script.Parent.Parent.Remotes)
 
-local Movesets = require(ReplicatedStorage.Shared.Modules.Movesets)
 
 local CombatService = {}
 
@@ -81,6 +80,66 @@ local function playAttackAnimation(fighter: FighterService.Fighter, attack)
 	track:Play(0.05)
 end
 
+-- Proyectil (pistolas): avanza cada frame desde el atacante en la dirección del
+-- disparo y golpea al PRIMER luchador que toque. Lo decide el servidor.
+function CombatService.SpawnProjectile(fighter: FighterService.Fighter, attack)
+	local spec = attack.projectile
+	local facing = getFacing(fighter.root)
+	local angle = math.rad(spec.angle or 0)
+	local direction = Vector3.new(math.cos(angle) * facing, math.sin(angle), 0)
+	local offset = attack.hitbox.offset
+	local origin = fighter.root.Position
+	local position = Vector3.new(origin.X + offset.X * facing, origin.Y + offset.Y, 0)
+	local size: Vector3 = spec.size
+
+	local visual = Instance.new("Part")
+	visual.Name = "Projectile"
+	visual.Anchored = true
+	visual.CanCollide = false
+	visual.CanQuery = false
+	visual.CanTouch = false
+	visual.CastShadow = false
+	visual.Material = Enum.Material.Neon
+	visual.Color = Color3.fromHex(spec.color or "FFFFFF")
+	visual.Size = size
+	visual.CFrame = CFrame.lookAt(position, position + direction)
+	visual.Parent = workspace
+
+	local params = OverlapParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	local traveled = 0
+
+	task.spawn(function()
+		while traveled < spec.range and visual.Parent do
+			local dt = RunService.Heartbeat:Wait()
+			local step = spec.speed * dt
+			position += direction * step
+			traveled += step
+			local boxCFrame = CFrame.lookAt(position, position + direction)
+			visual.CFrame = boxCFrame
+
+			local targets = {}
+			for _, model in FighterService.GetModels() do
+				if model ~= fighter.model then
+					table.insert(targets, model)
+				end
+			end
+			if #targets > 0 then
+				params.FilterDescendantsInstances = targets
+				for _, part in workspace:GetPartBoundsInBox(boxCFrame, size, params) do
+					local target = FighterService.GetFromInstance(part)
+					if target then
+						FighterService.ApplyHit(target, attack, facing)
+						visual:Destroy()
+						return
+					end
+				end
+			end
+		end
+		visual:Destroy()
+	end)
+end
+
 -- Ejecuta un ataque completo. Funciona igual para jugador o CPU.
 -- moveName ("Jab", "Heavy"...) se publica en el modelo para que los clientes
 -- dibujen la pose de ataque (PoseController): atributos Move y MoveTime.
@@ -106,15 +165,22 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack, mo
 			return
 		end
 
-		-- 2. Active: la hitbox busca objetivos cada frame
+		-- 2a. Ataque a distancia (pistolas): sale un proyectil y vive por su cuenta.
+		if attack.projectile then
+			CombatService.SpawnProjectile(fighter, attack)
+		end
+
+		-- 2b. Active: la hitbox busca objetivos cada frame (no en los disparos)
 		local alreadyHit: { [Model]: boolean } = {}
 		local landedHit = false
-		local debugPart = if workspace:GetAttribute("DebugHitboxes") then makeDebugPart(attack.hitbox.size) else nil
+		local debugPart = if workspace:GetAttribute("DebugHitboxes") and not attack.projectile
+			then makeDebugPart(attack.hitbox.size)
+			else nil
 		local params = OverlapParams.new()
 		params.FilterType = Enum.RaycastFilterType.Include
 
 		local activeEnd = os.clock() + attack.active
-		while os.clock() < activeEnd and stillAttacking() do
+		while not attack.projectile and os.clock() < activeEnd and stillAttacking() do
 			local boxCFrame = hitboxCFrame(fighter, attack)
 			if debugPart then
 				debugPart.CFrame = boxCFrame
@@ -147,6 +213,9 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack, mo
 			end
 
 			RunService.Heartbeat:Wait()
+		end
+		if attack.projectile then
+			task.wait(attack.active) -- el atacante sigue "disparando" durante el active
 		end
 
 		if debugPart then
@@ -194,7 +263,7 @@ local function onActionRequest(player: Player, payload: any)
 	if payload.action ~= "Attack" or type(payload.move) ~= "string" then
 		return
 	end
-	local moveset = Movesets[fighter.fighterId]
+	local moveset = FighterService.GetMoveset(fighter) -- según el arma que lleva
 	local attack = moveset and moveset[payload.move]
 	if not attack then
 		return

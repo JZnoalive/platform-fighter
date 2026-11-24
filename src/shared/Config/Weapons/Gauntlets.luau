@@ -1,5 +1,7 @@
--- ReplicatedStorage.Shared.Config.Fighters.Brawler
--- Moveset de "Brawler" (nombre en clave). Solo datos, sin lógica.
+-- ReplicatedStorage.Shared.Config.Weapons.Gauntlets
+-- Moveset del arma "Guanteletes" (la de Brawler por defecto). Solo datos, sin lógica.
+-- Estilo Brawlhalla: el MOVESET lo da el ARMA, no el personaje. Cualquier luchador
+-- puede usar cualquier arma (aspecto del arma en WeaponStyles.luau).
 --
 -- Qué ataque sale (lo decide CombatController en el cliente):
 --   Ligero (J / clic izq.)        suelo: Jab · SideLight (A/D) · UpLight (W) · DownLight (S)
@@ -16,7 +18,9 @@
 --   awayFromAttacker (opcional) : true = empuja hacia el lado donde está el rival
 --                                 (para golpes que pegan a los dos lados)
 --   selfImpulse (opcional)      : Vector2(adelante, arriba) que se da el ATACANTE al usarlo
---   animationId                 : se rellena cuando existan las animaciones (M7)
+--   projectile (opcional)       : { speed, range, angle, size, color } → en vez de golpear
+--                                 alrededor, dispara un proyectil (ver Blasters.luau)
+--   animationId                 : opcional; si existe se reproduce además de la pose
 
 return {
 	---------------------------------------------------------------- LIGEROS EN EL SUELO

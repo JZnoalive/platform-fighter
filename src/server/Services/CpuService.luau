@@ -78,7 +78,7 @@ end
 
 local function attack(ctrl: Controller, moveName: string): boolean
 	local fighter = ctrl.fighter
-	local moveset = Movesets[fighter.fighterId]
+	local moveset = Movesets[fighter.model:GetAttribute("Weapon")] -- según el arma que lleva
 	local data = moveset and moveset[moveName]
 	if not data or FighterService.GetState(fighter) ~= "Idle" then
 		return false

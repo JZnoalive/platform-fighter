@@ -10,6 +10,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local CharacterStyles = require(ReplicatedStorage.Shared.Config.CharacterStyles)
+local WeaponStyles = require(ReplicatedStorage.Shared.Config.WeaponStyles)
+local Movesets = require(ReplicatedStorage.Shared.Modules.Movesets)
 
 local AppearanceService = {}
 
@@ -59,27 +61,55 @@ function AppearanceService.GetDescription(fighterId: string): HumanoidDescriptio
 	return desc
 end
 
--- Pega las piezas del estilo al cuerpo. Se puede llamar otra vez: borra las anteriores.
-function AppearanceService.AddGear(character: Model, fighterId: string)
-	local style = CharacterStyles[fighterId]
-	if not style then
-		return
+-- Estela (Trail) a lo largo del eje más largo de la pieza: se ve al moverse rápido.
+local function addTrail(part: BasePart, colorHex: string)
+	local size = part.Size
+	local axis
+	if size.Z >= size.X and size.Z >= size.Y then
+		axis = Vector3.new(0, 0, size.Z / 2)
+	elseif size.Y >= size.X then
+		axis = Vector3.new(0, size.Y / 2, 0)
+	else
+		axis = Vector3.new(size.X / 2, 0, 0)
 	end
+	local a0 = Instance.new("Attachment")
+	a0.Position = axis
+	a0.Parent = part
+	local a1 = Instance.new("Attachment")
+	a1.Position = -axis
+	a1.Parent = part
+	local trail = Instance.new("Trail")
+	trail.Attachment0 = a0
+	trail.Attachment1 = a1
+	trail.Color = ColorSequence.new(Color3.fromHex(colorHex))
+	trail.Transparency = NumberSequence.new(0.3, 1)
+	trail.Lifetime = 0.15
+	trail.MinLength = 0.1
+	trail.LightEmission = 0.8
+	trail.FaceCamera = true
+	trail.Parent = part
+end
 
-	local old = character:FindFirstChild("Gear")
+-- Crea un grupo de piezas pegadas al cuerpo dentro de un Model llamado folderName.
+-- Si ya existía, lo borra y lo vuelve a crear.
+local function buildPieces(character: Model, pieces, folderName: string)
+	local old = character:FindFirstChild(folderName)
 	if old then
 		old:Destroy()
 	end
 	local folder = Instance.new("Model")
-	folder.Name = "Gear"
+	folder.Name = folderName
 
-	for _, piece in style.gear do
+	for _, piece in pieces do
 		local bodyPart = findBodyPart(character, piece.part)
 		if bodyPart then
 			local part = Instance.new("Part")
 			part.Name = piece.name
 			part.Size = bodyPart.Size * piece.size.scale + piece.size.add
-			part.CFrame = bodyPart.CFrame * CFrame.new(bodyPart.Size * piece.offset.scale + piece.offset.add)
+			local rotation = piece.rotation or Vector3.zero
+			part.CFrame = bodyPart.CFrame
+				* CFrame.new(bodyPart.Size * piece.offset.scale + piece.offset.add)
+				* CFrame.Angles(math.rad(rotation.X), math.rad(rotation.Y), math.rad(rotation.Z))
 			part.Color = Color3.fromHex(piece.color)
 			part.Material = Enum.Material[piece.material] or Enum.Material.SmoothPlastic
 			part.Anchored = false
@@ -96,11 +126,34 @@ function AppearanceService.AddGear(character: Model, fighterId: string)
 			weld.Part1 = part
 			weld.Parent = part
 
+			if piece.trail then
+				addTrail(part, piece.trail)
+			end
+
 			part.Parent = folder
 		end
 	end
 
 	folder.Parent = character
+end
+
+-- Pega las piezas del PERSONAJE (pelo, gafas, botas...). Se puede llamar otra vez.
+function AppearanceService.AddGear(character: Model, fighterId: string)
+	local style = CharacterStyles[fighterId]
+	if style then
+		buildPieces(character, style.gear, "Gear")
+	end
+end
+
+-- Cambia el ARMA: atributo "Weapon" (decide el moveset) + piezas del arma en las manos.
+function AppearanceService.SetWeapon(character: Model, weaponId: string)
+	local style = WeaponStyles[weaponId]
+	if not style or not Movesets[weaponId] then
+		warn("[AppearanceService] arma desconocida:", weaponId)
+		return
+	end
+	character:SetAttribute("Weapon", weaponId)
+	buildPieces(character, style.gear, "WeaponGear")
 end
 
 -- Espera (como mucho APPEARANCE_WAIT s) a que Roblox termine de cargar el avatar,
@@ -140,6 +193,12 @@ local function dressPlayerCharacter(player: Player, character: Model)
 	end
 	if character.Parent then
 		AppearanceService.AddGear(character, PLAYER_FIGHTER_ID)
+		-- Arma: la última que eligió en la práctica, o la de su personaje.
+		local weapon = player:GetAttribute("PreferredWeapon")
+		if type(weapon) ~= "string" or not WeaponStyles[weapon] then
+			weapon = CharacterStyles[PLAYER_FIGHTER_ID].defaultWeapon
+		end
+		AppearanceService.SetWeapon(character, weapon)
 	end
 end
 

@@ -44,6 +44,6 @@ Los nombres en código siguen siendo `Brawler` y `Blade`.
 
 - Alturas 5.2 y 5.4 studs: dentro del rango previsto; las hitboxes actuales sirven.
 - La espada de Blade se modela con el personaje, pero **la hitbox la decide el código**
-  (`Blade.luau`), no la malla. Si la espada final es mucho más larga o corta que
+  (`Weapons/Sword.luau`), no la malla. Si la espada final es mucho más larga o corta que
   ~5 studs, avisar para ajustar los `offset` de sus ataques.
 - Contraste en pantalla: Brawler cálido (naranja/cobre) vs Blade frío (violeta/magenta). ✔

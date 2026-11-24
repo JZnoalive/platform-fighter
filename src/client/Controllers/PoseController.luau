@@ -24,10 +24,13 @@ local PoseController = {}
 
 -- Articulación → parte R15 que la contiene
 local JOINTS = {
+	Root = "LowerTorso", -- todo el cuerpo (inclinarse, volteretas)
 	RightShoulder = "RightUpperArm",
 	RightElbow = "RightLowerArm",
+	RightWrist = "RightHand",
 	LeftShoulder = "LeftUpperArm",
 	LeftElbow = "LeftLowerArm",
+	LeftWrist = "LeftHand",
 	RightHip = "RightUpperLeg",
 	RightKnee = "RightLowerLeg",
 	LeftHip = "LeftUpperLeg",
@@ -82,9 +85,12 @@ end
 local function attackPose(model: Model)
 	local moveName = model:GetAttribute("Move")
 	local moveTime = model:GetAttribute("MoveTime")
-	local moveset = Movesets[model:GetAttribute("FighterId")]
+	local weapon = model:GetAttribute("Weapon")
+	local moveset = Movesets[weapon]
 	local data = moveset and moveName and moveset[moveName]
-	local pose = moveName and Poses.Moves[moveName]
+	-- Pose propia del arma si existe (Poses.Weapons), si no la general (Poses.Moves).
+	local weaponPoses = Poses.Weapons[weapon]
+	local pose = moveName and ((weaponPoses and weaponPoses[moveName]) or Poses.Moves[moveName])
 	if not data or not pose or type(moveTime) ~= "number" then
 		return nil
 	end
@@ -95,7 +101,13 @@ local function attackPose(model: Model)
 	elseif t < data.startup + data.active then
 		-- Golpe: llega a la pose en 0.04 s (rápido pero visible)
 		local a = math.clamp((t - data.startup) / 0.04, 0, 1)
-		return lerpPose(pose.windup, pose.strike, a)
+		local result = lerpPose(pose.windup, pose.strike, a)
+		if pose.spin then
+			-- Giro de todo el cuerpo repartido durante el active (voltereta, barrido)
+			local progress = math.clamp((t - data.startup) / math.max(data.active, 0.01), 0, 1)
+			result.Root = (result.Root or Vector3.zero) + pose.spin * progress
+		end
+		return result
 	end
 	local a = math.clamp((t - data.startup - data.active) / math.max(data.recovery, 0.01), 0, 1)
 	return lerpPose(pose.strike, EMPTY, a)

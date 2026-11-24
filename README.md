@@ -70,6 +70,7 @@ nombres, arte y código **propios**.
 | Esquiva (invulnerable; con A/D rueda, en el aire también W/S) | Shift izquierdo o L |
 | Menú de práctica (solo jugando solo) | P para ocultar/mostrar |
 | Partida contra la CPU (3 vidas) | Botón "⚔ Pelear contra la CPU" del menú de práctica |
+| Cambiar de arma (Puños / Espada / Guadaña / Pistolas) | Menú de práctica → "Mi arma" (y "Arma de la CPU") |
 
 La tabla completa de qué ataque sale con cada combinación está al principio de
 `src/client/Controllers/CombatController.luau`.

@@ -111,7 +111,7 @@ function CombatController.Start()
 
 			-- Impulso propio (Recovery, GroundPound): lo aplica el cliente porque
 			-- el jugador es dueño de la física de su personaje.
-			local moveset = Movesets[character:GetAttribute("FighterId")]
+			local moveset = Movesets[character:GetAttribute("Weapon")]
 			local attack = moveset and moveset[moveName]
 			if isIdle and attack and attack.selfImpulse then
 				MovementController.ApplySelfImpulse(attack.selfImpulse.X, attack.selfImpulse.Y)

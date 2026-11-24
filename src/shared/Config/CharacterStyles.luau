@@ -22,6 +22,7 @@ return {
 	-- "Forja Cinética": guanteletes neumáticos, gafas de soldador, mono gris, botas.
 	Brawler = {
 		hudColor = "D94E28", -- color de su tarjeta en el HUD
+		defaultWeapon = "Gauntlets", -- arma con la que aparece (ver WeaponStyles.luau)
 		bodyColors = {
 			head = "E8B796", -- piel
 			torso = "EDE6D6", -- camiseta blanco hueso
@@ -29,23 +30,7 @@ return {
 			legs = "4A4E54", -- mono gris ceniza
 		},
 		gear = {
-			-- Guanteletes (mano + antebrazo), bermellón con aro de cobre
-			{ name = "GauntletR", part = "RightHand",
-				size = { scale = Vector3.new(1.45, 0, 1.45), add = Vector3.new(0, 1.15, 0) },
-				offset = { scale = ZERO, add = Vector3.new(0, 0.2, 0) },
-				color = "D94E28", material = "Metal" },
-			{ name = "GauntletL", part = "LeftHand",
-				size = { scale = Vector3.new(1.45, 0, 1.45), add = Vector3.new(0, 1.15, 0) },
-				offset = { scale = ZERO, add = Vector3.new(0, 0.2, 0) },
-				color = "D94E28", material = "Metal" },
-			{ name = "CuffR", part = "RightLowerArm",
-				size = { scale = Vector3.new(1.25, 0.3, 1.25), add = ZERO },
-				offset = { scale = Vector3.new(0, 0.15, 0), add = ZERO },
-				color = "C87D4B", material = "Metal" },
-			{ name = "CuffL", part = "LeftLowerArm",
-				size = { scale = Vector3.new(1.25, 0.3, 1.25), add = ZERO },
-				offset = { scale = Vector3.new(0, 0.15, 0), add = ZERO },
-				color = "C87D4B", material = "Metal" },
+			-- (Los guanteletes son un ARMA: están en WeaponStyles.luau)
 
 			-- Pelo oscuro revuelto
 			{ name = "Hair", part = "Head",
@@ -89,6 +74,7 @@ return {
 	-- "Vórtice Amatista": traje obsidiana, bolero titanio, pelo lavanda, espadón violeta.
 	Blade = {
 		hudColor = "7C3AED",
+		defaultWeapon = "Sword",
 		bodyColors = {
 			head = "F2D7C9", -- piel
 			torso = "1E1B2E", -- chaqueta bolero titanio oscuro
@@ -116,25 +102,7 @@ return {
 				offset = { scale = Vector3.new(0.25, 0, -0.52), add = ZERO },
 				color = "F43F8E", material = "Neon" },
 
-			-- Espadón en la mano derecha, apuntando HACIA DELANTE (Z negativo).
-			-- Así se ve entero desde la cámara lateral aunque la mano quede detrás del
-			-- cuerpo, y no atraviesa el suelo. Alto en Y = el ancho que se ve de lado.
-			{ name = "SwordGrip", part = "RightHand",
-				size = { scale = ZERO, add = Vector3.new(0.3, 0.3, 0.9) },
-				offset = { scale = ZERO, add = Vector3.new(0, -0.2, -0.25) },
-				color = "1E1B2E", material = "Metal" },
-			{ name = "SwordGuard", part = "RightHand",
-				size = { scale = ZERO, add = Vector3.new(0.22, 1.0, 0.2) },
-				offset = { scale = ZERO, add = Vector3.new(0, -0.2, -0.8) },
-				color = "7C3AED", material = "Metal" },
-			{ name = "SwordBlade", part = "RightHand",
-				size = { scale = ZERO, add = Vector3.new(0.12, 0.6, 4.2) },
-				offset = { scale = ZERO, add = Vector3.new(0, -0.2, -3.0) },
-				color = "7C3AED", material = "Metal" },
-			{ name = "SwordGlow", part = "RightHand",
-				size = { scale = ZERO, add = Vector3.new(0.16, 0.12, 3.6) },
-				offset = { scale = ZERO, add = Vector3.new(0, -0.2, -3.1) },
-				color = "F43F8E", material = "Neon" },
+			-- (El espadón es un ARMA: está en WeaponStyles.luau)
 		},
 	},
 }

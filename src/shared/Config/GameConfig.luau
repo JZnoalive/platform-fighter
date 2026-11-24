@@ -2,7 +2,7 @@
 -- Reglas generales de la partida. Solo datos, sin lógica.
 
 local GameConfig = {
-	Version = "0.1.0-m7",
+	Version = "0.2.0-armas",
 
 	-- Presentación
 	ShowOverheadPercent = false, -- etiqueta de % encima de la cabeza (el HUD de abajo ya lo muestra)
@@ -30,7 +30,7 @@ local GameConfig = {
 
 	-- Depuración: muestra las hitboxes como cajas rojas mientras están activas.
 	-- Es el valor inicial; en modo práctica se puede cambiar desde el menú.
-	DebugHitboxes = true,
+	DebugHitboxes = false,
 }
 
 return GameConfig

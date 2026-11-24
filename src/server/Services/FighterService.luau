@@ -6,8 +6,10 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local CharacterStyles = require(ReplicatedStorage.Shared.Config.CharacterStyles)
 local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 local Knockback = require(ReplicatedStorage.Shared.Modules.Knockback)
+local Movesets = require(ReplicatedStorage.Shared.Modules.Movesets)
 local Remotes = require(script.Parent.Parent.Remotes)
 
 local FighterService = {}
@@ -73,6 +75,11 @@ function FighterService.Register(model: Model, kind: string, fighterId: string, 
 	model:SetAttribute("Percent", 0)
 	model:SetAttribute("State", "Idle")
 	model:SetAttribute("DisplayName", if player then player.DisplayName else model.Name)
+	if model:GetAttribute("Weapon") == nil then
+		-- Arma por defecto del personaje (AppearanceService la cambia y pone su aspecto).
+		local style = CharacterStyles[fighterId]
+		model:SetAttribute("Weapon", if style then style.defaultWeapon else "Gauntlets")
+	end
 
 	local fighter: Fighter = {
 		model = model,
@@ -138,6 +145,11 @@ function FighterService.GetModels(): { Model }
 	return list
 end
 
+-- Ataques del arma que lleva ahora el luchador (atributo "Weapon").
+function FighterService.GetMoveset(fighter: Fighter)
+	return Movesets[fighter.model:GetAttribute("Weapon")]
+end
+
 function FighterService.SetState(fighter: Fighter, state: string)
 	fighter.model:SetAttribute("State", state)
 end
@@ -176,6 +188,15 @@ function FighterService.ApplyHit(target: Fighter, attack, facing: number)
 
 	local percent = (target.model:GetAttribute("Percent") or 0) + attack.damage
 	target.model:SetAttribute("Percent", percent)
+
+	-- Contador de combo: si ya estaba aturdido, este golpe suma al combo.
+	if state == "Hitstun" then
+		target.model:SetAttribute("ComboHits", (target.model:GetAttribute("ComboHits") or 0) + 1)
+		target.model:SetAttribute("ComboDamage", (target.model:GetAttribute("ComboDamage") or 0) + attack.damage)
+	else
+		target.model:SetAttribute("ComboHits", 1)
+		target.model:SetAttribute("ComboDamage", attack.damage)
+	end
 
 	local velocity, hitstun = Knockback.Compute(attack, percent, facing)
 
