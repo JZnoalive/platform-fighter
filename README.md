@@ -4,7 +4,8 @@ Juego de lucha de plataformas 2D **original** para Roblox. Inspirado en el géne
 (porcentaje de daño, knockback, expulsar al rival del escenario), con personajes,
 nombres, arte y código **propios**.
 
-> **Estado:** Hito M0 — preparación del proyecto.
+> **Estado:** M0–M3 terminados (proyecto, arena/cámara, movimiento, combate).
+> M4 (KO, vidas y partida) en pruebas. Ver [DECISIONES.md](DECISIONES.md).
 > **Meta actual:** una mini demo jugable (1 personaje jugable vs 1 CPU, 1 arena)
 > para grabar un tráiler de mecánicas y una partida con handcam.
 
@@ -41,7 +42,18 @@ nombres, arte y código **propios**.
    ```
 3. En Studio: pestaña **Plugins → Rojo → Connect**.
 4. Edita el código en VS Code (`src/`). Los cambios aparecen solos en Studio.
-5. Prueba en Studio: **Test → Clients and Servers → 2 Players → Start**.
+5. Prueba en Studio con 2 jugadores: menú **Test → Start Test Session** (o el
+   desplegable junto a ▶) → modo servidor + clientes → **2** jugadores.
+   Si no hay errores, el Output dice `[Server] listo` y `[Client] listo` con la versión.
+
+### Controles actuales
+
+| Acción | Teclas |
+|---|---|
+| Moverse | A/D o ←/→ |
+| Saltar (1 en suelo + 2 en el aire) | Space, W o ↑ (en M4b: solo Space) |
+| Ligero (Jab / lateral con A/D / aéreo) | J o clic izquierdo |
+| Pesado | K o clic derecho |
 
 ### Qué está en Git y qué no
 
@@ -51,8 +63,11 @@ nombres, arte y código **propios**.
 
 ## Flujo de Git
 
-- `main` siempre funciona. Nunca se sube directo a `main`.
-- Una rama por tarea: `m2/movimiento-salto`, `m3/hitbox-jab`, etc.
+- `main` siempre funciona.
+- **Fase actual:** mientras solo programa JZnoalive (con Claude), los cambios van
+  directo a `main`, uno por hito, y se prueban antes del siguiente.
+- **Cuando entren más programadores:** nunca directo a `main`; una rama por tarea:
+  `m2/movimiento-salto`, `m3/hitbox-jab`, etc.
 - Pull Request → otra persona prueba en Studio → merge.
 - Un módulo, una persona a la vez (ver [docs/REGLAS.md](docs/REGLAS.md)).
 

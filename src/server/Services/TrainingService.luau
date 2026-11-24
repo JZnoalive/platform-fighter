@@ -3,6 +3,9 @@
 -- Nunca hay dummies colocados a mano en Workspace (así no se repite el bug
 -- de golpear a varios dummies a la vez).
 -- Si el dummy sale de la BlastZone, vuelve a su spawn con 0 %.
+--
+-- El dummy solo existe en modo libre (menos de 2 jugadores). MatchService lo
+-- quita al empezar una partida (SetActive(false)) y lo devuelve al terminar.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -13,6 +16,10 @@ local TrainingService = {}
 
 local FACE_LEFT = CFrame.Angles(0, math.pi / 2, 0)
 
+local wantActive = false
+local spawning = false
+local dummyModel: Model? = nil
+
 local function isInside(position: Vector3, zone: BasePart): boolean
 	local half = zone.Size / 2
 	local center = zone.Position
@@ -21,7 +28,8 @@ end
 
 local function spawnDummy()
 	local arena = workspace:FindFirstChild("Arena")
-	local spawnPart = arena and arena:FindFirstChild("SpawnPoints") and arena.SpawnPoints:FindFirstChild("Spawn2")
+	local spawnPoints = arena and arena:FindFirstChild("SpawnPoints")
+	local spawnPart = spawnPoints and spawnPoints:FindFirstChild("Spawn2")
 	local blastZone = arena and arena:FindFirstChild("BlastZone")
 	if not spawnPart or not blastZone then
 		warn("[TrainingService] falta Workspace.Arena.SpawnPoints.Spawn2 o Workspace.Arena.BlastZone")
@@ -36,6 +44,12 @@ local function spawnDummy()
 		return
 	end
 
+	-- Mientras se creaba, puede que haya empezado una partida.
+	if not wantActive then
+		model:Destroy()
+		return
+	end
+
 	local spawnCFrame = CFrame.new(spawnPart.Position.X, spawnPart.Position.Y + 3, 0) * FACE_LEFT
 	model.Name = "TrainingDummy"
 	model:PivotTo(spawnCFrame)
@@ -43,9 +57,11 @@ local function spawnDummy()
 
 	local fighter = FighterService.Register(model, "Dummy", "Dummy", nil)
 	if not fighter then
+		model:Destroy()
 		return
 	end
 	fighter.root:SetNetworkOwner(nil) -- el servidor controla su física
+	dummyModel = model
 
 	local connection
 	connection = RunService.Heartbeat:Connect(function()
@@ -74,8 +90,31 @@ local function spawnDummy()
 	print("[TrainingService] dummy listo")
 end
 
+-- true = debe haber dummy; false = se quita.
+function TrainingService.SetActive(active: boolean)
+	wantActive = active
+
+	if not active then
+		if dummyModel then
+			dummyModel:Destroy() -- FighterService lo da de baja solo (AncestryChanged)
+			dummyModel = nil
+			print("[TrainingService] dummy retirado (empieza partida)")
+		end
+		return
+	end
+
+	if dummyModel and dummyModel.Parent or spawning then
+		return -- ya hay uno o se está creando
+	end
+	spawning = true
+	task.spawn(function()
+		spawnDummy()
+		spawning = false
+	end)
+end
+
 function TrainingService.Start()
-	task.spawn(spawnDummy)
+	TrainingService.SetActive(true)
 end
 
 return TrainingService

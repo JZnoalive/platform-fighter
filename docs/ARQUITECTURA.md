@@ -1,7 +1,8 @@
 # Arquitectura
 
 Pequeña, modular y fácil de depurar. **Crece solo cuando un hito lo necesita.**
-Las secciones marcadas *(M3)*, *(M6)*, etc. no existen todavía.
+Cada archivo indica el hito en que aparece. Hoy existen los de M0 a M4;
+los marcados *(M5)*, *(M6)* o *(M7)* todavía no existen.
 
 ## Estructura del repositorio → Roblox
 
@@ -15,12 +16,13 @@ repo/
     ├── shared/   → ReplicatedStorage.Shared
     │   ├── Config/
     │   │   ├── GameConfig.luau        reglas generales (stocks, tiempos de respawn)
+    │   │   ├── CameraConfig.luau      (M1) zoom y suavidad de la cámara
     │   │   ├── MovementConfig.luau    (M2) velocidades, gravedad, saltos
     │   │   └── Fighters/              (M3) un archivo de datos por luchador
     │   │       ├── Brawler.luau
     │   │       └── Blade.luau         (M5)
     │   └── Modules/
-    │       ├── Movement.luau          (M2) cálculo de movimiento compartido jugador/CPU
+    │       ├── Movement.luau          (M6) cálculo de movimiento compartido jugador/CPU
     │       └── Knockback.luau         (M3) fórmula de knockback
     ├── server/   → ServerScriptService.Server
     │   ├── Main.server.luau           arranca los servicios en orden
@@ -28,7 +30,7 @@ repo/
     │   └── Services/
     │       ├── FighterService.luau    (M3) registro de luchadores, estado, daño
     │       ├── CombatService.luau     (M3) ataques, ventanas activas, hitboxes
-    │       ├── TrainingService.luau   (M3) crea y resetea el dummy por código
+    │       ├── TrainingService.luau   (M3) dummy por código; solo en modo libre (M4)
     │       ├── MatchService.luau      (M4) spawns, blast zone, KO, stocks, victoria
     │       └── CpuService.luau        (M6) IA de la CPU
     └── client/   → StarterPlayer.StarterPlayerScripts.Client
@@ -104,7 +106,7 @@ busca objetivos **en el registro**, nunca recorriendo Workspace.
 | `State` | string: `Idle`, `Attacking`, `Hitstun`, `KO`, `Respawning`, `Eliminated` | servidor | M3/M4 |
 | `Stocks` | number | servidor | M4 |
 | `Invulnerable` | boolean | servidor | M4 |
-| `FighterId` | string: `Brawler`, `Blade` | servidor | M3 |
+| `FighterId` | string: `Brawler`, `Blade`, `Dummy` | servidor | M3 |
 
 ### Remotes (en `ReplicatedStorage.Shared.Remotes`, los crea el servidor)
 
@@ -119,24 +121,30 @@ busca objetivos **en el registro**, nunca recorriendo Workspace.
 
 Tiempos en segundos (no en frames: el servidor de Roblox no garantiza 60 FPS exactos).
 
+Ejemplo real: `src/shared/Config/Fighters/Brawler.luau`.
+
 ```lua
 Jab = {
-    startup  = 0.05,  -- antes de que la hitbox salga
+    startup  = 0.06,  -- antes de que la hitbox salga
     active   = 0.08,  -- hitbox activa
-    recovery = 0.15,  -- después, sin poder actuar
-    damage   = 3,     -- % que suma
-    baseKnockback  = 10,
-    knockbackScale = 0.12,  -- cuánto aumenta por cada % del rival
-    angle    = 35,    -- grados, 0 = horizontal hacia delante
-    hitbox = { offset = Vector3.new(2, 0, 0), size = Vector3.new(3, 3, 4) },
+    recovery = 0.14,  -- después, sin poder actuar
+    damage   = 4,     -- % que suma
+    baseKnockback  = 28,
+    knockbackScale = 0.25,  -- cuánto aumenta por cada % del rival
+    angle    = 30,    -- grados, 0 = horizontal hacia delante, 90 = arriba
+    -- offset: X = hacia delante (según hacia dónde mira), Y = arriba
+    hitbox = { offset = Vector2.new(2.5, 0.5), size = Vector3.new(4, 4, 6) },
+    animationId = nil, -- se rellena en M7
 }
 ```
 
 ### Fórmula de knockback de la demo *(M3)*
 
+Código: `src/shared/Modules/Knockback.luau`.
+
 ```text
-fuerza = baseKnockback + (porcentajeDelRival * knockbackScale)
-hitstun = fuerza * 0.02   (ajustable en GameConfig)
+fuerza  = baseKnockback + (porcentajeDelRival * knockbackScale)
+hitstun = fuerza * GameConfig.HitstunPerForce  (entre MinHitstun y MaxHitstun)
 ```
 
 Simple a propósito. Se cambia por una más elaborada solo si la demo lo pide.
@@ -147,7 +155,12 @@ Simple a propósito. Se cambia por una más elaborada solo si la demo lo pide.
    El de un **dummy/CPU** lo aplica el servidor directamente.
 2. KO por **posición** contra los límites de `BlastZone` en cada Heartbeat,
    nunca con `Touched`.
-3. `Workspace.FallenPartsDestroyHeight` por debajo de la BlastZone.
-4. Respawn = teletransportar + resetear atributos. No usar `LoadCharacter`.
-5. `Humanoid.BreakJointsOnDeath = false`, la vida nunca baja (se usa `Percent`).
+3. `Workspace.FallenPartsDestroyHeight` debe quedar por debajo de la BlastZone
+   (el valor por defecto, -500, sirve: la BlastZone acaba en Y = -40). No cambiarlo.
+4. Respawn = anclar, teletransportar y resetear atributos (MatchService). No usar `LoadCharacter`.
+5. La vida (`Health`) nunca se toca; el daño es `Percent`. Nadie muere, solo hay KO.
 6. Cada ataque guarda una lista `alreadyHit`: un objetivo, un golpe por ataque.
+7. Para recolocar a un jugador, el servidor lo **ancla** primero, lo mueve y al soltarlo
+   le devuelve la física (`SetNetworkOwner`) y avisa a su cliente (`FighterReset`).
+8. Ningún `WaitForChild` sin garantía de que el objeto existe: los remotes se esperan
+   dentro de `task.spawn` para no bloquear el arranque del cliente.

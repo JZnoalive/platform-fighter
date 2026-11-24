@@ -16,6 +16,7 @@ local RunService = game:GetService("RunService")
 
 local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 local FighterService = require(script.Parent.FighterService)
+local TrainingService = require(script.Parent.TrainingService)
 local Remotes = require(script.Parent.Parent.Remotes)
 
 local MatchService = {}
@@ -145,6 +146,7 @@ local function checkVictory(excluded: Player?)
 		matchState = "Waiting"
 		-- Si ya no hay jugadores suficientes, los eliminados vuelven en modo libre.
 		if #playerFighters() < GameConfig.MinPlayersForMatch then
+			TrainingService.SetActive(true)
 			for _, fighter in playerFighters() do
 				fighter.model:SetAttribute("Stocks", nil)
 				if FighterService.GetState(fighter) == "Eliminated" then
@@ -192,6 +194,7 @@ local function startMatch()
 		return
 	end
 	matchState = "Playing"
+	TrainingService.SetActive(false) -- sin dummy en una partida real
 	print(`[MatchService] empieza la partida con {#fighters} jugadores`)
 
 	for index, fighter in fighters do

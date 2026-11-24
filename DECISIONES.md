@@ -22,6 +22,8 @@
 | 2026-11-24 | KO por posición fuera de la BlastZone (Heartbeat), nunca con Touched | Fiable a cualquier velocidad |
 | 2026-11-24 | Respawn = anclar arriba (RespawnTop) 1 s + invulnerable con brillo blanco; sin LoadCharacter | Rápido, sin recargar scripts; se ve claro quién es invulnerable |
 | 2026-11-24 | Con menos de 2 jugadores: modo libre (KO sin perder vidas) | Se puede entrenar solo contra el dummy |
+| 2026-11-24 | El dummy solo existe en modo libre; se retira al empezar una partida | Revisión: aparecía en Spawn2 encima del jugador 2 y estorbaba en el 1v1 |
+| 2026-11-24 | Mientras solo programa JZnoalive, commits directos a `main` | Rama + PR cuando entren más programadores |
 | 2026-11-24 | Arriba/abajo y recovery se hacen en M4b, después de M4 | Petición de JZnoalive; M4 primero para cerrar el ciclo de partida |
 | 2026-11-24 | Plano de juego: X = izquierda/derecha, Y = arriba/abajo, Z siempre 0 | Una sola convención para cámara, movimiento y hitboxes |
 
@@ -35,6 +37,9 @@
 | 2026-11-24 | M3 Combate vs dummy | Golpes conectan, % sube, knockback, dummy por código; probado con avatar y dummy |
 
 ## Problemas pendientes
+
+- [ ] Knockback jugador contra jugador aún sin probar (M3 se probó contra el dummy) → se prueba en M4
+- [ ] Un 3er jugador que entra a mitad de partida no tiene vidas (la demo es 1v1; se revisa si hace falta)
 
 - [ ] Nombre definitivo del juego
 - [ ] Diseño final de Brawler y Blade
