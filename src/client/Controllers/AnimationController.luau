@@ -39,6 +39,9 @@ function AnimationController.GetAttackAnimation(weapon: string?, move: string?):
 		return nil
 	end
 	-- Si el ataque tiene pose diseñada a mano (codePose), la dibuja PoseController.
+	if Poses.CodePosesForAllAttacks then
+		return nil
+	end
 	local weaponPoses = weapon and Poses.Weapons[weapon]
 	if weaponPoses and weaponPoses[move] and weaponPoses[move].codePose then
 		return nil

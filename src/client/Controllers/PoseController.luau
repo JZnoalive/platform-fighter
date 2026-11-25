@@ -209,6 +209,9 @@ local function hasAttackAnimation(model: Model): boolean
 	local move = model:GetAttribute("Move")
 	local weapon = model:GetAttribute("Weapon")
 	-- Poses diseñadas a mano a partir de los vídeos (codePose) mandan sobre la animación.
+	if Poses.CodePosesForAllAttacks then
+		return false
+	end
 	local weaponPoses = weapon and Poses.Weapons[weapon]
 	if move and weaponPoses and weaponPoses[move] and weaponPoses[move].codePose then
 		return false

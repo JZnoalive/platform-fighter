@@ -32,6 +32,11 @@ local function with(base, extra)
 end
 
 return {
+	-- true = TODOS los ataques usan estas poses por código (diseñadas a partir de los
+	-- vídeos de referencia) en vez de las animaciones generadas por IA. Las animaciones
+	-- de IA solo quedan para guardia, carrera, recibir golpe y esquiva.
+	CodePosesForAllAttacks = true,
+
 	Moves = {
 		Jab = {
 			windup = with(CROUCH, { RightShoulder = V(45, 0, 0), RightElbow = V(100, 0, 0), Waist = V(0, 25, 0) }),
@@ -180,6 +185,30 @@ return {
 				windup = { Root = V(-10, 0, 0), Waist = V(-10, 30, 0), RightShoulder = V(-20, 0, 20), RightWrist = V(-150, 0, 0), LeftShoulder = V(30, 0, -20), RightHip = V(30, 0, 0), RightKnee = V(-55, 0, 0), LeftHip = V(-15, 0, 0), LeftKnee = V(-35, 0, 0) },
 				strike = { Root = V(-25, 0, 0), Waist = V(-15, -35, 0), RightShoulder = V(70, 0, 0), RightWrist = V(-58, 0, 0), LeftShoulder = V(-30, 0, -30), RightHip = V(75, 0, 0), RightKnee = V(-85, 0, 0), LeftHip = V(-40, 0, 0), LeftKnee = V(-10, 0, 0) },
 			},
+			-- Rec/NAir hacia arriba: tajo ascendente en el aire.
+			AirUpLight = {
+				windup = { Root = V(-5, 0, 0), RightShoulder = V(30, 0, 0), RightWrist = V(-90, 0, 0), LeftShoulder = V(20, 0, -20), RightHip = V(50, 0, 0), RightKnee = V(-90, 0, 0), LeftHip = V(30, 0, 0), LeftKnee = V(-70, 0, 0) },
+				strike = { Root = V(12, 0, 0), Waist = V(15, 0, 0), Neck = V(15, 0, 0), RightShoulder = V(170, 0, 0), RightWrist = V(-35, 0, 0), LeftShoulder = V(-20, 0, -30), RightHip = V(20, 0, 0), RightKnee = V(-40, 0, 0), LeftHip = V(40, 0, 0), LeftKnee = V(-80, 0, 0) },
+			},
+			-- DAir: estocada en picado en diagonal hacia abajo-delante.
+			AirDownLight = {
+				windup = { Root = V(10, 0, 0), RightShoulder = V(140, 0, 0), RightWrist = V(-40, 0, 0), LeftShoulder = V(60, 0, -20), RightHip = V(60, 0, 0), RightKnee = V(-100, 0, 0), LeftHip = V(40, 0, 0), LeftKnee = V(-80, 0, 0) },
+				strike = { Root = V(-25, 0, 0), Waist = V(-15, -20, 0), RightShoulder = V(45, 0, 0), RightWrist = V(-100, 0, 0), LeftShoulder = V(-30, 0, -30), RightHip = V(10, 0, 0), RightKnee = V(-20, 0, 0), LeftHip = V(-20, 0, 0), LeftKnee = V(-30, 0, 0) },
+			},
+			-- Pesado arriba: gran tajo ascendente desde abajo.
+			UpHeavy = {
+				windup = with(CROUCH, { Root = V(-10, 0, 0), Waist = V(-15, 25, 0), RightShoulder = V(-20, 0, 15), RightWrist = V(-150, 0, 0), RightKnee = V(-70, 0, 0), LeftKnee = V(-60, 0, 0) }),
+				strike = { Root = V(15, 0, 0), Waist = V(20, -15, 0), Neck = V(20, 0, 0), RightShoulder = V(175, 0, 0), RightWrist = V(-60, 0, 0), LeftShoulder = V(-30, 0, -30), RightHip = V(-15, 0, 0), LeftHip = V(25, 0, 0) },
+			},
+			Recovery = { -- sube girando con la espada en alto
+				windup = { Root = V(-10, 0, 0), RightShoulder = V(20, 0, 0), RightWrist = V(-90, 0, 0), RightHip = V(60, 0, 0), LeftHip = V(60, 0, 0), RightKnee = V(-90, 0, 0), LeftKnee = V(-90, 0, 0) },
+				strike = { RightShoulder = V(175, 0, 0), RightWrist = V(-60, 0, 0), LeftShoulder = V(-20, 0, -30), Waist = V(10, 0, 0), LeftHip = V(50, 0, 0), LeftKnee = V(-70, 0, 0) },
+				spin = V(0, 360, 0),
+			},
+			GroundPound = { -- cae clavando la espada hacia abajo
+				windup = { Root = V(10, 0, 0), RightShoulder = V(170, 0, 0), RightWrist = V(-60, 0, 0), LeftShoulder = V(160, 0, 0), RightHip = V(80, 0, 0), LeftHip = V(80, 0, 0), RightKnee = V(-110, 0, 0), LeftKnee = V(-110, 0, 0) },
+				strike = { Root = V(-10, 0, 0), RightShoulder = V(25, 0, 0), RightWrist = V(-115, 0, 0), LeftShoulder = V(20, 0, 0), Waist = V(-20, 0, 0), RightHip = V(10, 0, 0), LeftHip = V(-10, 0, 0) },
+			},
 			-- SAir: tajo horizontal amplio en el aire (espada por encima del hombro → barrido).
 			AirLight = {
 				codePose = true,
@@ -260,6 +289,29 @@ return {
 				pull = { Root = V(10, 0, 0), RightShoulder = V(30, 0, 0), RightElbow = V(90, 0, 0), RightWrist = V(40, 0, 180), LeftShoulder = V(20, 0, 0), LeftElbow = V(100, 0, 0), Waist = V(10, 40, 0), RightHip = V(60, 0, 0), RightKnee = V(-100, 0, 0), LeftHip = V(60, 0, 0), LeftKnee = V(-100, 0, 0) },
 				throw = { Root = V(-30, 0, 0), RightShoulder = V(40, 0, 0), RightWrist = V(-110, 0, 0), LeftShoulder = V(30, 0, 0), Waist = V(-25, -40, 0), RightHip = V(30, 0, 0), RightKnee = V(-50, 0, 0), LeftHip = V(50, 0, 0), LeftKnee = V(-60, 0, 0) },
 			},
+			UpLight = { -- arco por encima de la cabeza: la hoja sube desde delante hacia atrás
+				windup = with(CROUCH, { Root = V(-5, 0, 0), RightShoulder = V(40, 0, 0), RightWrist = V(-100, 0, 0), LeftShoulder = V(35, 0, 0), Waist = V(-10, 0, 0) }),
+				strike = { Root = V(10, 0, 0), Waist = V(12, 0, 0), Neck = V(15, 0, 0), RightShoulder = V(175, 0, 0), RightWrist = V(-20, 0, 0), LeftShoulder = V(165, 0, 0), RightHip = V(-10, 0, 0), LeftHip = V(15, 0, 0) },
+			},
+			AirUpLight = { -- el mismo arco en el aire
+				windup = { Root = V(-5, 0, 0), RightShoulder = V(40, 0, 0), RightWrist = V(-100, 0, 0), LeftShoulder = V(35, 0, 0), RightHip = V(50, 0, 0), RightKnee = V(-90, 0, 0), LeftHip = V(30, 0, 0), LeftKnee = V(-70, 0, 0) },
+				strike = { Root = V(12, 0, 0), Waist = V(12, 0, 0), RightShoulder = V(175, 0, 0), RightWrist = V(-20, 0, 0), LeftShoulder = V(165, 0, 0), RightHip = V(30, 0, 0), RightKnee = V(-60, 0, 0), LeftHip = V(50, 0, 0), LeftKnee = V(-90, 0, 0) },
+			},
+			-- FIRMA "Rueda celeste": la guadaña gira en horizontal por encima de la cabeza.
+			UpHeavy = {
+				windup = with(CROUCH, { RightShoulder = V(120, 0, 0), RightWrist = V(-120, 0, 0), LeftShoulder = V(110, 0, 0) }),
+				strike = { Root = V(5, 0, 0), RightShoulder = V(170, 0, 0), RightWrist = V(-170, 0, 0), LeftShoulder = V(165, 0, 0), Neck = V(15, 0, 0), RightHip = V(-10, 0, 0), LeftHip = V(15, 0, 0) },
+				spin = V(0, 720, 0),
+			},
+			Recovery = { -- sube girando con la guadaña en alto
+				windup = { Root = V(-10, 0, 0), RightShoulder = V(40, 0, 0), RightWrist = V(-100, 0, 0), RightHip = V(60, 0, 0), LeftHip = V(60, 0, 0), RightKnee = V(-90, 0, 0), LeftKnee = V(-90, 0, 0) },
+				strike = { Root = V(8, 0, 0), RightShoulder = V(175, 0, 0), RightWrist = V(-20, 0, 0), LeftShoulder = V(165, 0, 0), LeftHip = V(40, 0, 0), LeftKnee = V(-60, 0, 0) },
+				spin = V(0, 360, 0),
+			},
+			GroundPound = { -- cae con la hoja apuntando abajo
+				windup = { Root = V(10, 0, 0), RightShoulder = V(170, 0, 0), RightWrist = V(-50, 0, 0), LeftShoulder = V(160, 0, 0), RightHip = V(80, 0, 0), LeftHip = V(80, 0, 0), RightKnee = V(-110, 0, 0), LeftKnee = V(-110, 0, 0) },
+				strike = { Root = V(-15, 0, 0), RightShoulder = V(30, 0, 0), RightWrist = V(-120, 0, 0), LeftShoulder = V(25, 0, 0), Waist = V(-20, 0, 0) },
+			},
 			Heavy = {
 				windup = with(CROUCH, { Root = V(10, 0, 0), RightShoulder = V(200, 0, 0), RightWrist = V(-30, 0, 0), LeftShoulder = V(180, 0, 0), Waist = V(20, 40, 0) }),
 				strike = { Root = V(-25, 0, 0), RightShoulder = V(50, 0, 0), RightWrist = V(-110, 0, 0), LeftShoulder = V(40, 0, 0), Waist = V(-35, -40, 0), RightHip = V(-35, 0, 0), LeftHip = V(55, 0, 0), LeftKnee = V(-40, 0, 0) },
@@ -284,6 +336,25 @@ return {
 				codePose = true,
 				windup = { RightShoulder = V(30, 0, 0), RightElbow = V(120, 0, 0), RightWrist = V(-60, 0, 0), LeftShoulder = V(30, 0, 0), LeftElbow = V(120, 0, 0), LeftWrist = V(-60, 0, 0), Waist = V(0, 10, 0) },
 				strike = { Root = V(5, 0, 0), Waist = V(0, -25, 0), RightShoulder = V(95, 0, 0), RightWrist = V(-90, 0, 0), LeftShoulder = V(30, 0, 0), LeftElbow = V(120, 0, 0), LeftWrist = V(-60, 0, 0), RightHip = V(-15, 0, 0), LeftHip = V(20, 0, 0) },
+			},
+			-- FIRMA "Cometa oblicuo": disparo cargado doble en DIAGONAL hacia arriba.
+			UpHeavy = {
+				windup = with(CROUCH, { Root = V(-8, 0, 0), RightShoulder = V(20, 0, 0), RightWrist = V(-90, 0, 0), LeftShoulder = V(20, 0, 0), LeftWrist = V(-90, 0, 0), Waist = V(-10, 0, 0) }),
+				strike = { Root = V(12, 0, 0), Waist = V(12, 0, 0), RightShoulder = V(135, 0, 0), RightWrist = V(-90, 0, 0), LeftShoulder = V(130, 0, 0), LeftWrist = V(-90, 0, 0), RightHip = V(-20, 0, 0), LeftHip = V(25, 0, 0) },
+			},
+			-- FIRMA "Lluvia de balas": gira disparando adelante y atrás a la vez.
+			DownHeavy = {
+				windup = with(CROUCH, { RightShoulder = V(30, 0, 0), RightElbow = V(120, 0, 0), RightWrist = V(-60, 0, 0), LeftShoulder = V(30, 0, 0), LeftElbow = V(120, 0, 0), LeftWrist = V(-60, 0, 0) }),
+				strike = with(CROUCH, { RightShoulder = V(85, 0, 0), RightWrist = V(-90, 0, 0), LeftShoulder = V(-80, 0, 0), LeftWrist = V(-90, 0, 0), Waist = V(0, 0, 0) }),
+				spin = V(0, 360, 0),
+			},
+			Recovery = { -- dispara las dos hacia abajo y sale impulsada
+				windup = { RightShoulder = V(60, 0, 0), RightWrist = V(-90, 0, 0), LeftShoulder = V(60, 0, 0), LeftWrist = V(-90, 0, 0), RightHip = V(50, 0, 0), LeftHip = V(50, 0, 0), RightKnee = V(-80, 0, 0), LeftKnee = V(-80, 0, 0) },
+				strike = { Root = V(5, 0, 0), RightShoulder = V(5, 0, 10), RightWrist = V(-90, 0, 0), LeftShoulder = V(5, 0, -10), LeftWrist = V(-90, 0, 0), RightHip = V(20, 0, 0), LeftHip = V(-10, 0, 0), RightKnee = V(-40, 0, 0), LeftKnee = V(-20, 0, 0) },
+			},
+			GroundPound = { -- cae en picado disparando abajo
+				windup = { Root = V(10, 0, 0), RightShoulder = V(150, 0, 0), RightWrist = V(-90, 0, 0), LeftShoulder = V(150, 0, 0), LeftWrist = V(-90, 0, 0), RightHip = V(80, 0, 0), LeftHip = V(80, 0, 0), RightKnee = V(-110, 0, 0), LeftKnee = V(-110, 0, 0) },
+				strike = { Root = V(-15, 0, 0), RightShoulder = V(0, 0, 15), RightWrist = V(-90, 0, 0), LeftShoulder = V(0, 0, -15), LeftWrist = V(-90, 0, 0), Waist = V(-15, 0, 0) },
 			},
 			-- DLight: agachada, dispara las DOS pistolas al suelo delante (explosión a ras de
 			-- suelo que levanta al rival).
