@@ -77,3 +77,14 @@ Juega a defender el borde: la firma de pistolas "Cometa oblicuo" (disparo en dia
 y la de guadaña "Trampa del abismo" (barrido raso que echa fuera al que vuelve).
 
 En el menú de práctica: filas **"Mi personaje"** y **"Personaje de la CPU"**.
+
+### Volta — diseño propio (4.º personaje)
+Velocista eléctrica: chaqueta corta **amarilla** (`#F5C518`), mangas y mallas azul
+marino (`#1F2A44`), pelo blanco con coleta alta, cinta y rayo neón cian en el pecho.
+Armas: **Puños / Espada** · Stats 5 / 6 / 4 / 7 (rápida, presión y movilidad).
+Idea de referencia (solo mecánica): leyendas veloces de puños + espada.
+
+## HUD estilo Brawlhalla (v0.8)
+Tarjetas arriba a la derecha: retrato redondo con la cabeza real del personaje, **aro
+que cambia de color con el daño** (blanco → amarillo → naranja → rojo → rojo oscuro) y
+tiembla al recibir golpes, medalla con las vidas, nombre y el % pequeño debajo.

@@ -174,4 +174,55 @@ return {
 				color = "1B1F27", material = "SmoothPlastic" },
 		},
 	},
+
+	---------------------------------------------------------------- VOLTA
+	-- "Volta": velocista eléctrica, artes marciales con puños y espada corta.
+	-- Idea de referencia (solo mecánica): leyendas rápidas de puños + espada que viven
+	-- de la presión y la movilidad. Diseño PROPIO: chaqueta corta amarilla eléctrica,
+	-- mallas azul marino, coleta blanca y rayos neón. Paleta 60-30-10:
+	-- azul marino / amarillo / blanco-cian.
+	Volta = {
+		displayName = "Volta",
+		weapons = { "Gauntlets", "Sword" },
+		stats = { strength = 5, dexterity = 6, defense = 4, speed = 7 },
+		hudColor = "F5C518",
+		defaultWeapon = "Gauntlets",
+		headScale = 1.55, -- chibi
+		bodyColors = {
+			head = "F1C7A5", -- piel
+			torso = "F5C518", -- chaqueta amarilla
+			arms = "1F2A44", -- mangas azul marino
+			legs = "1F2A44",
+		},
+		gear = {
+			-- Pelo blanco con coleta alta
+			{ name = "HairTop", part = "Head",
+				size = { scale = Vector3.new(1.08, 0.3, 1.08), add = ZERO },
+				offset = { scale = Vector3.new(0, 0.56, 0.03), add = ZERO },
+				color = "F4F7FB", material = "SmoothPlastic" },
+			{ name = "Ponytail", part = "Head",
+				size = { scale = Vector3.new(0.3, 0.75, 0.3), add = ZERO },
+				offset = { scale = Vector3.new(0, 0.35, 0.68), add = ZERO },
+				color = "F4F7FB", material = "SmoothPlastic" },
+			-- Cinta en la frente (rayo)
+			{ name = "Headband", part = "Head",
+				size = { scale = Vector3.new(1.1, 0.12, 1.1), add = ZERO },
+				offset = { scale = Vector3.new(0, 0.28, 0), add = ZERO },
+				color = "7DF9FF", material = "Neon" },
+			-- Rayo neón en el pecho
+			{ name = "ChestBolt", part = "UpperTorso",
+				size = { scale = Vector3.new(0.12, 0.6, 0.06), add = ZERO },
+				offset = { scale = Vector3.new(-0.2, 0, -0.52), add = ZERO },
+				color = "7DF9FF", material = "Neon" },
+			-- Zapatillas
+			{ name = "ShoeR", part = "RightFoot",
+				size = { scale = Vector3.new(1.12, 1.25, 1.15), add = ZERO },
+				offset = { scale = ZERO, add = Vector3.new(0, 0.04, 0) },
+				color = "F4F7FB", material = "SmoothPlastic" },
+			{ name = "ShoeL", part = "LeftFoot",
+				size = { scale = Vector3.new(1.12, 1.25, 1.15), add = ZERO },
+				offset = { scale = ZERO, add = Vector3.new(0, 0.04, 0) },
+				color = "F4F7FB", material = "SmoothPlastic" },
+		},
+	},
 }

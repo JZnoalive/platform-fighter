@@ -31,18 +31,24 @@ type Card = {
 	nameLabel: TextLabel,
 	percentLabel: TextLabel,
 	stocksLabel: TextLabel,
+	portrait: Frame, -- círculo del retrato (se sacude al recibir golpes)
+	ring: UIStroke, -- aro de color según el daño (estilo Brawlhalla)
+	viewport: ViewportFrame,
+	portraitKey: string?, -- personaje+arma del retrato actual (para rehacerlo si cambia)
 	stripe: Frame,
 	scale: UIScale,
 	lastPercent: number,
+	shakeUntil: number,
 }
 local cards: { [Model]: Card } = {}
 
--- Color del % según el daño: blanco → amarillo → naranja → rojo.
+-- Color del daño (aro del retrato y %): blanco → amarillo → naranja → rojo → rojo oscuro.
 local PERCENT_COLORS = {
 	{ 0, Color3.fromRGB(255, 255, 255) },
-	{ 50, Color3.fromRGB(255, 230, 90) },
-	{ 100, Color3.fromRGB(255, 140, 40) },
-	{ 150, Color3.fromRGB(230, 30, 30) },
+	{ 40, Color3.fromRGB(255, 232, 80) },
+	{ 80, Color3.fromRGB(255, 150, 40) },
+	{ 120, Color3.fromRGB(235, 40, 30) },
+	{ 170, Color3.fromRGB(120, 10, 20) },
 }
 
 local function percentColor(percent: number): Color3
@@ -68,65 +74,165 @@ local function makeText(parent: Instance, font: Enum.Font, size: UDim2, position
 	return label
 end
 
+local PORTRAIT = 86 -- tamaño del retrato (px)
+
+local function corner(parent: Instance, radius: UDim)
+	local c = Instance.new("UICorner")
+	c.CornerRadius = radius
+	c.Parent = parent
+end
+
+-- Tarjeta estilo Brawlhalla: retrato redondo con aro de color según el daño,
+-- medalla con las vidas, nombre debajo y el % pequeño.
 local function createCard(model: Model): Card
 	local frame = Instance.new("Frame")
-	frame.Size = UDim2.fromOffset(190, 84)
-	frame.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
-	frame.BackgroundTransparency = 0.25
+	frame.Size = UDim2.fromOffset(PORTRAIT + 34, PORTRAIT + 46)
+	frame.BackgroundTransparency = 1
 	frame.Parent = cardsFrame
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 10)
-	corner.Parent = frame
 
+	-- Franja del color del personaje detrás del retrato
 	local stripe = Instance.new("Frame")
-	stripe.Size = UDim2.new(0, 8, 1, 0)
+	stripe.AnchorPoint = Vector2.new(0.5, 0)
+	stripe.Position = UDim2.new(0.5, 0, 0, PORTRAIT * 0.55)
+	stripe.Size = UDim2.new(1, 0, 0, PORTRAIT * 0.45 + 40)
+	stripe.BackgroundColor3 = Color3.fromRGB(18, 18, 26)
+	stripe.BackgroundTransparency = 0.15
 	stripe.BorderSizePixel = 0
 	stripe.Parent = frame
-	local stripeCorner = Instance.new("UICorner")
-	stripeCorner.CornerRadius = UDim.new(0, 10)
-	stripeCorner.Parent = stripe
+	corner(stripe, UDim.new(0, 12))
 
-	local nameLabel = makeText(frame, Enum.Font.GothamBold, UDim2.new(1, -20, 0, 18), UDim2.fromOffset(16, 4))
-	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+	local portrait = Instance.new("Frame")
+	portrait.AnchorPoint = Vector2.new(0.5, 0)
+	portrait.Position = UDim2.new(0.5, 0, 0, 2)
+	portrait.Size = UDim2.fromOffset(PORTRAIT, PORTRAIT)
+	portrait.BackgroundColor3 = Color3.fromRGB(30, 34, 48)
+	portrait.Parent = frame
+	corner(portrait, UDim.new(1, 0))
+	local ring = Instance.new("UIStroke")
+	ring.Thickness = 5
+	ring.Color = Color3.new(1, 1, 1)
+	ring.Parent = portrait
 
-	local percentLabel = makeText(frame, Enum.Font.GothamBlack, UDim2.new(0, 120, 0, 44), UDim2.fromOffset(16, 22))
-	percentLabel.TextXAlignment = Enum.TextXAlignment.Left
+	local viewport = Instance.new("ViewportFrame")
+	viewport.Size = UDim2.fromScale(1, 1)
+	viewport.BackgroundTransparency = 1
+	viewport.Ambient = Color3.fromRGB(200, 200, 200)
+	viewport.LightColor = Color3.new(1, 1, 1)
+	viewport.LightDirection = Vector3.new(-0.4, -1, -0.6)
+	viewport.Parent = portrait
+	corner(viewport, UDim.new(1, 0))
+
+	-- Medalla de vidas (arriba a la derecha del retrato)
+	local badge = Instance.new("Frame")
+	badge.AnchorPoint = Vector2.new(0.5, 0.5)
+	badge.Position = UDim2.new(0.5, PORTRAIT * 0.42, 0, PORTRAIT * 0.16)
+	badge.Size = UDim2.fromOffset(30, 30)
+	badge.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+	badge.ZIndex = 3
+	badge.Parent = frame
+	corner(badge, UDim.new(1, 0))
+	local badgeStroke = Instance.new("UIStroke")
+	badgeStroke.Thickness = 2
+	badgeStroke.Color = Color3.new(1, 1, 1)
+	badgeStroke.Parent = badge
+	local stocksLabel = makeText(badge, Enum.Font.GothamBlack, UDim2.fromScale(0.8, 0.8), UDim2.fromScale(0.1, 0.1))
+	stocksLabel.ZIndex = 4
+
+	local nameLabel = makeText(frame, Enum.Font.GothamBold, UDim2.new(1, -8, 0, 16), UDim2.new(0, 4, 0, PORTRAIT + 6))
+	local percentLabel = makeText(frame, Enum.Font.GothamBlack, UDim2.new(1, -8, 0, 20), UDim2.new(0, 4, 0, PORTRAIT + 22))
 	local scale = Instance.new("UIScale")
 	scale.Parent = percentLabel
-
-	local stocksLabel = makeText(frame, Enum.Font.GothamBold, UDim2.new(0, 60, 0, 20), UDim2.new(1, -66, 1, -26))
-	stocksLabel.TextXAlignment = Enum.TextXAlignment.Right
 
 	return {
 		frame = frame,
 		nameLabel = nameLabel,
 		percentLabel = percentLabel,
 		stocksLabel = stocksLabel,
+		portrait = portrait,
+		ring = ring,
+		viewport = viewport,
+		portraitKey = nil,
 		stripe = stripe,
 		scale = scale,
 		lastPercent = 0,
+		shakeUntil = 0,
 	}
+end
+
+-- Retrato: copia estática del personaje (cabeza, pelo/capucha) dentro del ViewportFrame.
+local function rebuildPortrait(model: Model, card: Card)
+	card.viewport:ClearAllChildren()
+	local wasArchivable = model.Archivable
+	model.Archivable = true
+	local ok, copy = pcall(function()
+		return model:Clone()
+	end)
+	model.Archivable = wasArchivable
+	if not ok or not copy then
+		return
+	end
+	for _, d in copy:GetDescendants() do
+		if d:IsA("Script") or d:IsA("LocalScript") or d:IsA("Highlight") or d:IsA("BillboardGui") or d:IsA("Sound") then
+			d:Destroy()
+		elseif d:IsA("BasePart") then
+			d.Anchored = true
+		end
+	end
+	local world = Instance.new("WorldModel")
+	world.Parent = card.viewport
+	copy.Parent = world
+	local head = copy:FindFirstChild("Head") :: BasePart?
+	if not head then
+		return
+	end
+	local camera = Instance.new("Camera")
+	camera.FieldOfView = 30
+	-- De frente y un poco de lado, encuadrando la cabeza
+	local look = head.CFrame.LookVector
+	local eye = head.Position + look * 6 + head.CFrame.RightVector * 1.5 + Vector3.new(0, 0.6, 0)
+	camera.CFrame = CFrame.lookAt(eye, head.Position + Vector3.new(0, -0.2, 0))
+	camera.Parent = card.viewport
+	card.viewport.CurrentCamera = camera
 end
 
 local function updateCard(model: Model, card: Card)
 	local style = CharacterStyles[model:GetAttribute("FighterId")]
-	card.stripe.BackgroundColor3 = if style and style.hudColor
-		then Color3.fromHex(style.hudColor)
-		else Color3.fromRGB(150, 150, 150)
+	local teamColor = if style and style.hudColor then Color3.fromHex(style.hudColor) else Color3.fromRGB(150, 150, 150)
+	card.stripe.BackgroundColor3 = Color3.fromRGB(18, 18, 26):Lerp(teamColor, 0.25)
+	card.portrait.BackgroundColor3 = Color3.fromRGB(26, 28, 40):Lerp(teamColor, 0.35)
 	card.nameLabel.Text = model:GetAttribute("DisplayName") or model.Name
 
+	-- Rehacer el retrato si cambió el personaje o el arma (y cuando ya cargó el aspecto)
+	local key = `{model:GetAttribute("FighterId")}|{model:GetAttribute("Weapon")}`
+	if card.portraitKey ~= key and model:FindFirstChild("Head") then
+		card.portraitKey = key
+		task.delay(0.6, function() -- deja que se peguen pelo/capucha/arma
+			if cards[model] == card then
+				rebuildPortrait(model, card)
+			end
+		end)
+	end
+
 	local percent = math.floor(model:GetAttribute("Percent") or 0)
+	local damageColor = percentColor(percent)
 	card.percentLabel.Text = `{percent}%`
-	card.percentLabel.TextColor3 = percentColor(percent)
+	card.percentLabel.TextColor3 = damageColor
+	card.ring.Color = damageColor
 	if percent > card.lastPercent then
-		-- "Salto" del número al recibir daño
+		-- Golpe recibido: el número "salta" y el retrato tiembla
 		card.scale.Scale = 1.35
 		TweenService:Create(card.scale, TweenInfo.new(0.18, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+		card.shakeUntil = os.clock() + 0.25
 	end
 	card.lastPercent = percent
+	if os.clock() < card.shakeUntil then
+		card.portrait.Position = UDim2.new(0.5, math.random(-4, 4), 0, 2 + math.random(-3, 3))
+	else
+		card.portrait.Position = UDim2.new(0.5, 0, 0, 2)
+	end
 
 	local stocks = model:GetAttribute("Stocks")
-	card.stocksLabel.Text = if stocks then string.rep("●", math.max(stocks, 0)) else ""
+	card.stocksLabel.Text = if stocks then tostring(math.max(stocks, 0)) else "∞"
 	card.frame.Visible = model:GetAttribute("State") ~= "Eliminated" or stocks ~= nil
 end
 
@@ -212,7 +318,7 @@ local function createGui()
 
 	comboLabel = Instance.new("TextLabel")
 	comboLabel.AnchorPoint = Vector2.new(1, 0)
-	comboLabel.Position = UDim2.new(1, -24, 0, 90)
+	comboLabel.Position = UDim2.new(1, -24, 0, 170) -- debajo de las tarjetas
 	comboLabel.Size = UDim2.fromOffset(320, 50)
 	comboLabel.BackgroundTransparency = 1
 	comboLabel.TextScaled = true
@@ -225,16 +331,17 @@ local function createGui()
 	comboScale = Instance.new("UIScale")
 	comboScale.Parent = comboLabel
 
+	-- Tarjetas arriba a la derecha (estilo Brawlhalla)
 	cardsFrame = Instance.new("Frame")
 	cardsFrame.Name = "Cards"
-	cardsFrame.AnchorPoint = Vector2.new(0.5, 1)
-	cardsFrame.Position = UDim2.new(0.5, 0, 1, -16)
-	cardsFrame.Size = UDim2.new(1, -32, 0, 84)
+	cardsFrame.AnchorPoint = Vector2.new(1, 0)
+	cardsFrame.Position = UDim2.new(1, -16, 0, 14)
+	cardsFrame.Size = UDim2.new(0.7, 0, 0, 140)
 	cardsFrame.BackgroundTransparency = 1
 	cardsFrame.Parent = gui
 	local layout = Instance.new("UIListLayout")
 	layout.FillDirection = Enum.FillDirection.Horizontal
-	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	layout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 	layout.SortOrder = Enum.SortOrder.LayoutOrder
 	layout.Padding = UDim.new(0, 16)
 	layout.Parent = cardsFrame

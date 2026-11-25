@@ -86,6 +86,6 @@ function FighterStats.Moveset(weapon: string?, fighterId: string?)
 end
 
 -- Personajes elegibles, en orden (para menús).
-FighterStats.Roster = { "Brawler", "Blade", "Umbra" }
+FighterStats.Roster = { "Brawler", "Blade", "Umbra", "Volta" }
 
 return FighterStats
