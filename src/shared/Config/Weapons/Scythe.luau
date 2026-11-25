@@ -1,30 +1,35 @@
 -- ReplicatedStorage.Shared.Config.Weapons.Scythe
--- Moveset del arma "Guadaña": mucho alcance, golpes en arco y un lateral que
--- ENGANCHA y tira al rival hacia atrás (ángulo > 90 = hacia el lado contrario).
+-- Moveset del arma "Guadaña": mucho alcance y golpes en arco.
+-- Su seña de identidad es el ACTIVE INPUT (como la guadaña de Brawlhalla): en Jab,
+-- SideLight, AirLight y AirDownLight, si MANTIENES ATRÁS durante el golpe, el rival sale
+-- lanzado hacia atrás (por encima de ti). Casi no tiene combos verdaderos: vive de leer
+-- la esquiva del rival. String típica: SideLight (atrás) > Jab > AirDownLight > AirLight.
 -- Mismos 12 ataques y campos que Gauntlets.luau (ver su cabecera).
 
 return {
 	---------------------------------------------------------------- LIGEROS EN EL SUELO
 	Jab = {
-		startup = 0.06,
+		startup = 0.09,
 		active = 0.1,
 		recovery = 0.14,
 		damage = 5,
 		baseKnockback = 14,
 		knockbackScale = 0.14,
 		angle = 30,
+		activeInput = true,
 		hitbox = { offset = Vector2.new(4, 0.5), size = Vector3.new(7, 4, 6) },
 	},
 
-	-- Gancho: tira al rival por detrás de ti (ideal para empezar combos)
+	-- Gancho: hacia delante, o mantén ATRÁS y lo tira por detrás de ti (abre strings)
 	SideLight = {
-		startup = 0.08,
+		startup = 0.12, -- arco pesado: da tiempo a elegir la dirección (active input)
 		active = 0.12,
 		recovery = 0.19,
 		damage = 8,
 		baseKnockback = 18,
 		knockbackScale = 0.3,
-		angle = 150,
+		angle = 35,
+		activeInput = true,
 		hitbox = { offset = Vector2.new(5, 0), size = Vector3.new(8, 4, 6) },
 	},
 
@@ -45,9 +50,9 @@ return {
 		active = 0.12,
 		recovery = 0.19,
 		damage = 6,
-		baseKnockback = 18,
-		knockbackScale = 0.16,
-		angle = 55,
+		baseKnockback = 32, -- levanta algo menos que la espada: string, no combo seguro
+		knockbackScale = 0.14,
+		angle = 68,
 		hitbox = { offset = Vector2.new(5, -2), size = Vector3.new(9, 2, 6) },
 	},
 
@@ -61,6 +66,7 @@ return {
 		baseKnockback = 20,
 		knockbackScale = 0.3,
 		angle = 45,
+		activeInput = true,
 		hitbox = { offset = Vector2.new(3, 0), size = Vector3.new(8, 7, 6) },
 	},
 
@@ -83,6 +89,7 @@ return {
 		baseKnockback = 18,
 		knockbackScale = 0.3,
 		angle = -70,
+		activeInput = true,
 		hitbox = { offset = Vector2.new(1.5, -4), size = Vector3.new(6, 5, 6) },
 	},
 
@@ -116,19 +123,18 @@ return {
 		hitbox = { offset = Vector2.new(0, 5.5), size = Vector3.new(10, 8, 6) },
 	},
 
-	-- Barrido enorme a los dos lados
-	-- FIRMA "Rueda de la segadora": barrido giratorio con 3 tajos a los dos lados
+	-- FIRMA "Trampa del abismo" (control de borde): barrido giratorio con 3 tajos a los
+	-- dos lados; el último lanza RASO (casi horizontal), ideal para echar al rival fuera
+	-- cuando intenta volver por el borde.
 	DownHeavy = {
 		startup = 0.28,
 		active = 0.36,
 		recovery = 0.5,
 		hits = 3,
 		damage = 5,
-		baseKnockback = 40,
+		baseKnockback = 44,
 		knockbackScale = 0.92,
-		angle = 30,
-		linkKnockback = 10,
-		linkAngle = 45,
+		angle = 14,
 		awayFromAttacker = true,
 		hitbox = { offset = Vector2.new(0, -1.5), size = Vector3.new(15, 3, 6) },
 	},

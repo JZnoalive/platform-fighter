@@ -20,6 +20,10 @@
 --   selfImpulse (opcional)      : Vector2(adelante, arriba) que se da el ATACANTE al usarlo
 --   projectile (opcional)       : { speed, range, angle, size, color } → en vez de golpear
 --                                 alrededor, dispara un proyectil (ver Blasters.luau)
+--   hits (opcional)             : nº de impactos (firmas). Los primeros "enganchan":
+--                                 linkKnockback / linkAngle (por defecto 6 y 90 = quieto)
+--   activeInput (opcional)      : true = si mantienes ATRÁS durante el golpe, lanza hacia
+--                                 atrás (ángulo reflejado). Es la mecánica de la guadaña.
 --   animationId                 : opcional; si existe se reproduce además de la pose
 
 return {
@@ -63,7 +67,8 @@ return {
 		animationId = nil,
 	},
 
-	-- Ligero con S: barrida baja
+	-- Ligero con S: barrida baja. Deja al rival cerca y bajo: combo verdadero
+	-- DLight > SideLight de 0 % a ~60 % (como los guanteletes de Brawlhalla).
 	DownLight = {
 		startup = 0.05,
 		active = 0.1,
@@ -127,11 +132,10 @@ return {
 		baseKnockback = 45,
 		knockbackScale = 1.0,
 		angle = 38,
-		linkKnockback = 12,
-		linkAngle = 20,
+		-- (los enganches dejan al rival quieto y la embestida lo vuelve a alcanzar)
 		selfImpulse = Vector2.new(45, 4),
 		impulseAtStartup = true,
-		hitbox = { offset = Vector2.new(3, 0.5), size = Vector3.new(6, 4, 6) },
+		hitbox = { offset = Vector2.new(3.5, 0.5), size = Vector3.new(7, 4, 6) },
 	},
 
 	-- Pesado con W en el suelo: manda hacia arriba
@@ -145,8 +149,8 @@ return {
 		baseKnockback = 42,
 		knockbackScale = 0.95,
 		angle = 88,
-		linkKnockback = 18,
-		linkAngle = 85,
+		linkKnockback = 42, -- el enganche sube al rival a la vez que tú (salto de 45)
+		linkAngle = 90,
 		selfImpulse = Vector2.new(0, 45),
 		impulseAtStartup = true,
 		hitbox = { offset = Vector2.new(0.5, 5), size = Vector3.new(6, 7, 6) },

@@ -57,6 +57,7 @@ return {
 			AirUpLight = id("106843415329953"),
 			AirDownLight = id("79800723593387"), -- disparo hacia abajo
 			Heavy = id("138878990500930"), -- disparo cargado
+			UpHeavy = id("106843415329953"), -- "Cometa oblicuo": disparo en diagonal
 			Recovery = id("79800723593387"),
 		},
 	},

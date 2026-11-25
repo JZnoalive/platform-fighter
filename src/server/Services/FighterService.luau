@@ -28,6 +28,8 @@ export type Fighter = {
 	queuedAt: number, -- cuándo se pidió
 	lastDodgeAt: number, -- para el enfriamiento de la esquiva
 	lastLandedAt: number, -- último golpe acertado (chase dodge)
+	inputDir: number, -- dirección que pulsaba al pedir el ataque (-1, 0, 1): "active input"
+	queuedDir: number, -- la del ataque en cola
 }
 
 local fighters: { [Model]: Fighter } = {}
@@ -96,6 +98,8 @@ function FighterService.Register(model: Model, kind: string, fighterId: string, 
 		queuedAt = 0,
 		lastDodgeAt = -math.huge,
 		lastLandedAt = -math.huge,
+		inputDir = 0,
+		queuedDir = 0,
 	}
 	fighters[model] = fighter
 	if GameConfig.ShowOverheadPercent then

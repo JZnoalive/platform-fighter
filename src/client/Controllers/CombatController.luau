@@ -17,6 +17,7 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Movesets = require(ReplicatedStorage.Shared.Modules.Movesets)
 local InputController = require(script.Parent.InputController)
@@ -24,6 +25,9 @@ local MovementController = require(script.Parent.MovementController)
 local AnimationController = require(script.Parent.AnimationController)
 
 local CombatController = {}
+
+local lastAttackPressAt = -math.huge -- última vez que se pidió un ataque
+local lastAimDir: number? = nil -- última dirección enviada con "Aim"
 
 -- Devuelve el nombre del ataque, o nil si no hay ninguno válido (p. ej. Recovery gastado).
 -- canImpulse = false cuando se está atacando: los ataques con impulso propio
@@ -78,6 +82,31 @@ function CombatController.Start()
 		local remotes = ReplicatedStorage.Shared:WaitForChild("Remotes")
 		local actionRequest = remotes:WaitForChild("ActionRequest") :: RemoteEvent
 
+		-- Active input: mientras atacas, avisar al servidor si cambias la dirección
+		-- (A/D) para que el golpe lance hacia donde mantienes. Solo cuando cambia.
+		-- Además manda la posición REAL del personaje (el servidor la ve con retraso):
+		-- así la hitbox sale donde estás de verdad en los combos aéreos.
+		-- (también justo después de pulsar: la confirmación "Attacking" llega con retraso)
+		RunService.Heartbeat:Connect(function()
+			local character = Players.LocalPlayer.Character
+			local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+			if not root then
+				return
+			end
+			if character:GetAttribute("State") ~= "Attacking" and os.clock() - lastAttackPressAt > 0.4 then
+				lastAimDir = nil
+				return
+			end
+			-- La dirección solo se manda cuando CAMBIA; la posición, cada frame.
+			local dir = InputController.GetMoveX()
+			local payload = { action = "Aim", pos = root.Position, dir = nil :: number? }
+			if dir ~= lastAimDir then
+				lastAimDir = dir
+				payload.dir = dir
+			end
+			actionRequest:FireServer(payload)
+		end)
+
 		InputController.OnPress(function(action)
 			local character = Players.LocalPlayer.Character
 			local state = character and character:GetAttribute("State")
@@ -108,10 +137,24 @@ function CombatController.Start()
 				return
 			end
 
-			actionRequest:FireServer({ action = "Attack", move = moveName })
+			-- dir: dirección pulsada (para el "active input" de la guadaña)
+			local root = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+			lastAttackPressAt = os.clock()
+			actionRequest:FireServer({
+				action = "Attack",
+				move = moveName,
+				dir = InputController.GetMoveX(),
+				pos = if root then root.Position else nil,
+				facing = MovementController.GetFacing(),
+			})
 
 			local moveset = Movesets[character:GetAttribute("Weapon")]
 			local attack = moveset and moveset[moveName]
+			if isIdle and attack then
+				-- Desde YA cuenta como atacando en mi pantalla (no girar, no caminar), sin
+				-- esperar a que el servidor lo confirme.
+				MovementController.NotifyAttackStarted(math.min(attack.startup + attack.active, 0.35))
+			end
 			if isIdle then
 				-- Respuesta instantánea: la animación empieza ya en mi pantalla.
 				AnimationController.PredictAttack(moveName)

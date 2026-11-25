@@ -62,3 +62,20 @@ Notación: `J` ligero, `K` pesado, `S`/`W`/`A-D` dirección, `Space` saltar, `Sh
 
 > Los combos los descubren los jugadores: estos son un punto de partida.
 > Si encuentras uno nuevo que mole, apúntalo aquí.
+
+## Combos verdaderos COMPROBADOS en Studio (v0.6, guiados por la wiki)
+
+Probados con teclas reales contra la CPU (el rival seguía aturdido = no podía esquivar):
+
+| Arma | Combo | Teclas | Resultado |
+|---|---|---|---|
+| Espada | DLight > SAir | `S+J → Space (+D) → J` | ✅ a 0 % y a 60 % (COMBO x2) |
+| Puños | DLight > SLight | `S+J → D+J` | ✅ a 0 % |
+| Puños | Firma "Ráfaga de pistones" | `K` | ✅ los 3 golpes conectan |
+| Guadaña | SLight con active input | `D+J` y mantener `A` durante el golpe | ✅ tira al rival hacia ti en vez de empujarlo |
+
+Qué lo hizo posible:
+- La hitbox de un golpe único se apaga al acertar → la recuperación empieza ya.
+- El salto despega al instante y un salto pulsado al final de un ataque no se pierde.
+- La hitbox sale desde la posición REAL del jugador (el servidor la ve con retraso).
+- Las plataformas flotantes se atraviesan desde abajo (antes el rival chocaba con ellas).

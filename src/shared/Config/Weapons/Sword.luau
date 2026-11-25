@@ -40,14 +40,17 @@ return {
 		animationId = nil,
 	},
 
+	-- Barrida que LEVANTA (estilo Brawlhalla): abre el combo verdadero DLight > SAir
+	-- (salta y pega con el aéreo antes de que el rival pueda esquivar). Comprobado con
+	-- el simulador: entra de 0 % a 120 %. También DLight > Recovery para rematar arriba.
 	DownLight = {
 		startup = 0.07,
 		active = 0.1,
 		recovery = 0.19,
 		damage = 6,
-		baseKnockback = 18,
-		knockbackScale = 0.16,
-		angle = 55,
+		baseKnockback = 72, -- sube casi vertical ~13 studs: a la altura de tu salto
+		knockbackScale = 0.06, -- casi igual a cualquier % (golpe de combo, no de remate)
+		angle = 80,
 		hitbox = { offset = Vector2.new(4.5, -2), size = Vector3.new(7, 2, 6) },
 		animationId = nil,
 	},
@@ -61,7 +64,8 @@ return {
 		baseKnockback = 22,
 		knockbackScale = 0.3,
 		angle = 40,
-		hitbox = { offset = Vector2.new(3.5, 0), size = Vector3.new(7, 5, 6) },
+		-- arco grande que llega por debajo: atrapa al rival que sube tras la barrida
+		hitbox = { offset = Vector2.new(3.5, -1.5), size = Vector3.new(9, 9, 6) },
 		animationId = nil,
 	},
 
@@ -126,8 +130,6 @@ return {
 		baseKnockback = 42,
 		knockbackScale = 0.95,
 		angle = 28,
-		linkKnockback = 12,
-		linkAngle = 60,
 		awayFromAttacker = true,
 		hitbox = { offset = Vector2.new(0, -1.5), size = Vector3.new(13, 3, 6) },
 	},

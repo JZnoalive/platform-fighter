@@ -10,6 +10,7 @@ local RunService = game:GetService("RunService")
 
 local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 local MovementConfig = require(ReplicatedStorage.Shared.Config.MovementConfig)
+local OneWayPlatforms = require(ReplicatedStorage.Shared.Modules.OneWayPlatforms)
 local InputController = require(script.Parent.InputController)
 
 local MovementController = {}
@@ -34,6 +35,16 @@ local airDodgeAvailable = true -- la esquiva aérea se usa 1 vez por vuelo
 local pendingKnockback: Vector3? = nil -- se aplica al terminar el hitlag
 local knockbackAt = 0
 local lastLandedAt = -math.huge -- último golpe que acerté (chase dodge)
+local platformState = { dropUntil = 0 } -- plataformas de un solo sentido
+local downHeldSince: number? = nil -- desde cuándo se mantiene S (dejarse caer)
+local lastAttackingAt = -math.huge -- para no perder el salto pulsado al final de un ataque
+local localAttackUntil = 0 -- ataque recién pulsado que el servidor aún no ha confirmado
+
+-- Lo llama CombatController al pulsar un ataque: mientras dure, cuenta como "atacando"
+-- (no se gira ni se camina) aunque el estado del servidor no haya llegado todavía.
+function MovementController.NotifyAttackStarted(duration: number)
+	localAttackUntil = os.clock() + duration
+end
 
 function MovementController.GetFacing(): number
 	return facing
@@ -207,6 +218,21 @@ local function step(dt: number)
 	end
 	local now = os.clock()
 
+	-- Plataformas de un solo sentido (siempre, también en hitstun: se atraviesan al salir
+	-- lanzado hacia arriba). Mantener S sin atacar = dejarse caer.
+	local body = root.Parent :: Model
+	-- (hay que mantener S un instante: un toque rápido de S + J sigue siendo DownLight)
+	if InputController.IsDownHeld() then
+		downHeldSince = downHeldSince or now
+	else
+		downHeldSince = nil
+	end
+	local wantsDrop = downHeldSince ~= nil
+		and now - downHeldSince >= 0.12
+		and not inHitstun
+		and body:GetAttribute("State") == "Idle"
+	OneWayPlatforms.Update(body, root, humanoid, wantsDrop, platformState)
+
 	-- 0. Hitstun: sin control. Primero congelado (hitlag), luego sale volando.
 	if inHitstun then
 		if now < hitstunUntil then
@@ -267,7 +293,7 @@ local function step(dt: number)
 		airDodgeAvailable = true
 	end
 
-	local attacking = character:GetAttribute("State") == "Attacking"
+	local attacking = character:GetAttribute("State") == "Attacking" or now < localAttackUntil
 
 	-- 1. Horizontal: acelerar hacia la velocidad objetivo.
 	-- Atacando en el suelo no se avanza; en el aire se conserva el control.
@@ -299,13 +325,23 @@ local function step(dt: number)
 		end
 	end
 
-	-- 2. Saltos (no durante un ataque).
-	if not attacking and InputController.HasBufferedJump(MovementConfig.JumpBuffer) then
+	-- 2. Saltos (no durante un ataque). Si el ataque ACABA de terminar, vale un salto
+	-- pulsado durante su final (hasta 0,35 s antes): el fin del ataque llega del servidor
+	-- con retraso y, sin esto, el salto del combo se perdía.
+	if attacking then
+		lastAttackingAt = now
+	end
+	local jumpWindow = if now - lastAttackingAt <= 0.1 then 0.35 else MovementConfig.JumpBuffer
+	if not attacking and InputController.HasBufferedJump(jumpWindow) then
 		local canGroundJump = groundJumpAvailable and (now - lastGroundedAt) <= MovementConfig.CoyoteTime
 		if canGroundJump then
 			InputController.ClearJump()
 			groundJumpAvailable = false
 			humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+			-- Despegue INSTANTÁNEO (el salto del Humanoid tarda unos frames en empujar):
+			-- clave para que DLight > salto > aéreo sea un combo verdadero.
+			local vel = root.AssemblyLinearVelocity
+			root.AssemblyLinearVelocity = Vector3.new(vel.X, MovementConfig.JumpVelocity, 0)
 		elseif not grounded and airJumpsLeft > 0 then
 			InputController.ClearJump()
 			airJumpsLeft -= 1

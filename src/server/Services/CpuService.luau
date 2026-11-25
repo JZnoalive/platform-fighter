@@ -19,6 +19,7 @@ local RunService = game:GetService("RunService")
 local CpuConfig = require(ReplicatedStorage.Shared.Config.CpuConfig)
 local MovementConfig = require(ReplicatedStorage.Shared.Config.MovementConfig)
 local Movesets = require(ReplicatedStorage.Shared.Modules.Movesets)
+local OneWayPlatforms = require(ReplicatedStorage.Shared.Modules.OneWayPlatforms)
 local FighterService = require(script.Parent.FighterService)
 local CombatService = require(script.Parent.CombatService)
 
@@ -40,6 +41,7 @@ type Controller = {
 	nextReactAt: number,
 	dodgeVelocity: Vector3,
 	attackToggle: boolean,
+	platformState: { dropUntil: number }, -- plataformas de un solo sentido
 }
 
 local controllers: { [Model]: Controller } = {}
@@ -69,6 +71,8 @@ local function jump(ctrl: Controller, grounded: boolean)
 	local fighter = ctrl.fighter
 	if grounded then
 		fighter.humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+		local vel = fighter.root.AssemblyLinearVelocity -- despegue instantáneo
+		fighter.root.AssemblyLinearVelocity = Vector3.new(vel.X, MovementConfig.JumpVelocity, 0)
 	elseif ctrl.airJumpsLeft > 0 then
 		ctrl.airJumpsLeft -= 1
 		local vel = fighter.root.AssemblyLinearVelocity
@@ -242,6 +246,7 @@ local function step(ctrl: Controller)
 	local fighter = ctrl.fighter
 	local root, humanoid = fighter.root, fighter.humanoid
 	local state = FighterService.GetState(fighter)
+	OneWayPlatforms.Update(fighter.model, root, humanoid, false, ctrl.platformState)
 	local grounded = humanoid.FloorMaterial ~= Enum.Material.Air
 	if grounded then
 		ctrl.airJumpsLeft = MovementConfig.MaxAirJumps
@@ -307,6 +312,7 @@ function CpuService.Attach(fighter: FighterService.Fighter, behavior: string)
 		nextReactAt = 0,
 		dodgeVelocity = Vector3.zero,
 		attackToggle = false,
+		platformState = { dropUntil = 0 },
 	}
 	controllers[fighter.model] = ctrl
 

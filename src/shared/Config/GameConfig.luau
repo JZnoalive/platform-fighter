@@ -2,7 +2,7 @@
 -- Reglas generales de la partida. Solo datos, sin lógica.
 
 local GameConfig = {
-	Version = "0.5.0-firmas",
+	Version = "0.6.0-combos-wiki",
 
 	-- Presentación
 	ShowOverheadPercent = false, -- etiqueta de % encima de la cabeza (el HUD de abajo ya lo muestra)

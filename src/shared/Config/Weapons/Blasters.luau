@@ -127,16 +127,18 @@ return {
 		hitbox = { offset = Vector2.new(2.5, 0.5), size = Vector3.new(2.6, 2.6, 4) },
 	},
 
-	-- Golpe hacia arriba con las culatas
+	-- FIRMA "Cometa oblicuo": un disparo cargado enorme en DIAGONAL hacia arriba.
+	-- Cubre el ángulo por donde vuelve el rival y lo castiga cuando salta.
 	UpHeavy = {
-		startup = 0.3,
-		active = 0.14,
+		startup = 0.32,
+		active = 0.06,
 		recovery = 0.42,
 		damage = 13,
 		baseKnockback = 42,
 		knockbackScale = 0.95,
-		angle = 88,
-		hitbox = { offset = Vector2.new(0, 5), size = Vector3.new(6, 6, 6) },
+		angle = 55,
+		projectile = shot(115, 36, 45, Vector3.new(2.4, 2.4, 4)),
+		hitbox = { offset = Vector2.new(2, 2), size = Vector3.new(2.4, 2.4, 4) },
 	},
 
 	-- Giro a ras de suelo a los dos lados
@@ -150,8 +152,6 @@ return {
 		baseKnockback = 38,
 		knockbackScale = 0.88,
 		angle = 30,
-		linkKnockback = 8,
-		linkAngle = 40,
 		awayFromAttacker = true,
 		hitbox = { offset = Vector2.new(0, -1), size = Vector3.new(12, 3, 6) },
 	},

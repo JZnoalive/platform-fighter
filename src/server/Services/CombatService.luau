@@ -13,15 +13,52 @@ local Remotes = require(script.Parent.Parent.Remotes)
 
 local CombatService = {}
 
-local function getFacing(root: BasePart): number
+local function getRootFacing(root: BasePart): number
 	return if root.CFrame.LookVector.X >= 0 then 1 else -1
 end
 
+-- Hacia dónde mira el luchador PARA SU ATAQUE. El servidor ve el giro del jugador con
+-- retraso: si te girabas y atacabas enseguida, el golpe salía hacia el otro lado.
+-- Por eso el cliente manda su orientación al pedir el ataque y se usa esa.
+local attackFacings: { [Model]: { current: number?, queued: number? } } = setmetatable({}, { __mode = "k" }) :: any
+
+local function facingOf(fighter: FighterService.Fighter): number
+	local entry = fighter.player and attackFacings[fighter.model]
+	if entry and entry.current then
+		return entry.current
+	end
+	return getRootFacing(fighter.root)
+end
+
+-- Compensación de latencia: el servidor ve al JUGADOR con retraso (Roblox interpola su
+-- posición), así que en un combo aéreo la hitbox salía donde estabas hace ~0,15 s.
+-- Mientras ataca, el cliente manda su posición real ("Aim"); si es reciente y está cerca
+-- de lo que ve el servidor (anti-trampas), la hitbox sale desde ahí.
+local CLIENT_POS_MAX_AGE = 0.25
+local CLIENT_POS_MAX_DIST = 20 -- saltando a 75 studs/s, 0,15 s de retraso ya son ~11 studs
+local clientPositions: { [Model]: { pos: Vector3, at: number } } = setmetatable({}, { __mode = "k" }) :: any
+
+local function attackOrigin(fighter: FighterService.Fighter): Vector3
+	local serverPos = fighter.root.Position
+	local report = fighter.player and clientPositions[fighter.model]
+	if report and os.clock() - report.at <= CLIENT_POS_MAX_AGE and (report.pos - serverPos).Magnitude <= CLIENT_POS_MAX_DIST then
+		return report.pos
+	end
+	return serverPos
+end
+
 local function hitboxCFrame(fighter: FighterService.Fighter, attack): CFrame
-	local facing = getFacing(fighter.root)
+	local facing = facingOf(fighter)
 	local offset = attack.hitbox.offset
-	local pos = fighter.root.Position
+	local pos = attackOrigin(fighter)
 	return CFrame.new(pos.X + offset.X * facing, pos.Y + offset.Y, 0)
+end
+
+-- Guarda la posición que dice el cliente (solo números válidos).
+local function storeClientPos(fighter: FighterService.Fighter, pos: any)
+	if typeof(pos) == "Vector3" and pos.X == pos.X and pos.Y == pos.Y then
+		clientPositions[fighter.model] = { pos = Vector3.new(pos.X, pos.Y, 0), at = os.clock() }
+	end
 end
 
 local function makeDebugPart(size: Vector3): BasePart
@@ -94,7 +131,7 @@ end
 
 function CombatService.SpawnOneProjectile(fighter: FighterService.Fighter, attack, angleDegrees: number)
 	local spec = attack.projectile
-	local facing = getFacing(fighter.root)
+	local facing = facingOf(fighter)
 	local angle = math.rad(angleDegrees)
 	local direction = Vector3.new(math.cos(angle) * facing, math.sin(angle), 0)
 	local offset = attack.hitbox.offset
@@ -200,20 +237,38 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack, mo
 		local lastLagTick = -1 -- el hitlag alarga el ataque una vez por impacto
 		local linkAttack = nil
 		if hits > 1 then
+			-- Por defecto el enganche deja al rival QUIETO en el sitio (vertical y flojo):
+			-- así el atacante, que avanza, lo vuelve a alcanzar con el siguiente impacto.
 			linkAttack = table.clone(attack)
-			linkAttack.baseKnockback = attack.linkKnockback or 10
+			linkAttack.baseKnockback = attack.linkKnockback or 6
 			linkAttack.knockbackScale = 0
-			linkAttack.angle = attack.linkAngle or 70
+			linkAttack.angle = attack.linkAngle or 90
+			linkAttack.activeInput = nil
+		end
+
+		-- Active input (guadaña): si MIENTRAS golpeas mantienes la dirección HACIA ATRÁS,
+		-- el golpe lanza hacia atrás (ángulo reflejado). Eliges hacia dónde mandar al rival.
+		-- (fighter.inputDir lo actualiza el cliente con la acción "Aim" durante el ataque.)
+		local function aimed(data)
+			local inputDir = fighter.inputDir
+			if data.activeInput and inputDir ~= 0 and inputDir == -facingOf(fighter) then
+				local mirrored = table.clone(data)
+				mirrored.angle = 180 - data.angle
+				return mirrored
+			end
+			return data
 		end
 
 		local activeEnd = os.clock() + attack.active
 		while not attack.projectile and os.clock() < activeEnd and stillAttacking() do
-			local tick = math.min(hits - 1, math.floor((os.clock() - activeStart) / hitInterval))
+			-- math.max: el nº de impacto NUNCA retrocede (el hitlag retrasa activeStart y,
+			-- sin esto, volvía al impacto anterior y golpeaba en bucle infinito).
+			local tick = math.max(currentTick, math.min(hits - 1, math.floor((os.clock() - activeStart) / hitInterval)))
 			if tick ~= currentTick then
 				currentTick = tick
 				alreadyHit = {} -- nuevo impacto: se puede volver a golpear al mismo rival
 			end
-			local hitData = if linkAttack and tick < hits - 1 then linkAttack else attack
+			local hitData = aimed(if linkAttack and tick < hits - 1 then linkAttack else attack)
 
 			local boxCFrame = hitboxCFrame(fighter, attack)
 			if debugPart then
@@ -235,7 +290,7 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack, mo
 					local target = FighterService.GetFromInstance(part)
 					if target and not alreadyHit[target.model] then
 						alreadyHit[target.model] = true -- un objetivo, un golpe por ataque
-						local direction = getFacing(fighter.root)
+						local direction = facingOf(fighter)
 						if attack.awayFromAttacker then
 							-- Golpes a los dos lados: empujar hacia donde está el rival.
 							direction = if target.root.Position.X >= fighter.root.Position.X then 1 else -1
@@ -258,6 +313,13 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack, mo
 				end
 			end
 
+			-- Golpe único que ya acertó: la hitbox se apaga y empieza la recuperación YA
+			-- (como en Brawlhalla: así DLight > aéreo es un combo verdadero).
+			if landedHit and hits == 1 then
+				-- El hitlag (atacante congelado) no debe comerse la recuperación.
+				task.wait(hitlagExtra)
+				break
+			end
 			RunService.Heartbeat:Wait()
 		end
 		if attack.projectile then
@@ -287,6 +349,11 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack, mo
 		local queuedMove = fighter.queuedMove
 		fighter.queuedAttack = nil
 		if queued and queuedMove and os.clock() - fighter.queuedAt <= GameConfig.AttackBufferWindow then
+			fighter.inputDir = fighter.queuedDir
+			local facings = attackFacings[fighter.model]
+			if facings then
+				facings.current = facings.queued
+			end
 			CombatService.PerformAttack(fighter, queued, queuedMove)
 		end
 	end)
@@ -306,6 +373,16 @@ local function onActionRequest(player: Player, payload: any)
 		FighterService.TryStartDodge(fighter) -- valida estado y enfriamiento
 		return
 	end
+	if payload.action == "Aim" then
+		-- Dirección mantenida durante el ataque (active input). Solo -1, 0 o 1.
+		-- (el cliente solo la manda cuando cambia; sin "dir" se conserva la anterior)
+		if payload.dir ~= nil then
+			fighter.inputDir = if payload.dir == 1 or payload.dir == -1 then payload.dir else 0
+		end
+		storeClientPos(fighter, payload.pos)
+		return
+	end
+	storeClientPos(fighter, payload.pos)
 	if payload.action ~= "Attack" or type(payload.move) ~= "string" then
 		return
 	end
@@ -315,13 +392,27 @@ local function onActionRequest(player: Player, payload: any)
 		return
 	end
 
+	-- Dirección pulsada (-1, 0, 1) para el active input. Cualquier otra cosa = 0.
+	local dir = if payload.dir == 1 or payload.dir == -1 then payload.dir else 0
+	-- Orientación del jugador al pulsar (1 derecha, -1 izquierda).
+	local facing = if payload.facing == 1 or payload.facing == -1 then payload.facing else nil
+	local facings = attackFacings[fighter.model]
+	if not facings then
+		facings = {}
+		attackFacings[fighter.model] = facings
+	end
+
 	local state = FighterService.GetState(fighter)
 	if state == "Idle" then
+		fighter.inputDir = dir
+		facings.current = facing
 		CombatService.PerformAttack(fighter, attack, payload.move)
 	elseif state == "Attacking" and not attack.selfImpulse then
 		-- Pedido durante otro ataque: se guarda y sale al terminar (si no caduca).
 		fighter.queuedAttack = attack
 		fighter.queuedMove = payload.move
+		fighter.queuedDir = dir
+		facings.queued = facing
 		fighter.queuedAt = os.clock()
 	end
 end

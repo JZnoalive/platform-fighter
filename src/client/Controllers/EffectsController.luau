@@ -62,15 +62,140 @@ local function burst(position: Vector3, color: Color3, startSize: number, endSiz
 	end)
 end
 
-local function flashModel(model: Model)
-	local highlight = Instance.new("Highlight")
-	highlight.FillColor = Color3.new(1, 1, 1)
-	highlight.FillTransparency = 0.2
-	highlight.OutlineTransparency = 1
-	highlight.DepthMode = Enum.HighlightDepthMode.Occluded
-	highlight.Parent = model
-	task.delay(0.08, function()
-		highlight:Destroy()
+-- Tinte de golpe (como Brawlhalla): BLANCO un instante y luego celeste pálido durante
+-- todo el aturdimiento, para que se lea "no puede actuar". Reutiliza el Highlight del
+-- contorno (Roblox limita cuántos Highlights se ven a la vez).
+local HIT_WHITE = Color3.new(1, 1, 1)
+local HITSTUN_TINT = Color3.fromRGB(190, 230, 255)
+local tintTokens: { [Model]: number } = setmetatable({}, { __mode = "k" }) :: any
+
+local function ensureOutline(model: Model): Highlight
+	local existing = model:FindFirstChild("Outline")
+	if existing and existing:IsA("Highlight") then
+		return existing
+	end
+	local outline = Instance.new("Highlight")
+	outline.Name = "Outline"
+	outline.FillTransparency = 1
+	outline.OutlineColor = Color3.fromRGB(15, 10, 20)
+	outline.OutlineTransparency = 0.1
+	outline.DepthMode = Enum.HighlightDepthMode.Occluded
+	outline.Parent = model
+	return outline
+end
+
+local function flashModel(model: Model, hitstun: number)
+	local outline = ensureOutline(model)
+	local token = (tintTokens[model] or 0) + 1
+	tintTokens[model] = token
+	outline.FillColor = HIT_WHITE
+	outline.FillTransparency = 0.05
+	task.delay(0.07, function()
+		if tintTokens[model] ~= token then
+			return
+		end
+		outline.FillColor = HITSTUN_TINT
+		outline.FillTransparency = 0.55
+	end)
+	task.delay(math.max(hitstun, 0.1), function()
+		if tintTokens[model] ~= token then
+			return -- otro golpe lo renovó (combo)
+		end
+		TweenService:Create(outline, TweenInfo.new(0.12), { FillTransparency = 1 }):Play()
+	end)
+end
+
+local function makeFx(): Part
+	local part = Instance.new("Part")
+	part.Anchored = true
+	part.CanCollide = false
+	part.CanQuery = false
+	part.CanTouch = false
+	part.CastShadow = false
+	part.Material = Enum.Material.Neon
+	part.Parent = effectsFolder
+	return part
+end
+
+-- Chispa de impacto (referencia: vídeos de Brawlhalla + doc. de gráficos, sección 5):
+--   núcleo blanco (dispara el bloom) + estrella de rayos amarillos orientada según el
+--   golpe + fragmentos eléctricos que saltan y caen + luz puntual breve que ilumina
+--   a los dos luchadores.
+local SPARK_YELLOW = Color3.fromRGB(255, 214, 64)
+local SPARK_ORANGE = Color3.fromRGB(255, 140, 40)
+
+local function hitSpark(position: Vector3, direction: Vector3, strength: number)
+	local pos = Vector3.new(position.X, position.Y, 1.5) -- delante de los luchadores
+	local scale = 0.8 + strength * 0.9 -- 0..1 → tamaño
+
+	-- 1. Núcleo blanco
+	local core = makeFx()
+	core.Shape = Enum.PartType.Ball
+	core.Color = Color3.new(1, 1, 1)
+	core.Size = Vector3.one * (1.2 * scale)
+	core.Position = pos
+	TweenService:Create(core, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+		Size = Vector3.one * (4 * scale),
+		Transparency = 1,
+	}):Play()
+	task.delay(0.12, function()
+		core:Destroy()
+	end)
+
+	-- 2. Estrella de rayos: el más largo sigue la dirección del golpe
+	local baseAngle = math.atan2(direction.Y, direction.X)
+	local rays = 5 + math.floor(strength * 3)
+	for i = 1, rays do
+		local angle = baseAngle + (i - 1) * (2 * math.pi / rays) + (math.random() - 0.5) * 0.3
+		local length = (if i == 1 then 6 else 2.5 + math.random() * 2) * scale
+		local ray = makeFx()
+		ray.Color = if i % 2 == 0 then SPARK_ORANGE else SPARK_YELLOW
+		ray.Size = Vector3.new(0.35 * scale, 0.35 * scale, length)
+		local dir = Vector3.new(math.cos(angle), math.sin(angle), 0)
+		ray.CFrame = CFrame.lookAt(pos + dir * (length / 2), pos + dir * length)
+		TweenService:Create(ray, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Size = Vector3.new(0.05, 0.05, length * 1.5),
+			CFrame = CFrame.lookAt(pos + dir * length, pos + dir * length * 2),
+			Transparency = 1,
+		}):Play()
+		task.delay(0.18, function()
+			ray:Destroy()
+		end)
+	end
+
+	-- 3. Fragmentos eléctricos (partículas con gravedad)
+	local holder = makeFx()
+	holder.Transparency = 1
+	holder.Size = Vector3.one * 0.2
+	holder.Position = pos
+	local emitter = Instance.new("ParticleEmitter")
+	emitter.Color = ColorSequence.new(Color3.new(1, 1, 0.8), SPARK_YELLOW)
+	emitter.LightEmission = 1
+	emitter.LightInfluence = 0
+	emitter.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.45 * scale),
+		NumberSequenceKeypoint.new(1, 0),
+	})
+	emitter.Transparency = NumberSequence.new(0, 0.3)
+	emitter.Lifetime = NumberRange.new(0.25, 0.5)
+	emitter.Speed = NumberRange.new(20 * scale, 45 * scale)
+	emitter.SpreadAngle = Vector2.new(180, 180)
+	emitter.Acceleration = Vector3.new(0, -90, 0)
+	emitter.Drag = 4
+	emitter.Rate = 0
+	emitter.Parent = holder
+	emitter:Emit(10 + math.floor(strength * 14))
+
+	-- 4. Luz puntual de impacto
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(255, 225, 150)
+	light.Range = 10 + 10 * strength
+	light.Brightness = 4 + 4 * strength
+	light.Shadows = false
+	light.Parent = holder
+	TweenService:Create(light, TweenInfo.new(0.12), { Brightness = 0 }):Play()
+	task.delay(0.6, function()
+		holder:Destroy()
 	end)
 end
 
@@ -121,18 +246,27 @@ local function onHit(targetModel: Model?, position: Vector3, force: number, dura
 		launchTrail(targetModel, duration or 0.5)
 	end
 	local heavy = force >= HEAVY_FORCE
+	-- Dirección del golpe: del atacante hacia el golpeado (para orientar la chispa).
+	local direction = Vector3.new(1, 0.3, 0)
+	local attackerRoot = attackerModel and attackerModel:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if attackerRoot then
+		local d = position - attackerRoot.Position
+		if d.Magnitude > 0.1 then
+			direction = Vector3.new(d.X, d.Y + 1, 0).Unit
+		end
+	end
+	local strength = math.clamp(force / 110, 0, 1)
+	hitSpark(position, direction, strength)
 	if heavy then
-		burst(position, Color3.fromRGB(255, 150, 60), 1.5, 9, 0.22)
-		burst(position, Color3.fromRGB(255, 255, 255), 1, 4, 0.12)
+		hitSpark(position, -direction, strength * 0.6) -- segunda estrella cruzada en los fuertes
 		CameraController.Shake(0.7, 0.25)
 		playSound(AudioConfig.HitHeavy)
 	else
-		burst(position, Color3.fromRGB(255, 240, 170), 1, 4, 0.14)
 		CameraController.Shake(0.15, 0.08)
 		playSound(AudioConfig.HitLight)
 	end
 	if targetModel and targetModel.Parent then
-		flashModel(targetModel)
+		flashModel(targetModel, duration or 0.3)
 	end
 end
 
@@ -180,19 +314,7 @@ local function onMatchEvent(kind: string, data: { [string]: any })
 end
 
 -- Contorno negro en los luchadores (estilo cartoon): se leen mejor sobre el fondo.
-local function ensureOutline(model: Model)
-	if model:FindFirstChild("Outline") then
-		return
-	end
-	local outline = Instance.new("Highlight")
-	outline.Name = "Outline"
-	outline.FillTransparency = 1
-	outline.OutlineColor = Color3.fromRGB(15, 10, 20)
-	outline.OutlineTransparency = 0.1
-	outline.DepthMode = Enum.HighlightDepthMode.Occluded
-	outline.Parent = model
-end
-
+-- (ensureOutline está arriba: el tinte de golpe usa el mismo Highlight)
 local function outlineLoop()
 	while true do
 		for _, player in Players:GetPlayers() do
