@@ -47,3 +47,33 @@ Los nombres en código siguen siendo `Brawler` y `Blade`.
   (`Weapons/Sword.luau`), no la malla. Si la espada final es mucho más larga o corta que
   ~5 studs, avisar para ajustar los `offset` de sus ataques.
 - Contraste en pantalla: Brawler cálido (naranja/cobre) vs Blade frío (violeta/magenta). ✔
+
+---
+
+## Sistema de leyendas (v0.7) — idea de Brawlhalla, contenido propio
+
+Cada personaje tiene **2 armas** y **4 stats** (de 3 a 9, suman 22; 5 = normal).
+Los datos están en `src/shared/Config/CharacterStyles.luau` y las fórmulas en
+`src/shared/Modules/FighterStats.luau`:
+
+| Stat | Qué hace (por cada punto sobre 5) |
+|---|---|
+| Fuerza | +3 % daño y +4 % knockback al golpear |
+| Destreza | −3 % startup y recovery de los ataques LIGEROS |
+| Defensa | −3 % daño y −3,5 % knockback recibidos |
+| Velocidad | +3 % velocidad corriendo y en el aire |
+
+| Personaje | Idea de referencia (solo mecánica) | Armas | FUE/DES/DEF/VEL |
+|---|---|---|---|
+| **Forja** (Brawler) | leyenda de fuerza y remate | Puños / Pistolas | 7 / 4 / 6 / 5 |
+| **Vórtice** (Blade) | espadachín veloz y frágil | Espada / Guadaña | 5 / 7 / 3 / 7 |
+| **Umbra** (nuevo) | leyenda defensiva de guadaña + pistolas que controla el borde | Guadaña / Pistolas | 4 / 5 / 7 / 6 |
+
+### Umbra — diseño propio
+Vigía encapuchada: capucha y bufanda **turquesa** (`#2BB5A8`), abrigo gris pizarra
+(`#3A4250`), botas altas (`#1B1F27`) y ojos blancos brillantes bajo la capucha
+(acento del 10 %). Nada de pelo rubio ni guadaña de segadora clásica.
+Juega a defender el borde: la firma de pistolas "Cometa oblicuo" (disparo en diagonal)
+y la de guadaña "Trampa del abismo" (barrido raso que echa fuera al que vuelve).
+
+En el menú de práctica: filas **"Mi personaje"** y **"Personaje de la CPU"**.

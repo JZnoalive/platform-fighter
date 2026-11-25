@@ -19,6 +19,7 @@ local RunService = game:GetService("RunService")
 local CpuConfig = require(ReplicatedStorage.Shared.Config.CpuConfig)
 local CharacterStyles = require(ReplicatedStorage.Shared.Config.CharacterStyles)
 local WeaponStyles = require(ReplicatedStorage.Shared.Config.WeaponStyles)
+local FighterStats = require(ReplicatedStorage.Shared.Modules.FighterStats)
 local FighterService = require(script.Parent.FighterService)
 local CpuService = require(script.Parent.CpuService)
 local AppearanceService = require(script.Parent.AppearanceService)
@@ -33,6 +34,7 @@ local spawning = false
 local cpuFighter: FighterService.Fighter? = nil
 local spawnCFrame: CFrame? = nil
 local currentBehavior = CpuConfig.DefaultBehavior
+local cpuFighterId = "Blade" -- personaje de la CPU (cambiable en el menú)
 local cpuWeapon = CharacterStyles.Blade.defaultWeapon -- se conserva aunque la CPU se recree
 local matchControl = false -- true = la CPU está en una partida "VsCpu" (la gestiona MatchService)
 local startVsCpuCallback: ((Player) -> ())? = nil
@@ -80,7 +82,7 @@ local function spawnCpu()
 
 	local ok, model = pcall(function()
 		return Players:CreateHumanoidModelFromDescription(
-			AppearanceService.GetDescription("Blade"),
+			AppearanceService.GetDescription(cpuFighterId),
 			Enum.HumanoidRigType.R15
 		)
 	end)
@@ -96,9 +98,9 @@ local function spawnCpu()
 	end
 
 	spawnCFrame = CFrame.new(spawnPart.Position.X, spawnPart.Position.Y + 3, 0) * FACE_LEFT
-	model.Name = "CPU_Blade"
+	model.Name = `CPU_{cpuFighterId}`
 	model:PivotTo(spawnCFrame :: CFrame)
-	AppearanceService.AddGear(model, "Blade") -- pelo, cuello, franja (estilo bloque)
+	AppearanceService.AddGear(model, cpuFighterId) -- pelo, capucha, botas... (estilo bloque)
 	AppearanceService.SetWeapon(model, cpuWeapon) -- espada por defecto (cambiable en el menú)
 	local humanoid = model:FindFirstChildOfClass("Humanoid")
 	if humanoid then
@@ -106,13 +108,13 @@ local function spawnCpu()
 	end
 	model.Parent = workspace
 
-	local fighter = FighterService.Register(model, "Cpu", "Blade", nil)
+	local fighter = FighterService.Register(model, "Cpu", cpuFighterId, nil)
 	if not fighter then
 		model:Destroy()
 		return
 	end
 	fighter.root:SetNetworkOwner(nil) -- el servidor controla su física
-	model:SetAttribute("DisplayName", "Blade (CPU)")
+	model:SetAttribute("DisplayName", `{CharacterStyles[cpuFighterId].displayName or cpuFighterId} (CPU)`)
 	CollectionService:AddTag(model, "CameraTarget") -- la cámara también la encuadra
 	CpuService.Attach(fighter, currentBehavior)
 	cpuFighter = fighter
@@ -179,6 +181,22 @@ local function onPracticeCommand(player: Player, command: any, value: any)
 		if type(value) == "string" and WeaponStyles[value] then
 			cpuWeapon = value
 			AppearanceService.SetWeapon(fighter.model, value)
+		end
+	elseif command == "Character" then
+		-- Cambiar MI personaje: se recuerda y reaparezco con él (y con su arma).
+		if type(value) == "string" and table.find(FighterStats.Roster, value) then
+			player:SetAttribute("FighterChoice", value)
+			player:SetAttribute("PreferredWeapon", nil)
+			player:LoadCharacter()
+		end
+	elseif command == "CpuCharacter" then
+		-- Cambiar el personaje de la CPU: se recrea con su aspecto y su arma.
+		if type(value) == "string" and table.find(FighterStats.Roster, value) and value ~= cpuFighterId then
+			cpuFighterId = value
+			cpuWeapon = CharacterStyles[value].defaultWeapon
+			fighter.model:Destroy() -- FighterService y CpuService la dan de baja solos
+			cpuFighter = nil
+			TrainingService.SetActive(true) -- crea la nueva
 		end
 	end
 end

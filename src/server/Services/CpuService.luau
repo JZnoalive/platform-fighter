@@ -19,6 +19,7 @@ local RunService = game:GetService("RunService")
 local CpuConfig = require(ReplicatedStorage.Shared.Config.CpuConfig)
 local MovementConfig = require(ReplicatedStorage.Shared.Config.MovementConfig)
 local Movesets = require(ReplicatedStorage.Shared.Modules.Movesets)
+local FighterStats = require(ReplicatedStorage.Shared.Modules.FighterStats)
 local OneWayPlatforms = require(ReplicatedStorage.Shared.Modules.OneWayPlatforms)
 local FighterService = require(script.Parent.FighterService)
 local CombatService = require(script.Parent.CombatService)
@@ -82,7 +83,7 @@ end
 
 local function attack(ctrl: Controller, moveName: string): boolean
 	local fighter = ctrl.fighter
-	local moveset = Movesets[fighter.model:GetAttribute("Weapon")] -- según el arma que lleva
+	local moveset = FighterStats.Moveset(fighter.model:GetAttribute("Weapon"), fighter.fighterId) -- según el arma que lleva
 	local data = moveset and moveset[moveName]
 	if not data or FighterService.GetState(fighter) ~= "Idle" then
 		return false
@@ -276,6 +277,7 @@ local function step(ctrl: Controller)
 		end
 		humanoid.WalkSpeed = (if grounded then MovementConfig.GroundSpeed else MovementConfig.AirSpeed)
 			* CpuConfig.SpeedMultiplier
+			* FighterStats.SpeedMultiplier(fighter.fighterId)
 		humanoid:Move(Vector3.new(moveX, 0, 0))
 	else
 		humanoid:Move(Vector3.zero)

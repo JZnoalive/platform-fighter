@@ -20,6 +20,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Movesets = require(ReplicatedStorage.Shared.Modules.Movesets)
+local FighterStats = require(ReplicatedStorage.Shared.Modules.FighterStats)
 local InputController = require(script.Parent.InputController)
 local MovementController = require(script.Parent.MovementController)
 local AnimationController = require(script.Parent.AnimationController)
@@ -148,7 +149,7 @@ function CombatController.Start()
 				facing = MovementController.GetFacing(),
 			})
 
-			local moveset = Movesets[character:GetAttribute("Weapon")]
+			local moveset = FighterStats.Moveset(character:GetAttribute("Weapon"), character:GetAttribute("FighterId"))
 			local attack = moveset and moveset[moveName]
 			if isIdle and attack then
 				-- Desde YA cuenta como atacando en mi pantalla (no girar, no caminar), sin

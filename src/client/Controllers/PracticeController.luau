@@ -10,6 +10,8 @@ local UserInputService = game:GetService("UserInputService")
 
 local CpuConfig = require(ReplicatedStorage.Shared.Config.CpuConfig)
 local WeaponStyles = require(ReplicatedStorage.Shared.Config.WeaponStyles)
+local CharacterStyles = require(ReplicatedStorage.Shared.Config.CharacterStyles)
+local FighterStats = require(ReplicatedStorage.Shared.Modules.FighterStats)
 
 local PracticeController = {}
 
@@ -24,6 +26,8 @@ local panel: Frame
 local behaviorButtons: { [string]: TextButton } = {}
 local myWeaponButtons: { [string]: TextButton } = {}
 local cpuWeaponButtons: { [string]: TextButton } = {}
+local myCharacterButtons: { [string]: TextButton } = {}
+local cpuCharacterButtons: { [string]: TextButton } = {}
 local hitboxButton: TextButton
 
 local function makeLabel(parent: Instance, text: string, order: number)
@@ -71,6 +75,38 @@ local function refreshHitboxes()
 	hitboxButton.Text = if workspace:GetAttribute("DebugHitboxes") then "Hitboxes: SÍ" else "Hitboxes: NO"
 end
 
+-- Fila de botones de personaje (Forja / Vórtice / Umbra). Devuelve los botones por id.
+local function makeCharacterRow(order: number, onClick: (string) -> ()): { [string]: TextButton }
+	local row = Instance.new("Frame")
+	row.LayoutOrder = order
+	row.Size = UDim2.new(1, 0, 0, 26)
+	row.BackgroundTransparency = 1
+	row.Parent = panel
+	local layout = Instance.new("UIListLayout")
+	layout.FillDirection = Enum.FillDirection.Horizontal
+	layout.SortOrder = Enum.SortOrder.LayoutOrder
+	layout.Padding = UDim.new(0, 3)
+	layout.Parent = row
+
+	local buttons = {}
+	local count = #FighterStats.Roster
+	for index, fighterId in FighterStats.Roster do
+		local style = CharacterStyles[fighterId]
+		local button = makeButton(
+			row,
+			if style then style.displayName or fighterId else fighterId,
+			index,
+			UDim2.new(1 / count, -3 * (count - 1) / count, 1, 0)
+		)
+		button.TextSize = 12
+		button.Activated:Connect(function()
+			onClick(fighterId)
+		end)
+		buttons[fighterId] = button
+	end
+	return buttons
+end
+
 -- Fila de 4 botones de arma. onClick(weaponId). Devuelve los botones por arma.
 local function makeWeaponRow(order: number, onClick: (string) -> ()): { [string]: TextButton }
 	local row = Instance.new("Frame")
@@ -113,6 +149,15 @@ local function refreshWeapons()
 	end
 	for weaponId, button in cpuWeaponButtons do
 		button.BackgroundColor3 = if weaponId == cpuWeapon then COLOR_CPU else COLOR_BUTTON
+	end
+	-- Personajes (atributo FighterId)
+	local myFighter = character and character:GetAttribute("FighterId")
+	local cpuFighter = cpu and cpu:GetAttribute("FighterId")
+	for fighterId, button in myCharacterButtons do
+		button.BackgroundColor3 = if fighterId == myFighter then COLOR_SELECTED else COLOR_BUTTON
+	end
+	for fighterId, button in cpuCharacterButtons do
+		button.BackgroundColor3 = if fighterId == cpuFighter then COLOR_CPU else COLOR_BUTTON
 	end
 end
 
@@ -157,6 +202,16 @@ local function build(practiceCommand: RemoteEvent)
 	vsCpuButton.Font = Enum.Font.GothamBold
 	vsCpuButton.Activated:Connect(function()
 		practiceCommand:FireServer("StartVsCpu")
+	end)
+
+	-- Personajes (estilo leyendas: cada uno con 2 armas y sus stats)
+	makeLabel(panel, "Mi personaje:", nextOrder())
+	myCharacterButtons = makeCharacterRow(nextOrder(), function(fighterId)
+		practiceCommand:FireServer("Character", fighterId)
+	end)
+	makeLabel(panel, "Personaje de la CPU:", nextOrder())
+	cpuCharacterButtons = makeCharacterRow(nextOrder(), function(fighterId)
+		practiceCommand:FireServer("CpuCharacter", fighterId)
 	end)
 
 	-- Armas (estilo Brawlhalla): cada arma tiene sus propios ataques.

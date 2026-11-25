@@ -19,6 +19,7 @@ local RunService = game:GetService("RunService")
 
 local Animations = require(ReplicatedStorage.Shared.Config.Animations)
 local Movesets = require(ReplicatedStorage.Shared.Modules.Movesets)
+local FighterStats = require(ReplicatedStorage.Shared.Modules.FighterStats)
 local Poses = require(ReplicatedStorage.Shared.Config.Poses)
 
 local PoseController = {}
@@ -98,7 +99,7 @@ local function attackPose(model: Model)
 	local moveName = model:GetAttribute("Move")
 	local moveTime = model:GetAttribute("MoveTime")
 	local weapon = model:GetAttribute("Weapon")
-	local moveset = Movesets[weapon]
+	local moveset = FighterStats.Moveset(weapon, model:GetAttribute("FighterId"))
 	local data = moveset and moveName and moveset[moveName]
 	-- Pose propia del arma si existe (Poses.Weapons), si no la general (Poses.Moves).
 	local weaponPoses = Poses.Weapons[weapon]

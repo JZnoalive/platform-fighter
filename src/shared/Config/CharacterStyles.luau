@@ -21,9 +21,14 @@ return {
 	---------------------------------------------------------------- BRAWLER
 	-- "Forja Cinética": guanteletes neumáticos, gafas de soldador, mono gris, botas.
 	Brawler = {
+		displayName = "Forja",
+		-- Estilo leyenda: 2 armas + 4 stats (Fuerza/Destreza/Defensa/Velocidad, suman 22).
+		-- Idea de referencia: leyendas de fuerza y remate (tipo Cross). Kit y look propios.
+		weapons = { "Gauntlets", "Blasters" },
+		stats = { strength = 7, dexterity = 4, defense = 6, speed = 5 },
 		hudColor = "D94E28", -- color de su tarjeta en el HUD
 		defaultWeapon = "Gauntlets", -- arma con la que aparece (ver WeaponStyles.luau)
-		headScale = 1.18, -- cabeza algo más grande (estilo juego de lucha / anime)
+		headScale = 1.6, -- cabeza GRANDE (proporción chibi ~1:2,5, legible a distancia)
 		bodyColors = {
 			head = "E8B796", -- piel
 			torso = "EDE6D6", -- camiseta blanco hueso
@@ -74,9 +79,13 @@ return {
 	---------------------------------------------------------------- BLADE
 	-- "Vórtice Amatista": traje obsidiana, bolero titanio, pelo lavanda, espadón violeta.
 	Blade = {
+		displayName = "Vórtice",
+		-- Idea de referencia: espadachines veloces y frágiles (tipo Jiro). Kit y look propios.
+		weapons = { "Sword", "Scythe" },
+		stats = { strength = 5, dexterity = 7, defense = 3, speed = 7 },
 		hudColor = "7C3AED",
 		defaultWeapon = "Sword",
-		headScale = 1.15,
+		headScale = 1.55, -- chibi
 		bodyColors = {
 			head = "F2D7C9", -- piel
 			torso = "1E1B2E", -- chaqueta bolero titanio oscuro
@@ -105,6 +114,64 @@ return {
 				color = "F43F8E", material = "Neon" },
 
 			-- (El espadón es un ARMA: está en WeaponStyles.luau)
+		},
+	},
+
+	---------------------------------------------------------------- UMBRA
+	-- "Umbra": vigía encapuchada que defiende el borde. Idea de referencia: la leyenda
+	-- defensiva de guadaña + pistolas (tipo Nix) que pidió el usuario. Diseño PROPIO:
+	-- capucha y bufanda turquesa sobre ropa gris pizarra (nada de pelo rubio ni guadaña
+	-- de segadora clásica). Paleta 60-30-10: pizarra / turquesa / blanco hueso.
+	Umbra = {
+		displayName = "Umbra",
+		weapons = { "Scythe", "Blasters" },
+		stats = { strength = 4, dexterity = 5, defense = 7, speed = 6 },
+		hudColor = "2BB5A8",
+		defaultWeapon = "Scythe",
+		headScale = 1.55, -- chibi
+		bodyColors = {
+			head = "D9B8A0", -- piel
+			torso = "3A4250", -- abrigo pizarra
+			arms = "3A4250",
+			legs = "262B35",
+		},
+		gear = {
+			-- Capucha (cubre la cabeza por arriba y por detrás)
+			{ name = "Hood", part = "Head",
+				size = { scale = Vector3.new(1.16, 0.62, 1.12), add = ZERO },
+				offset = { scale = Vector3.new(0, 0.34, 0.08), add = ZERO },
+				color = "2BB5A8", material = "SmoothPlastic" },
+			{ name = "HoodBack", part = "Head",
+				size = { scale = Vector3.new(1.1, 0.8, 0.3), add = ZERO },
+				offset = { scale = Vector3.new(0, 0, 0.6), add = ZERO },
+				color = "23968B", material = "SmoothPlastic" },
+			-- Ojos brillantes bajo la capucha (acento del 10 %)
+			{ name = "EyeGlowR", part = "Head",
+				size = { scale = Vector3.new(0.14, 0.08, 0.06), add = ZERO },
+				offset = { scale = Vector3.new(0.2, 0.05, -0.53), add = ZERO },
+				color = "F2F6E9", material = "Neon" },
+			{ name = "EyeGlowL", part = "Head",
+				size = { scale = Vector3.new(0.14, 0.08, 0.06), add = ZERO },
+				offset = { scale = Vector3.new(-0.2, 0.05, -0.53), add = ZERO },
+				color = "F2F6E9", material = "Neon" },
+			-- Bufanda larga turquesa
+			{ name = "Scarf", part = "UpperTorso",
+				size = { scale = Vector3.new(0.9, 0.25, 1.15), add = ZERO },
+				offset = { scale = Vector3.new(0, 0.5, 0), add = ZERO },
+				color = "2BB5A8", material = "SmoothPlastic" },
+			{ name = "ScarfTail", part = "UpperTorso",
+				size = { scale = Vector3.new(0.25, 0.8, 0.12), add = ZERO },
+				offset = { scale = Vector3.new(0.25, 0.05, 0.6), add = ZERO },
+				color = "23968B", material = "SmoothPlastic" },
+			-- Botas altas
+			{ name = "BootR", part = "RightFoot",
+				size = { scale = Vector3.new(1.1, 1.5, 1.12), add = ZERO },
+				offset = { scale = ZERO, add = Vector3.new(0, 0.08, 0) },
+				color = "1B1F27", material = "SmoothPlastic" },
+			{ name = "BootL", part = "LeftFoot",
+				size = { scale = Vector3.new(1.1, 1.5, 1.12), add = ZERO },
+				offset = { scale = ZERO, add = Vector3.new(0, 0.08, 0) },
+				color = "1B1F27", material = "SmoothPlastic" },
 		},
 	},
 }

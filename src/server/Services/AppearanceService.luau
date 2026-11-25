@@ -15,7 +15,7 @@ local Movesets = require(ReplicatedStorage.Shared.Modules.Movesets)
 
 local AppearanceService = {}
 
-local PLAYER_FIGHTER_ID = "Brawler"
+local PLAYER_FIGHTER_ID = "Brawler" -- personaje por defecto si no eligió otro
 local APPEARANCE_WAIT = 3 -- segundos máximos esperando a que Roblox cargue el avatar
 
 -- Si el juego usa avatares R6, estas partes R15 no existen: se usa la equivalente.
@@ -187,18 +187,24 @@ local function dressPlayerCharacter(player: Player, character: Model)
 		return
 	end
 
+	-- Personaje elegido en el menú (atributo FighterChoice), o Brawler.
+	local fighterId = player:GetAttribute("FighterChoice")
+	if type(fighterId) ~= "string" or not CharacterStyles[fighterId] then
+		fighterId = PLAYER_FIGHTER_ID
+	end
+
 	local ok, err = pcall(function()
-		humanoid:ApplyDescription(AppearanceService.GetDescription(PLAYER_FIGHTER_ID))
+		humanoid:ApplyDescription(AppearanceService.GetDescription(fighterId))
 	end)
 	if not ok then
 		warn("[AppearanceService] no se pudo aplicar el aspecto a", player.Name, err)
 	end
 	if character.Parent then
-		AppearanceService.AddGear(character, PLAYER_FIGHTER_ID)
+		AppearanceService.AddGear(character, fighterId)
 		-- Arma: la última que eligió en la práctica, o la de su personaje.
 		local weapon = player:GetAttribute("PreferredWeapon")
 		if type(weapon) ~= "string" or not WeaponStyles[weapon] then
-			weapon = CharacterStyles[PLAYER_FIGHTER_ID].defaultWeapon
+			weapon = CharacterStyles[fighterId].defaultWeapon
 		end
 		AppearanceService.SetWeapon(character, weapon)
 	end

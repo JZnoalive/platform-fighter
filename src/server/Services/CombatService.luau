@@ -176,7 +176,10 @@ function CombatService.SpawnOneProjectile(fighter: FighterService.Fighter, attac
 				for _, part in workspace:GetPartBoundsInBox(boxCFrame, size, params) do
 					local target = FighterService.GetFromInstance(part)
 					if target then
-						FighterService.ApplyHit(target, attack, facing)
+						-- El disparo recuerda quién lo lanzó (para su stat de Fuerza).
+						local shotData = table.clone(attack)
+						shotData.ownerFighterId = fighter.fighterId
+						FighterService.ApplyHit(target, shotData, facing)
 						visual:Destroy()
 						return
 					end

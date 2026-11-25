@@ -10,6 +10,7 @@ local CharacterStyles = require(ReplicatedStorage.Shared.Config.CharacterStyles)
 local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 local Knockback = require(ReplicatedStorage.Shared.Modules.Knockback)
 local Movesets = require(ReplicatedStorage.Shared.Modules.Movesets)
+local FighterStats = require(ReplicatedStorage.Shared.Modules.FighterStats)
 local Remotes = require(script.Parent.Parent.Remotes)
 
 local FighterService = {}
@@ -153,7 +154,7 @@ end
 
 -- Ataques del arma que lleva ahora el luchador (atributo "Weapon").
 function FighterService.GetMoveset(fighter: Fighter)
-	return Movesets[fighter.model:GetAttribute("Weapon")]
+	return FighterStats.Moveset(fighter.model:GetAttribute("Weapon"), fighter.fighterId)
 end
 
 function FighterService.SetState(fighter: Fighter, state: string)
@@ -198,19 +199,25 @@ function FighterService.ApplyHit(target: Fighter, attack, facing: number, attack
 		return
 	end
 
-	local percent = (target.model:GetAttribute("Percent") or 0) + attack.damage
+	-- Stats de leyenda: Fuerza del atacante y Defensa del objetivo cambian daño y knockback.
+	-- (Los proyectiles no pasan attacker: llevan ownerFighterId en el ataque.)
+	local attackerId = if attacker then attacker.fighterId else attack.ownerFighterId
+	local damageMult, knockbackMult = FighterStats.HitMultipliers(attackerId, target.fighterId)
+	local damage = math.max(1, math.floor(attack.damage * damageMult + 0.5))
+
+	local percent = (target.model:GetAttribute("Percent") or 0) + damage
 	target.model:SetAttribute("Percent", percent)
 
 	-- Contador de combo: si ya estaba aturdido, este golpe suma al combo.
 	if state == "Hitstun" then
 		target.model:SetAttribute("ComboHits", (target.model:GetAttribute("ComboHits") or 0) + 1)
-		target.model:SetAttribute("ComboDamage", (target.model:GetAttribute("ComboDamage") or 0) + attack.damage)
+		target.model:SetAttribute("ComboDamage", (target.model:GetAttribute("ComboDamage") or 0) + damage)
 	else
 		target.model:SetAttribute("ComboHits", 1)
-		target.model:SetAttribute("ComboDamage", attack.damage)
+		target.model:SetAttribute("ComboDamage", damage)
 	end
 
-	local velocity, hitstun = Knockback.Compute(attack, percent, facing)
+	local velocity, hitstun = Knockback.Compute(attack, percent, facing, knockbackMult)
 	local hitlag = FighterService.ComputeHitlag(attack)
 
 	-- Congelar a los dos durante el hitlag (lo leen MovementController y CpuService).
@@ -308,12 +315,21 @@ function FighterService.TryStartDodge(fighter: Fighter): boolean
 	return true
 end
 
+-- Personaje que eligió el jugador (atributo "FighterChoice", lo pone el menú de práctica).
+function FighterService.GetPlayerFighterId(player: Player): string
+	local choice = player:GetAttribute("FighterChoice")
+	if type(choice) == "string" and CharacterStyles[choice] then
+		return choice
+	end
+	return "Brawler"
+end
+
 local function onPlayerAdded(player: Player)
 	player.CharacterAdded:Connect(function(character)
-		FighterService.Register(character, "Player", "Brawler", player)
+		FighterService.Register(character, "Player", FighterService.GetPlayerFighterId(player), player)
 	end)
 	if player.Character then
-		task.spawn(FighterService.Register, player.Character, "Player", "Brawler", player)
+		task.spawn(FighterService.Register, player.Character, "Player", FighterService.GetPlayerFighterId(player), player)
 	end
 end
 

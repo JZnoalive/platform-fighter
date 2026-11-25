@@ -16,6 +16,7 @@ local RunService = game:GetService("RunService")
 local Animations = require(ReplicatedStorage.Shared.Config.Animations)
 local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 local Movesets = require(ReplicatedStorage.Shared.Modules.Movesets)
+local FighterStats = require(ReplicatedStorage.Shared.Modules.FighterStats)
 
 local AnimationController = {}
 
@@ -143,7 +144,7 @@ local function playLoop(model: Model, st: ModelState, key: string, animationId: 
 end
 
 local function attackDuration(model: Model): number?
-	local moveset = Movesets[model:GetAttribute("Weapon")]
+	local moveset = FighterStats.Moveset(model:GetAttribute("Weapon"), model:GetAttribute("FighterId"))
 	local data = moveset and moveset[model:GetAttribute("Move")]
 	if not data then
 		return nil
@@ -206,7 +207,7 @@ function AnimationController.PredictAttack(moveName: string)
 		return
 	end
 	local animationId = AnimationController.GetAttackAnimation(character:GetAttribute("Weapon"), moveName)
-	local moveset = Movesets[character:GetAttribute("Weapon")]
+	local moveset = FighterStats.Moveset(character:GetAttribute("Weapon"), character:GetAttribute("FighterId"))
 	local data = moveset and moveset[moveName]
 	if not animationId or not data then
 		return

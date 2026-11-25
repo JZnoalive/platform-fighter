@@ -11,6 +11,7 @@ local RunService = game:GetService("RunService")
 local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 local MovementConfig = require(ReplicatedStorage.Shared.Config.MovementConfig)
 local OneWayPlatforms = require(ReplicatedStorage.Shared.Modules.OneWayPlatforms)
+local FighterStats = require(ReplicatedStorage.Shared.Modules.FighterStats)
 local InputController = require(script.Parent.InputController)
 
 local MovementController = {}
@@ -298,7 +299,9 @@ local function step(dt: number)
 	-- 1. Horizontal: acelerar hacia la velocidad objetivo.
 	-- Atacando en el suelo no se avanza; en el aire se conserva el control.
 	local moveX = if attacking and grounded then 0 else InputController.GetMoveX()
-	local maxSpeed = if grounded then MovementConfig.GroundSpeed else MovementConfig.AirSpeed
+	-- Stat de Velocidad del personaje (FighterStats)
+	local maxSpeed = (if grounded then MovementConfig.GroundSpeed else MovementConfig.AirSpeed)
+		* FighterStats.SpeedMultiplier(character:GetAttribute("FighterId"))
 	local rate
 	if moveX ~= 0 then
 		rate = if grounded then MovementConfig.GroundAcceleration else MovementConfig.AirAcceleration
