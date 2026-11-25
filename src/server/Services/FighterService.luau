@@ -113,6 +113,19 @@ function FighterService.Register(model: Model, kind: string, fighterId: string, 
 		end
 	end)
 
+	-- Grupo de colisión "luchador" también en el SERVIDOR: los luchadores se atraviesan
+	-- entre sí (si no, un rival lanzado hacia atrás por la guadaña chocaba con el atacante).
+	-- El cliente lo cambia en su pantalla para las plataformas de un solo sentido.
+	local function setFighterGroup(part: Instance)
+		if part:IsA("BasePart") then
+			part.CollisionGroup = "Fighter"
+		end
+	end
+	for _, part in model:GetDescendants() do
+		setFighterGroup(part)
+	end
+	model.DescendantAdded:Connect(setFighterGroup)
+
 	return fighter
 end
 
@@ -266,6 +279,67 @@ function FighterService.ApplyHit(target: Fighter, attack, facing: number, attack
 			target.humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
 		end
 	end)
+end
+
+-- GANCHO (guadaña, como en Brawlhalla): el golpe engancha al rival, lo deja aturdido y
+-- SIN knockback, para que CombatService lo arrastre hasta el atacante y después lo lance
+-- hacia donde elija el jugador. Devuelve true si enganchó.
+function FighterService.ApplyGrab(target: Fighter, damage: number, duration: number, attacker: Fighter): boolean
+	local state = FighterService.GetState(target)
+	if
+		target.model:GetAttribute("Invulnerable")
+		or state == "Dodging"
+		or state == "KO"
+		or state == "Respawning"
+		or state == "Eliminated"
+	then
+		return false
+	end
+	local damageMult = FighterStats.HitMultipliers(attacker.fighterId, target.fighterId)
+	local dealt = math.max(1, math.floor(damage * damageMult + 0.5))
+	target.model:SetAttribute("Percent", (target.model:GetAttribute("Percent") or 0) + dealt)
+	if state == "Hitstun" then
+		target.model:SetAttribute("ComboHits", (target.model:GetAttribute("ComboHits") or 0) + 1)
+		target.model:SetAttribute("ComboDamage", (target.model:GetAttribute("ComboDamage") or 0) + dealt)
+	else
+		target.model:SetAttribute("ComboHits", 1)
+		target.model:SetAttribute("ComboDamage", dealt)
+	end
+	attacker.lastLandedAt = os.clock()
+	Remotes.HitEvent:FireAllClients(target.model, target.root.Position, 20, duration, attacker.model)
+
+	target.hitToken += 1
+	local token = target.hitToken
+	target.queuedAttack = nil
+	target.model:SetAttribute("State", "Hitstun")
+	if not target.player then
+		target.humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+	end
+	-- Red de seguridad: si nadie lo lanza (el atacante fue golpeado...), se suelta solo.
+	task.delay(duration + 0.6, function()
+		if target.hitToken == token and target.model.Parent and FighterService.GetState(target) == "Hitstun" then
+			target.model:SetAttribute("State", "Idle")
+			if not target.player then
+				target.humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
+			end
+		end
+	end)
+	return true
+end
+
+-- Mueve al enganchado hacia un punto (lo llama CombatService cada frame del arrastre).
+function FighterService.PullTo(target: Fighter, point: Vector3, timeLeft: number)
+	local toPoint = Vector3.new(point.X, point.Y, 0) - Vector3.new(target.root.Position.X, target.root.Position.Y, 0)
+	local velocity = toPoint / math.max(timeLeft, 0.05)
+	if velocity.Magnitude > 140 then
+		velocity = velocity.Unit * 140
+	end
+	if target.player then
+		-- El jugador es dueño de su física: se le manda la velocidad (sin hitlag).
+		Remotes.ApplyKnockback:FireClient(target.player, velocity, math.max(timeLeft, 0.05) + 0.05, 0)
+	else
+		target.root.AssemblyLinearVelocity = velocity
+	end
 end
 
 -- Esquiva: solo desde Idle y respetando el enfriamiento. Mientras dura, State = "Dodging"

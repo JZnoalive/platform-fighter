@@ -78,9 +78,17 @@ local function setupLighting()
 	bloom.Threshold = 1.6
 	bloom.Parent = Lighting
 
-	-- Los rayos de sol son de look "cinematográfico 3D": fuera.
+	-- Efectos que ya traía el place: se apagan para no DUPLICARLOS (doble bloom = brillo
+	-- quemado; el desenfoque de fondo lo pone CameraController). Los rayos de sol son de
+	-- look "cinematográfico 3D": fuera.
 	for _, effect in Lighting:GetChildren() do
 		if effect:IsA("SunRaysEffect") then
+			effect.Enabled = false
+		elseif effect:IsA("BloomEffect") and effect ~= bloom then
+			effect.Enabled = false
+		elseif effect:IsA("DepthOfFieldEffect") then
+			effect.Enabled = false
+		elseif effect:IsA("ColorCorrectionEffect") and effect ~= correction then
 			effect.Enabled = false
 		end
 	end

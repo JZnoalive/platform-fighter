@@ -1,36 +1,45 @@
 -- ReplicatedStorage.Shared.Config.Weapons.Scythe
 -- Moveset del arma "Guadaña": mucho alcance y golpes en arco.
--- Su seña de identidad es el ACTIVE INPUT (como la guadaña de Brawlhalla): en Jab,
--- SideLight, AirLight y AirDownLight, si MANTIENES ATRÁS durante el golpe, el rival sale
--- lanzado hacia atrás (por encima de ti). Casi no tiene combos verdaderos: vive de leer
+-- Su seña de identidad es el GANCHO con ACTIVE INPUT (como la guadaña de Brawlhalla):
+-- Jab, SideLight, AirLight y AirDownLight ENGANCHAN al rival (campo hook), lo arrastran
+-- delante de ti con una cadena y, al soltar, sale lanzado hacia donde mantengas:
+-- adelante, o ATRÁS (por detrás de ti). Casi no tiene combos verdaderos: vive de leer
 -- la esquiva del rival. String típica: SideLight (atrás) > Jab > AirDownLight > AirLight.
+--   hook = { damage = daño del enganche, pullTime = s arrastrando, holdTime = s sujetando,
+--            holdOffset = Vector2 delante/arriba del atacante donde queda el rival }
+--   (damage/baseKnockback/angle del ataque son los del LANZAMIENTO)
 -- Mismos 12 ataques y campos que Gauntlets.luau (ver su cabecera).
 
 return {
 	---------------------------------------------------------------- LIGEROS EN EL SUELO
+	-- GANCHO por arriba (NLight): la hoja baja desde arriba, engancha, atrae al rival
+	-- delante de ti y lo lanzas hacia donde mantengas (adelante o ATRÁS).
 	Jab = {
 		startup = 0.09,
 		active = 0.1,
 		recovery = 0.14,
-		damage = 5,
-		baseKnockback = 14,
-		knockbackScale = 0.14,
-		angle = 30,
+		damage = 4, -- daño del lanzamiento
+		baseKnockback = 22,
+		knockbackScale = 0.18,
+		angle = 50,
 		activeInput = true,
-		hitbox = { offset = Vector2.new(4, 0.5), size = Vector3.new(7, 4, 6) },
+		hook = { damage = 2, pullTime = 0.08, holdTime = 0.1, holdOffset = Vector2.new(2.6, 0.6) },
+		hitbox = { offset = Vector2.new(4, 1), size = Vector3.new(7, 5, 6) },
 	},
 
-	-- Gancho: hacia delante, o mantén ATRÁS y lo tira por detrás de ti (abre strings)
+	-- GANCHO lateral (SLight): estira la guadaña MUY lejos, engancha y lo arrastra hasta
+	-- ti; al soltar, lo lanzas adelante o por detrás (como en el vídeo: fuera del borde).
 	SideLight = {
 		startup = 0.12, -- arco pesado: da tiempo a elegir la dirección (active input)
 		active = 0.12,
 		recovery = 0.19,
-		damage = 8,
-		baseKnockback = 18,
+		damage = 5, -- daño del lanzamiento
+		baseKnockback = 22,
 		knockbackScale = 0.3,
-		angle = 35,
+		angle = 32,
 		activeInput = true,
-		hitbox = { offset = Vector2.new(5, 0), size = Vector3.new(8, 4, 6) },
+		hook = { damage = 3, pullTime = 0.1, holdTime = 0.1, holdOffset = Vector2.new(2.6, 0.3) },
+		hitbox = { offset = Vector2.new(6, 0.3), size = Vector3.new(10, 4, 6) },
 	},
 
 	-- Arco por encima de la cabeza
@@ -57,16 +66,18 @@ return {
 	},
 
 	---------------------------------------------------------------- LIGEROS EN EL AIRE
-	-- Molinete en el aire: hitbox grande alrededor
+	-- GANCHO aéreo (NAir): molinete que engancha alrededor; lo lanzas adelante o atrás
+	-- (la base de los arrastres fuera del mapa: NAir atrás > SAir > DAir).
 	AirLight = {
 		startup = 0.06,
 		active = 0.16,
 		recovery = 0.16,
-		damage = 7,
-		baseKnockback = 20,
-		knockbackScale = 0.3,
+		damage = 4,
+		baseKnockback = 22,
+		knockbackScale = 0.28,
 		angle = 45,
 		activeInput = true,
+		hook = { damage = 3, pullTime = 0.08, holdTime = 0.08, holdOffset = Vector2.new(2.4, 0) },
 		hitbox = { offset = Vector2.new(3, 0), size = Vector3.new(8, 7, 6) },
 	},
 
@@ -81,15 +92,18 @@ return {
 		hitbox = { offset = Vector2.new(0, 4.5), size = Vector3.new(8, 5, 6) },
 	},
 
+	-- GANCHO hacia abajo (DAir): engancha por debajo y lo clava hacia abajo-adelante o
+	-- abajo-atrás (ideal para echarlo fuera cuando vuelve por el borde).
 	AirDownLight = {
 		startup = 0.08,
 		active = 0.14,
 		recovery = 0.19,
-		damage = 8,
-		baseKnockback = 18,
+		damage = 5,
+		baseKnockback = 20,
 		knockbackScale = 0.3,
-		angle = -70,
+		angle = -60,
 		activeInput = true,
+		hook = { damage = 3, pullTime = 0.08, holdTime = 0.08, holdOffset = Vector2.new(1.8, -2) },
 		hitbox = { offset = Vector2.new(1.5, -4), size = Vector3.new(6, 5, 6) },
 	},
 

@@ -262,6 +262,51 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack, mo
 			return data
 		end
 
+		-- Gancho: arrastre + lanzamiento (se ejecuta aparte para no frenar el bucle).
+		local hookExtra = 0
+		local function runHook(target: FighterService.Fighter, hook, hookTime: number)
+			local chain = Instance.new("Part")
+			chain.Name = "ScytheChain"
+			chain.Anchored = true
+			chain.CanCollide = false
+			chain.CanQuery = false
+			chain.CanTouch = false
+			chain.CastShadow = false
+			chain.Material = Enum.Material.Neon
+			chain.Color = Color3.fromHex(hook.chainColor or "BFE9FF")
+			chain.Size = Vector3.new(0.25, 0.25, 1)
+			chain.Parent = workspace
+			local token = target.hitToken
+			local start = os.clock()
+			while os.clock() - start < hookTime do
+				-- Se cancela si el enganchado recibe otro golpe o desaparece, o el atacante cae.
+				if target.hitToken ~= token or not target.model.Parent or not fighter.model.Parent then
+					chain:Destroy()
+					return
+				end
+				local f = facingOf(fighter)
+				local origin = attackOrigin(fighter)
+				local point = origin + Vector3.new(hook.holdOffset.X * f, hook.holdOffset.Y, 0)
+				local timeLeft = hook.pullTime - (os.clock() - start)
+				FighterService.PullTo(target, point, timeLeft)
+				-- Cadena desde el atacante hasta el enganchado (se ve el tirón)
+				local a = origin + Vector3.new(0.8 * f, 0.6, 0.6)
+				local b = target.root.Position + Vector3.new(0, 0.3, 0.6)
+				local length = (b - a).Magnitude
+				if length > 0.1 then
+					chain.Size = Vector3.new(0.22, 0.22, length)
+					chain.CFrame = CFrame.lookAt((a + b) / 2, b)
+				end
+				RunService.Heartbeat:Wait()
+			end
+			chain:Destroy()
+			if target.hitToken ~= token or not target.model.Parent then
+				return
+			end
+			-- Lanzamiento: la dirección se decide AHORA (atrás = por detrás del atacante).
+			FighterService.ApplyHit(target, aimed(attack), facingOf(fighter), fighter)
+		end
+
 		local activeEnd = os.clock() + attack.active
 		while not attack.projectile and os.clock() < activeEnd and stillAttacking() do
 			-- math.max: el nº de impacto NUNCA retrocede (el hitlag retrasa activeStart y,
@@ -298,7 +343,18 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack, mo
 							-- Golpes a los dos lados: empujar hacia donde está el rival.
 							direction = if target.root.Position.X >= fighter.root.Position.X then 1 else -1
 						end
-						FighterService.ApplyHit(target, hitData, direction, fighter)
+						if hitData.hook then
+							-- GANCHO: engancha, arrastra hasta delante del atacante y lo lanza
+							-- hacia donde mantenga el jugador AL SOLTAR (active input).
+							local hook = hitData.hook
+							local hookTime = hook.pullTime + hook.holdTime
+							if FighterService.ApplyGrab(target, hook.damage, hookTime, fighter) then
+								hookExtra = math.max(hookExtra, hookTime)
+								task.spawn(runHook, target, hook, hookTime)
+							end
+						else
+							FighterService.ApplyHit(target, hitData, direction, fighter)
+						end
 						if lastLagTick ~= tick then
 							lastLagTick = tick
 							-- Hitlag: el ataque del atacante se "pausa" ese instante.
@@ -320,7 +376,8 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack, mo
 			-- (como en Brawlhalla: así DLight > aéreo es un combo verdadero).
 			if landedHit and hits == 1 then
 				-- El hitlag (atacante congelado) no debe comerse la recuperación.
-				task.wait(hitlagExtra)
+				-- Con gancho, el atacante sigue "sujetando" hasta que lanza al rival.
+				task.wait(hitlagExtra + hookExtra)
 				break
 			end
 			RunService.Heartbeat:Wait()
