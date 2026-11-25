@@ -42,8 +42,9 @@ return {
 			AirLight = id("102763966056762"), -- tajo aéreo
 		},
 		Scythe = {
-			Jab = id("109135252300662"),
-			SideLight = id("118566435346767"), -- gancho
+			-- gancho: lanzar la guadaña, atraer al rival y tirarlo (generada con IA de Roblox)
+			Jab = id("100294979570196"),
+			SideLight = id("100294979570196"),
 			Heavy = id("127228647128175"), -- siega
 			UpHeavy = id("140698507131074"),
 			DownHeavy = id("73745453402403"),

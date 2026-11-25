@@ -108,7 +108,39 @@ local function attackPose(model: Model)
 		return nil
 	end
 
-	local t = workspace:GetServerTimeNow() - moveTime
+	local now = workspace:GetServerTimeNow()
+	local t = now - moveTime
+
+	-- Ataques con GANCHO y poses clave (guadaña): preparar → estirar → enganchar →
+	-- tirar → lanzar. El instante del enganche lo marca el servidor (atributo HookAt).
+	if pose.hookUp and data.hook then
+		if t < data.startup then
+			return lerpPose(EMPTY, pose.windup, easeOut(math.clamp(t / data.startup, 0, 1)))
+		end
+		local hookAt = model:GetAttribute("HookAt")
+		if type(hookAt) == "number" and hookAt >= moveTime then
+			local h = now - hookAt
+			local pull, hold = data.hook.pullTime, data.hook.holdTime
+			if h < pull * 0.45 then
+				return lerpPose(pose.strike, pose.hookUp, easeOut(math.clamp(h / (pull * 0.45), 0, 1)))
+			elseif h < pull then
+				return lerpPose(pose.hookUp, pose.pull, easeOut(math.clamp((h - pull * 0.45) / (pull * 0.55), 0, 1)))
+			elseif h < pull + hold then
+				return pose.pull
+			elseif h < pull + hold + 0.07 then
+				return lerpPose(pose.pull, pose.throw, easeOut(math.clamp((h - pull - hold) / 0.07, 0, 1)))
+			end
+			local after = h - pull - hold - 0.07
+			return lerpPose(pose.throw, EMPTY, math.clamp(after / math.max(data.recovery * 0.6, 0.05), 0, 1))
+		end
+		-- Sin enganche (todavía o falló): estira la guadaña y vuelve.
+		if t < data.startup + data.active then
+			return lerpPose(pose.windup, pose.strike, math.clamp((t - data.startup) / 0.05, 0, 1))
+		end
+		local a = math.clamp((t - data.startup - data.active) / math.max(data.recovery, 0.01), 0, 1)
+		return lerpPose(pose.strike, EMPTY, a)
+	end
+
 	if t < data.startup then
 		return lerpPose(EMPTY, pose.windup, easeOut(math.clamp(t / data.startup, 0, 1)))
 	elseif t < data.startup + data.active then
@@ -176,6 +208,11 @@ end
 local function hasAttackAnimation(model: Model): boolean
 	local move = model:GetAttribute("Move")
 	local weapon = model:GetAttribute("Weapon")
+	-- Poses diseñadas a mano a partir de los vídeos (codePose) mandan sobre la animación.
+	local weaponPoses = weapon and Poses.Weapons[weapon]
+	if move and weaponPoses and weaponPoses[move] and weaponPoses[move].codePose then
+		return false
+	end
 	local byWeapon = weapon and Animations.Weapons[weapon]
 	return move ~= nil and ((byWeapon and byWeapon[move]) or Animations.Generic[move]) ~= nil
 end

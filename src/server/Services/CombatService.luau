@@ -350,6 +350,8 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack, mo
 							local hookTime = hook.pullTime + hook.holdTime
 							if FighterService.ApplyGrab(target, hook.damage, hookTime, fighter) then
 								hookExtra = math.max(hookExtra, hookTime)
+								-- Para las poses del cliente: instante exacto del enganche.
+								fighter.model:SetAttribute("HookAt", workspace:GetServerTimeNow())
 								task.spawn(runHook, target, hook, hookTime)
 							end
 						else

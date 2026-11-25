@@ -14,6 +14,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Animations = require(ReplicatedStorage.Shared.Config.Animations)
+local Poses = require(ReplicatedStorage.Shared.Config.Poses)
 local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 local Movesets = require(ReplicatedStorage.Shared.Modules.Movesets)
 local FighterStats = require(ReplicatedStorage.Shared.Modules.FighterStats)
@@ -35,6 +36,11 @@ local states: { [Model]: ModelState } = {}
 -- Animación para un ataque de un arma (o la general), o nil.
 function AnimationController.GetAttackAnimation(weapon: string?, move: string?): string?
 	if not move then
+		return nil
+	end
+	-- Si el ataque tiene pose diseñada a mano (codePose), la dibuja PoseController.
+	local weaponPoses = weapon and Poses.Weapons[weapon]
+	if weaponPoses and weaponPoses[move] and weaponPoses[move].codePose then
 		return nil
 	end
 	local byWeapon = weapon and Animations.Weapons[weapon]

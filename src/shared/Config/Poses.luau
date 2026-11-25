@@ -184,19 +184,45 @@ return {
 		},
 
 		------------------------------------------------------------ GUADAÑA
+		-- GANCHOS (codePose = pose diseñada a mano: manda sobre la animación de IA).
+		-- Sacados fotograma a fotograma del vídeo de referencia (gancho de guadaña):
+		--   windup  = prepara (hoja atrás)          strike = estira la guadaña hacia el rival
+		--   hookUp  = la hoja sube y engancha        pull   = recoge los brazos y lo atrae
+		--   throw   = gira y lo lanza (adelante o atrás según el active input)
+		-- Inclinación del mango ≈ Hombro + Codo + Muñeca (0 = adelante, 90 = arriba,
+		-- 180 = atrás, negativo = hacia abajo). La hoja cuelga en la punta del mango.
 		Scythe = {
-			Jab = {
-				windup = with(CROUCH, { RightShoulder = V(40, 0, 0), RightWrist = V(-60, 0, 0), LeftShoulder = V(60, 0, 0), Waist = V(0, 30, 0) }),
-				strike = { Root = V(-10, 0, 0), RightShoulder = V(85, 0, 0), RightWrist = V(-110, 0, 0), LeftShoulder = V(70, 0, 0), Waist = V(-10, -30, 0), LeftHip = V(30, 0, 0) },
+			Jab = { -- gancho POR ARRIBA: alza la guadaña y la baja delante, engancha y tira
+				codePose = true,
+				windup = with(CROUCH, { Root = V(8, 0, 0), RightShoulder = V(170, 0, 0), RightWrist = V(-50, 0, 0), LeftShoulder = V(160, 0, 0), Waist = V(12, 20, 0), Neck = V(10, 0, 0) }),
+				strike = { Root = V(-18, 0, 0), RightShoulder = V(85, 0, 0), RightWrist = V(-120, 0, 0), LeftShoulder = V(75, 0, 0), Waist = V(-15, -15, 0), RightHip = V(-15, 0, 0), LeftHip = V(35, 0, 0), LeftKnee = V(-30, 0, 0) },
+				hookUp = { Root = V(8, 0, 0), RightShoulder = V(150, 0, 0), RightWrist = V(-110, 0, 0), LeftShoulder = V(140, 0, 0), Waist = V(15, 10, 0), Neck = V(10, 0, 0) },
+				pull = with(CROUCH, { Root = V(15, 0, 0), RightShoulder = V(30, 0, 0), RightElbow = V(90, 0, 0), RightWrist = V(60, 0, 180), LeftShoulder = V(20, 0, 0), LeftElbow = V(100, 0, 0), Waist = V(10, 45, 0) }),
+				throw = { Root = V(-8, 0, 0), RightShoulder = V(100, 0, 0), RightWrist = V(-85, 0, 0), LeftShoulder = V(80, 0, 0), Waist = V(-15, -55, 0), RightHip = V(-25, 0, 0), LeftHip = V(40, 0, 0), LeftKnee = V(-30, 0, 0) },
 			},
-			SideLight = { -- gancho: lanza la hoja lejos y tira hacia atrás
-				windup = { Root = V(5, 0, 0), RightShoulder = V(150, 0, 0), RightWrist = V(-40, 0, 0), LeftShoulder = V(120, 0, 0), Waist = V(10, 40, 0) },
-				strike = { Root = V(10, 0, 0), RightShoulder = V(70, 0, 0), RightWrist = V(-110, 0, 0), LeftShoulder = V(50, 0, 0), Waist = V(15, -20, 0), RightHip = V(20, 0, 0), LeftHip = V(-20, 0, 0) },
+			SideLight = { -- gancho LATERAL: estira la guadaña lejos, engancha, arrastra y lanza
+				codePose = true,
+				windup = with(CROUCH, { Root = V(-5, 0, 0), RightShoulder = V(70, 0, 0), RightWrist = V(130, 0, 180), LeftShoulder = V(70, 0, 0), Waist = V(5, 35, 0) }),
+				strike = { Root = V(-20, 0, 0), RightShoulder = V(100, 0, 0), RightWrist = V(-80, 0, 0), LeftShoulder = V(95, 0, 0), Waist = V(-12, -25, 0), RightHip = V(-25, 0, 0), LeftHip = V(45, 0, 0), LeftKnee = V(-35, 0, 0) },
+				hookUp = { Root = V(10, 0, 0), RightShoulder = V(150, 0, 0), RightWrist = V(-110, 0, 0), LeftShoulder = V(140, 0, 0), Waist = V(15, 10, 0), Neck = V(10, 0, 0), RightHip = V(-10, 0, 0), LeftHip = V(20, 0, 0) },
+				pull = with(CROUCH, { Root = V(15, 0, 0), RightShoulder = V(30, 0, 0), RightElbow = V(90, 0, 0), RightWrist = V(60, 0, 180), LeftShoulder = V(20, 0, 0), LeftElbow = V(100, 0, 0), Waist = V(10, 45, 0) }),
+				throw = { Root = V(-8, 0, 0), RightShoulder = V(100, 0, 0), RightWrist = V(-85, 0, 0), LeftShoulder = V(80, 0, 0), Waist = V(-15, -55, 0), RightHip = V(-25, 0, 0), LeftHip = V(40, 0, 0), LeftKnee = V(-30, 0, 0) },
 			},
-			AirLight = { -- molinete
-				windup = { RightShoulder = V(90, 0, 0), RightWrist = V(-90, 0, 0) },
-				strike = { RightShoulder = V(90, 0, 0), RightWrist = V(-90, 0, 0), RightHip = V(30, 0, 0), LeftHip = V(30, 0, 0), RightKnee = V(-60, 0, 0), LeftKnee = V(-60, 0, 0) },
-				spin = V(-360, 0, 0),
+			AirLight = { -- gancho AÉREO: como en el vídeo (hoja atrás → engancha arriba → atrae → lanza)
+				codePose = true,
+				windup = { Root = V(-10, 0, 0), RightShoulder = V(70, 0, 0), RightWrist = V(130, 0, 180), LeftShoulder = V(70, 0, 0), Waist = V(0, 30, 0), RightHip = V(50, 0, 0), RightKnee = V(-90, 0, 0), LeftHip = V(30, 0, 0), LeftKnee = V(-70, 0, 0) },
+				strike = { Root = V(-15, 0, 0), RightShoulder = V(100, 0, 0), RightWrist = V(-85, 0, 0), LeftShoulder = V(95, 0, 0), Waist = V(-10, -20, 0), RightHip = V(40, 0, 0), RightKnee = V(-80, 0, 0), LeftHip = V(-10, 0, 0), LeftKnee = V(-30, 0, 0) },
+				hookUp = { Root = V(12, 0, 0), RightShoulder = V(150, 0, 0), RightWrist = V(-110, 0, 0), LeftShoulder = V(140, 0, 0), Waist = V(15, 10, 0), RightHip = V(30, 0, 0), RightKnee = V(-60, 0, 0), LeftHip = V(10, 0, 0), LeftKnee = V(-50, 0, 0) },
+				pull = { Root = V(15, 0, 0), RightShoulder = V(30, 0, 0), RightElbow = V(90, 0, 0), RightWrist = V(60, 0, 180), LeftShoulder = V(20, 0, 0), LeftElbow = V(100, 0, 0), Waist = V(10, 50, 0), RightHip = V(60, 0, 0), RightKnee = V(-100, 0, 0), LeftHip = V(50, 0, 0), LeftKnee = V(-90, 0, 0) },
+				throw = { Root = V(-10, 0, 0), RightShoulder = V(100, 0, 0), RightWrist = V(-85, 0, 0), LeftShoulder = V(80, 0, 0), Waist = V(-15, -60, 0), RightHip = V(20, 0, 0), RightKnee = V(-40, 0, 0), LeftHip = V(45, 0, 0), LeftKnee = V(-50, 0, 0) },
+			},
+			AirDownLight = { -- gancho HACIA ABAJO: la hoja baja, engancha por debajo y lo clava
+				codePose = true,
+				windup = { Root = V(10, 0, 0), RightShoulder = V(150, 0, 0), RightWrist = V(-40, 0, 0), LeftShoulder = V(140, 0, 0), RightHip = V(40, 0, 0), RightKnee = V(-80, 0, 0), LeftHip = V(40, 0, 0), LeftKnee = V(-80, 0, 0) },
+				strike = { Root = V(-25, 0, 0), RightShoulder = V(30, 0, 0), RightWrist = V(-55, 0, 0), LeftShoulder = V(25, 0, 0), Waist = V(-20, 0, 0), RightHip = V(50, 0, 0), RightKnee = V(-90, 0, 0), LeftHip = V(50, 0, 0), LeftKnee = V(-90, 0, 0) },
+				hookUp = { Root = V(-10, 0, 0), RightShoulder = V(80, 0, 0), RightWrist = V(-80, 0, 0), LeftShoulder = V(70, 0, 0), Waist = V(-10, 15, 0), RightHip = V(50, 0, 0), RightKnee = V(-90, 0, 0), LeftHip = V(50, 0, 0), LeftKnee = V(-90, 0, 0) },
+				pull = { Root = V(10, 0, 0), RightShoulder = V(30, 0, 0), RightElbow = V(90, 0, 0), RightWrist = V(40, 0, 180), LeftShoulder = V(20, 0, 0), LeftElbow = V(100, 0, 0), Waist = V(10, 40, 0), RightHip = V(60, 0, 0), RightKnee = V(-100, 0, 0), LeftHip = V(60, 0, 0), LeftKnee = V(-100, 0, 0) },
+				throw = { Root = V(-30, 0, 0), RightShoulder = V(40, 0, 0), RightWrist = V(-110, 0, 0), LeftShoulder = V(30, 0, 0), Waist = V(-25, -40, 0), RightHip = V(30, 0, 0), RightKnee = V(-50, 0, 0), LeftHip = V(50, 0, 0), LeftKnee = V(-60, 0, 0) },
 			},
 			Heavy = {
 				windup = with(CROUCH, { Root = V(10, 0, 0), RightShoulder = V(200, 0, 0), RightWrist = V(-30, 0, 0), LeftShoulder = V(180, 0, 0), Waist = V(20, 40, 0) }),
