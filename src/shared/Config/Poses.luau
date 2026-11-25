@@ -172,6 +172,20 @@ return {
 				windup = with(CROUCH, { RightShoulder = V(0, 0, 0), RightWrist = V(0, 0, 0), Waist = V(-15, 0, 0) }),
 				strike = { Root = V(10, 0, 0), RightShoulder = V(170, 0, 0), RightWrist = V(-30, 0, 0), Waist = V(15, 0, 0), Neck = V(20, 0, 0) },
 			},
+			-- Del vídeo (DLight > salto > SAir): ESTOCADA BAJA agachada. Guardia con la espada
+			-- atrás y baja → lunge con la pierna de delante doblada, la de atrás estirada y
+			-- la hoja barriendo a ras de suelo.
+			DownLight = {
+				codePose = true,
+				windup = { Root = V(-10, 0, 0), Waist = V(-10, 30, 0), RightShoulder = V(-20, 0, 20), RightWrist = V(-150, 0, 0), LeftShoulder = V(30, 0, -20), RightHip = V(30, 0, 0), RightKnee = V(-55, 0, 0), LeftHip = V(-15, 0, 0), LeftKnee = V(-35, 0, 0) },
+				strike = { Root = V(-25, 0, 0), Waist = V(-15, -35, 0), RightShoulder = V(70, 0, 0), RightWrist = V(-58, 0, 0), LeftShoulder = V(-30, 0, -30), RightHip = V(75, 0, 0), RightKnee = V(-85, 0, 0), LeftHip = V(-40, 0, 0), LeftKnee = V(-10, 0, 0) },
+			},
+			-- SAir: tajo horizontal amplio en el aire (espada por encima del hombro → barrido).
+			AirLight = {
+				codePose = true,
+				windup = { Root = V(5, 0, 0), Waist = V(10, 40, 0), RightShoulder = V(150, 0, 40), RightWrist = V(-40, 0, 0), LeftShoulder = V(40, 0, -30), RightHip = V(50, 0, 0), RightKnee = V(-90, 0, 0), LeftHip = V(20, 0, 0), LeftKnee = V(-60, 0, 0) },
+				strike = { Root = V(-10, 0, 0), Waist = V(-10, -50, 0), RightShoulder = V(90, 0, -40), RightWrist = V(-90, 0, 0), LeftShoulder = V(-20, 0, -40), RightHip = V(50, 0, 0), RightKnee = V(-90, 0, 0), LeftHip = V(-10, 0, 0), LeftKnee = V(-40, 0, 0) },
+			},
 			Heavy = { -- tajo cargado de arriba abajo
 				windup = with(CROUCH, { Root = V(10, 0, 0), RightShoulder = V(190, 0, 0), RightWrist = V(-40, 0, 0), LeftShoulder = V(170, 0, 0), Waist = V(15, 30, 0) }),
 				strike = { Root = V(-25, 0, 0), RightShoulder = V(60, 0, 0), RightWrist = V(-90, 0, 0), LeftShoulder = V(40, 0, 0), Waist = V(-30, -40, 0), RightHip = V(-35, 0, 0), LeftHip = V(55, 0, 0), LeftKnee = V(-40, 0, 0) },
@@ -180,6 +194,28 @@ return {
 				windup = { Root = V(5, 0, 0), RightShoulder = V(120, 0, 0), RightWrist = V(-90, 0, 0), Waist = V(10, 40, 0) },
 				strike = { Root = V(-15, 0, 0), RightShoulder = V(60, 0, 40), RightWrist = V(-90, 0, 0), Waist = V(-30, 0, 0), RightKnee = V(-70, 0, 0), LeftKnee = V(-70, 0, 0), RightHip = V(60, 0, 0), LeftHip = V(60, 0, 0) },
 				spin = V(0, 360, 0), -- giro sobre sí misma barriendo los dos lados
+			},
+		},
+
+		------------------------------------------------------------ PUÑOS
+		-- Del vídeo (sección de puños/garras: DLight > SAir): DLight = lanzamiento bajísimo
+		-- con el puño por delante; SAir = gran arco circular alrededor del cuerpo.
+		Gauntlets = {
+			DownLight = {
+				codePose = true,
+				windup = with(CROUCH, { Root = V(-10, 0, 0), Waist = V(-10, 30, 0), RightShoulder = V(-30, 0, 15), RightElbow = V(60, 0, 0), LeftShoulder = V(40, 0, -15), LeftElbow = V(90, 0, 0) }),
+				strike = { Root = V(-35, 0, 0), Waist = V(-15, -30, 0), RightShoulder = V(80, 0, 0), RightElbow = V(5, 0, 0), LeftShoulder = V(-35, 0, -20), LeftElbow = V(40, 0, 0), RightHip = V(85, 0, 0), RightKnee = V(-95, 0, 0), LeftHip = V(-45, 0, 0), LeftKnee = V(-5, 0, 0) },
+			},
+			SideLight = { -- puñetazo con todo el cuerpo hacia delante
+				codePose = true,
+				windup = with(CROUCH, { Root = V(5, 0, 0), Waist = V(5, 45, 0), RightShoulder = V(20, 0, 0), RightElbow = V(120, 0, 0), LeftShoulder = V(60, 0, 0), LeftElbow = V(90, 0, 0) }),
+				strike = { Root = V(-20, 0, 0), Waist = V(-12, -50, 0), RightShoulder = V(98, 0, 0), RightElbow = V(0, 0, 0), LeftShoulder = V(-30, 0, -15), LeftElbow = V(70, 0, 0), RightHip = V(-30, 0, 0), LeftHip = V(50, 0, 0), LeftKnee = V(-35, 0, 0) },
+			},
+			AirLight = { -- arco circular: el puño sube por detrás y baja por delante
+				codePose = true,
+				windup = { Root = V(10, 0, 0), Waist = V(10, 30, 0), RightShoulder = V(190, 0, 0), RightElbow = V(10, 0, 0), LeftShoulder = V(-20, 0, -20), RightHip = V(60, 0, 0), RightKnee = V(-100, 0, 0), LeftHip = V(30, 0, 0), LeftKnee = V(-70, 0, 0) },
+				strike = { Root = V(-15, 0, 0), Waist = V(-15, -30, 0), RightShoulder = V(60, 0, 0), RightElbow = V(0, 0, 0), LeftShoulder = V(-40, 0, -25), RightHip = V(20, 0, 0), RightKnee = V(-30, 0, 0), LeftHip = V(50, 0, 0), LeftKnee = V(-80, 0, 0) },
+				spin = V(-360, 0, 0), -- voltereta hacia delante durante el golpe (el arco del vídeo)
 			},
 		},
 
@@ -241,9 +277,20 @@ return {
 				windup = { RightShoulder = V(80, 0, 0), RightWrist = V(-90, 0, 0), Waist = V(0, -10, 0) },
 				strike = { Root = V(5, 0, 0), RightShoulder = V(95, 0, 0), RightWrist = V(-80, 0, 0), RightElbow = V(10, 0, 0), Waist = V(5, -20, 0) },
 			},
-			SideLight = { -- disparo a dos manos con retroceso
-				windup = with(CROUCH, { RightShoulder = V(85, 0, 0), RightWrist = V(-90, 0, 0), LeftShoulder = V(85, 0, 0), LeftWrist = V(-90, 0, 0) }),
-				strike = { Root = V(12, 0, 0), RightShoulder = V(100, 0, 0), RightWrist = V(-80, 0, 0), LeftShoulder = V(100, 0, 0), LeftWrist = V(-80, 0, 0), Waist = V(10, 0, 0), RightHip = V(-15, 0, 0), LeftHip = V(20, 0, 0) },
+			-- Del vídeo (DLight > SLight): guardia con las dos pistolas EN ALTO junto a los
+			-- hombros → SLight: brazo derecho estirado al frente disparando, la otra pistola
+			-- sigue en alto.
+			SideLight = {
+				codePose = true,
+				windup = { RightShoulder = V(30, 0, 0), RightElbow = V(120, 0, 0), RightWrist = V(-60, 0, 0), LeftShoulder = V(30, 0, 0), LeftElbow = V(120, 0, 0), LeftWrist = V(-60, 0, 0), Waist = V(0, 10, 0) },
+				strike = { Root = V(5, 0, 0), Waist = V(0, -25, 0), RightShoulder = V(95, 0, 0), RightWrist = V(-90, 0, 0), LeftShoulder = V(30, 0, 0), LeftElbow = V(120, 0, 0), LeftWrist = V(-60, 0, 0), RightHip = V(-15, 0, 0), LeftHip = V(20, 0, 0) },
+			},
+			-- DLight: agachada, dispara las DOS pistolas al suelo delante (explosión a ras de
+			-- suelo que levanta al rival).
+			DownLight = {
+				codePose = true,
+				windup = with(CROUCH, { RightShoulder = V(30, 0, 0), RightElbow = V(120, 0, 0), RightWrist = V(-60, 0, 0), LeftShoulder = V(30, 0, 0), LeftElbow = V(120, 0, 0), LeftWrist = V(-60, 0, 0) }),
+				strike = with(CROUCH, { Root = V(-12, 0, 0), Waist = V(-15, 0, 0), RightShoulder = V(55, 0, 0), RightWrist = V(-90, 0, 0), LeftShoulder = V(50, 0, 0), LeftWrist = V(-90, 0, 0), RightKnee = V(-55, 0, 0), LeftKnee = V(-45, 0, 0) }),
 			},
 			UpLight = { -- disparo en diagonal arriba
 				windup = { RightShoulder = V(140, 0, 0), RightWrist = V(-90, 0, 0) },
