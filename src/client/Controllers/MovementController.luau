@@ -12,6 +12,7 @@ local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 local MovementConfig = require(ReplicatedStorage.Shared.Config.MovementConfig)
 local OneWayPlatforms = require(ReplicatedStorage.Shared.Modules.OneWayPlatforms)
 local FighterStats = require(ReplicatedStorage.Shared.Modules.FighterStats)
+local MovementMath = require(ReplicatedStorage.Shared.Modules.MovementMath)
 local InputController = require(script.Parent.InputController)
 
 local MovementController = {}
@@ -40,6 +41,30 @@ local platformState = { dropUntil = 0 } -- plataformas de un solo sentido
 local downHeldSince: number? = nil -- desde cuándo se mantiene S (dejarse caer)
 local lastAttackingAt = -math.huge -- para no perder el salto pulsado al final de un ataque
 local localAttackUntil = 0 -- ataque recién pulsado que el servidor aún no ha confirmado
+-- Caminar / correr / dash y caída rápida
+local prevInputX = 0
+local lastTapDir, lastTapAt = 0, -math.huge
+local dashUntil, dashDir = 0, 1
+local running = false
+local fastFallActive = false
+
+-- Datos para el panel de depuración de la sala de prueba (atributos LOCALES del
+-- personaje propio: no se replican; los lee DebugController).
+local function publishDebug(character: Model, moveState: string, vy: number, attackPhase: string?)
+	character:SetAttribute("MoveState", moveState)
+	character:SetAttribute("VY", math.floor(vy + 0.5))
+	character:SetAttribute("JumpsLeft", airJumpsLeft)
+	character:SetAttribute("RecoveryReady", recoveryAvailable)
+	character:SetAttribute("AirDodgeReady", airDodgeAvailable)
+	character:SetAttribute("AttackPhase", attackPhase or "-")
+end
+
+-- Desplazamiento propio del ataque en curso (campo lunge)
+local lastMoveId: any = nil
+local lungeFrom, lungeUntil, lungeSpeed = 0, 0, 0
+local lungeVy: number? = nil
+local lungeVyDone = true
+local lastSelfImpulseAt = 0
 
 -- Lo llama CombatController al pulsar un ataque: mientras dure, cuenta como "atacando"
 -- (no se gira ni se camina) aunque el estado del servidor no haya llegado todavía.
@@ -54,7 +79,10 @@ end
 function MovementController.IsGrounded(): boolean
 	local character = Players.LocalPlayer.Character
 	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-	return humanoid ~= nil and humanoid.FloorMaterial ~= Enum.Material.Air
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	return humanoid ~= nil
+		and humanoid.FloorMaterial ~= Enum.Material.Air
+		and not (root and root.AssemblyLinearVelocity.Y >= 10) -- subiendo rápido = en el aire
 end
 
 -- Devuelve true y lo gasta si el Recovery está disponible.
@@ -92,14 +120,16 @@ function MovementController.ApplyKnockback(velocity: Vector3, hitstun: number, h
 	inHitstun = true
 	hitstunUntil = os.clock() + lag + hitstun
 	pendingKnockback = velocity
+	lungeUntil = 0 -- un golpe recibido corta el avance del ataque
 	knockbackAt = os.clock() + lag
 	InputController.ClearJump()
 	inDodge = false
 	-- Como en el género: recibir un golpe devuelve los saltos aéreos, el Recovery
 	-- y la esquiva aérea.
-	airJumpsLeft = MovementConfig.MaxAirJumps
-	recoveryAvailable = true
-	airDodgeAvailable = true
+	local full = MovementMath.FullResources(MovementConfig)
+	airJumpsLeft = full.jumps
+	recoveryAvailable = full.recovery
+	airDodgeAvailable = full.airDodge
 	-- Estado Physics: el Humanoid deja de frenar al personaje mientras vuela.
 	humanoid:ChangeState(Enum.HumanoidStateType.Physics)
 	root.AssemblyLinearVelocity = Vector3.zero -- quieto durante el hitlag
@@ -108,6 +138,14 @@ end
 -- Avisado por EffectsController cuando YO acierto un golpe (para la chase dodge).
 function MovementController.NotifyLandedHit()
 	lastLandedAt = os.clock()
+	-- Al conectar, el avance del ataque se corta: el atacante no atraviesa ni se queda
+	-- pegado al rival (queda a distancia para el siguiente golpe).
+	lungeUntil = math.min(lungeUntil, os.clock())
+end
+
+-- ¿Acerté un golpe hace muy poco? (ventana de la chase dodge)
+function MovementController.LandedHitRecently(): boolean
+	return os.clock() - lastLandedAt <= GameConfig.ChaseDodgeWindow
 end
 
 -- Impulso propio de un ataque (Recovery, GroundPound). forward/up según selfImpulse.
@@ -117,6 +155,7 @@ function MovementController.ApplySelfImpulse(forward: number, up: number)
 	if not root then
 		return
 	end
+	lastSelfImpulseAt = os.clock() -- este ataque mueve solo al personaje: no flota
 	local vel = root.AssemblyLinearVelocity
 	local x = if forward ~= 0 then forward * facing else vel.X
 	if forward ~= 0 then
@@ -151,7 +190,7 @@ function MovementController.StartDodge(dirX: number, dirY: number)
 	if grounded then
 		dirY = 0
 	else
-		airDodgeAvailable = false
+		airDodgeAvailable = MovementMath.ConsumeAirDodge({ jumps = airJumpsLeft, recovery = recoveryAvailable, airDodge = airDodgeAvailable }).airDodge
 	end
 
 	lastDodgeAt = os.clock()
@@ -212,12 +251,35 @@ local function onCharacterAdded(character: Model)
 	inDodge = false
 end
 
+-- Fuerza hacia arriba que quita parte de la gravedad durante los ataques aéreos.
+-- Es una fuerza FÍSICA (se aplica en cada paso de la física, no solo una vez por
+-- fotograma), así la "flotación" es estable aunque la física vaya más rápido que la pantalla.
+local function getHoverForce(root: BasePart): VectorForce
+	local force = root:FindFirstChild("HoverForce") :: VectorForce?
+	if force then
+		return force
+	end
+	local attachment = Instance.new("Attachment")
+	attachment.Name = "HoverAttachment"
+	attachment.Parent = root
+	local newForce = Instance.new("VectorForce")
+	newForce.Name = "HoverForce"
+	newForce.Attachment0 = attachment
+	newForce.RelativeTo = Enum.ActuatorRelativeTo.World
+	newForce.ApplyAtCenterOfMass = true
+	newForce.Force = Vector3.zero
+	newForce.Parent = root
+	return newForce
+end
+
 local function step(dt: number)
 	local root, humanoid = getBody()
 	if not root or not humanoid or humanoid.Health <= 0 then
 		return
 	end
 	local now = os.clock()
+	local hoverForce = getHoverForce(root)
+	hoverForce.Force = Vector3.zero -- se vuelve a encender abajo solo si hay ataque aéreo
 
 	-- Plataformas de un solo sentido (siempre, también en hitstun: se atraviesan al salir
 	-- lanzado hacia arriba). Mantener S sin atacar = dejarse caer.
@@ -248,6 +310,7 @@ local function step(dt: number)
 				end
 			end
 			lockToPlane(root, MovementConfig.MaxFallSpeed)
+			publishDebug(body, "Hitstun", root.AssemblyLinearVelocity.Y, nil)
 			return
 		end
 		inHitstun = false
@@ -266,6 +329,7 @@ local function step(dt: number)
 			local y = if dodgeOnGround then vel.Y else dodgeVelocity.Y
 			root.AssemblyLinearVelocity = Vector3.new(dodgeVelocity.X, y, 0)
 			lockToPlane(root, MovementConfig.MaxFallSpeed)
+			publishDebug(body, if dodgeOnGround then "Dodging" else "AirDodging", root.AssemblyLinearVelocity.Y, nil)
 			return
 		end
 		inDodge = false
@@ -285,30 +349,111 @@ local function step(dt: number)
 		return
 	end
 
-	local grounded = humanoid.FloorMaterial ~= Enum.Material.Air
+	-- Si subes rápido NO estás en el suelo aunque el Humanoid aún detecte suelo cerca
+	-- (pasaba al usar el Recovery a poca altura: recargaba los saltos sin aterrizar).
+	local grounded = humanoid.FloorMaterial ~= Enum.Material.Air and root.AssemblyLinearVelocity.Y < 10
 	if grounded then
 		lastGroundedAt = now
-		airJumpsLeft = MovementConfig.MaxAirJumps
+		local full = MovementMath.FullResources(MovementConfig) -- al aterrizar se recarga todo
+		airJumpsLeft = full.jumps
 		groundJumpAvailable = true
-		recoveryAvailable = true
-		airDodgeAvailable = true
+		recoveryAvailable = full.recovery
+		airDodgeAvailable = full.airDodge
 	end
 
 	local attacking = character:GetAttribute("State") == "Attacking" or now < localAttackUntil
 
-	-- 1. Horizontal: acelerar hacia la velocidad objetivo.
-	-- Atacando en el suelo no se avanza; en el aire se conserva el control.
-	local moveX = if attacking and grounded then 0 else InputController.GetMoveX()
+	-- 0d. Ataque CON DESPLAZAMIENTO (campo lunge del ataque): cuando el servidor confirma
+	-- un ataque nuevo (cambia MoveId), se programa el avance descontando lo que ya pasó.
+	-- Así también avanzan los ataques que salen del búfer en un combo.
+	local moveId = character:GetAttribute("MoveId")
+	if moveId ~= lastMoveId then
+		lastMoveId = moveId
+		lungeUntil = 0
+		if character:GetAttribute("State") == "Attacking" then
+			local moveset = FighterStats.Moveset(character:GetAttribute("Weapon"), character:GetAttribute("FighterId"))
+			local data = moveset and moveset[character:GetAttribute("Move")]
+			local lunge = data and data.lunge
+			local moveTime = character:GetAttribute("MoveTime")
+			if lunge and type(moveTime) == "number" then
+				local elapsed = workspace:GetServerTimeNow() - moveTime
+				lungeFrom = now + math.max(0, (lunge.delay or 0) - elapsed)
+				lungeUntil = lungeFrom + lunge.time
+				lungeSpeed = lunge.speed
+				lungeVy = lunge.vy
+				lungeVyDone = false
+			end
+		end
+	end
+
+	-- Fase del ataque en curso (para saber cuánto control hay): solo se bloquea en las
+	-- ventanas de arranque/golpe en el suelo; en la recuperación y en el aire hay control parcial.
+	local attackPhase: string? = nil
+	local hovering = false -- ataque aéreo en arranque/golpe: casi flota
+	if character:GetAttribute("State") == "Attacking" then
+		local moveset = FighterStats.Moveset(character:GetAttribute("Weapon"), character:GetAttribute("FighterId"))
+		local data = moveset and moveset[character:GetAttribute("Move")]
+		local moveTime = character:GetAttribute("MoveTime")
+		if data and type(moveTime) == "number" then
+			attackPhase = MovementMath.AttackPhase(workspace:GetServerTimeNow() - moveTime, data)
+			local descends = (data.lunge and data.lunge.vy and data.lunge.vy < 0)
+				or (data.selfImpulse and data.selfImpulse.Y ~= 0) -- picados, GroundPound, Recovery
+			hovering = not grounded and attackPhase ~= "done" and not descends
+		else
+			attackPhase = "startup"
+		end
+	elseif now < localAttackUntil then
+		attackPhase = "startup" -- recién pulsado, el servidor aún no lo confirmó
+		hovering = not grounded and now - lastSelfImpulseAt > 0.3 -- flota ya desde que pulsas
+	end
+
+	-- 1. Horizontal: caminar, correr (tras un dash) y DASH (doble toque de A/D en el suelo).
+	local inputX = InputController.GetMoveX()
+	if grounded and attackPhase == nil and inputX ~= 0 and inputX ~= prevInputX then
+		if inputX == lastTapDir and now - lastTapAt <= MovementConfig.DashDoubleTapWindow then
+			dashUntil = now + MovementConfig.DashTime
+			dashDir = inputX
+			running = true
+		end
+		lastTapDir = inputX
+		lastTapAt = now
+	end
+	if inputX == 0 and grounded then
+		running = false
+	end
+	prevInputX = inputX
+
+	local control = MovementMath.ControlFactor(attackPhase, grounded, MovementConfig)
+	local moveX = inputX * control
 	-- Stat de Velocidad del personaje (FighterStats)
-	local maxSpeed = (if grounded then MovementConfig.GroundSpeed else MovementConfig.AirSpeed)
-		* FighterStats.SpeedMultiplier(character:GetAttribute("FighterId"))
+	local baseSpeed = if grounded
+		then (if running then MovementConfig.RunSpeed else MovementConfig.WalkSpeed)
+		else MovementConfig.AirSpeed
+	local maxSpeed = baseSpeed * FighterStats.SpeedMultiplier(character:GetAttribute("FighterId"))
 	local rate
 	if moveX ~= 0 then
 		rate = if grounded then MovementConfig.GroundAcceleration else MovementConfig.AirAcceleration
+		-- Dash jump: en el aire, si vas MÁS rápido que AirSpeed en la misma dirección,
+		-- el impulso se conserva y solo se pierde poco a poco.
+		if not grounded and math.sign(speedX) == math.sign(moveX) and math.abs(speedX) > math.abs(moveX * maxSpeed) then
+			rate = MovementConfig.AirDeceleration
+		end
 	else
 		rate = if grounded then MovementConfig.GroundDeceleration else MovementConfig.AirDeceleration
 	end
 	speedX = approach(speedX, moveX * maxSpeed, rate * dt)
+	if now < dashUntil then
+		speedX = MovementConfig.DashSpeed * dashDir
+	end
+	-- Desplazamiento del ataque: manda sobre lo anterior mientras dura.
+	if now >= lungeFrom and now < lungeUntil then
+		speedX = lungeSpeed * facing
+		if lungeVy and not lungeVyDone then
+			lungeVyDone = true
+			local vel = root.AssemblyLinearVelocity
+			root.AssemblyLinearVelocity = Vector3.new(vel.X, lungeVy, 0)
+		end
+	end
 
 	-- El Humanoid aplica la velocidad: así respeta suelo, rampas y animaciones.
 	if math.abs(speedX) < 0.05 then
@@ -321,9 +466,9 @@ local function step(dt: number)
 
 	-- Durante un ataque no se gira (el golpe sale hacia donde mirabas).
 	if not attacking then
-		if moveX > 0 then
+		if inputX > 0 then
 			facing = 1
-		elseif moveX < 0 then
+		elseif inputX < 0 then
 			facing = -1
 		end
 	end
@@ -345,26 +490,53 @@ local function step(dt: number)
 			-- clave para que DLight > salto > aéreo sea un combo verdadero.
 			local vel = root.AssemblyLinearVelocity
 			root.AssemblyLinearVelocity = Vector3.new(vel.X, MovementConfig.JumpVelocity, 0)
-		elseif not grounded and airJumpsLeft > 0 then
+		elseif not grounded and MovementMath.CanAirJump(airJumpsLeft) then
 			InputController.ClearJump()
-			airJumpsLeft -= 1
+			airJumpsLeft = MovementMath.ConsumeAirJump({ jumps = airJumpsLeft, recovery = recoveryAvailable, airDodge = airDodgeAvailable }).jumps
+			fastFallActive = false
 			local vel = root.AssemblyLinearVelocity
 			root.AssemblyLinearVelocity = Vector3.new(vel.X, MovementConfig.AirJumpVelocity, 0)
 		end
 		-- Si no se puede saltar, el salto queda guardado un instante (JumpBuffer).
 	end
 
-	-- 3. Caída rápida: mantener S en el aire cuando ya no subes.
-	local maxFall = MovementConfig.MaxFallSpeed
-	if not grounded and InputController.IsDownHeld() then
-		maxFall = MovementConfig.FastFallSpeed
-		local vel = root.AssemblyLinearVelocity
-		if vel.Y < MovementConfig.FastFallTrigger then
-			root.AssemblyLinearVelocity = Vector3.new(vel.X, -MovementConfig.FastFallSpeed, 0)
+	-- 3. Gravedad por fases (subida / punto alto / bajada) y CAÍDA RÁPIDA gradual:
+	-- mantener S en el aire, solo si ya bajas o estás en el punto alto.
+	local vel = root.AssemblyLinearVelocity
+	local fastFalling = false
+	if not grounded then
+		fastFalling = InputController.IsDownHeld()
+			and (fastFallActive or MovementMath.CanStartFastFall(vel.Y, MovementConfig))
+		fastFallActive = fastFalling
+		if hovering then
+			-- Ataque aéreo: la fuerza quita (1 - AirAttackGravityMultiplier) de la gravedad
+			-- y aquí solo se limita la caída (mismo resultado que VerticalStep con hovering).
+			local g = workspace.Gravity
+			hoverForce.Force = Vector3.new(0, root.AssemblyMass * g * (1 - MovementConfig.AirAttackGravityMultiplier), 0)
+			root.AssemblyLinearVelocity = Vector3.new(vel.X, math.max(vel.Y, -MovementConfig.AirAttackMaxFallSpeed), 0)
+		else
+			root.AssemblyLinearVelocity = Vector3.new(vel.X, MovementMath.VerticalStep(vel.Y, dt, MovementConfig, fastFalling), 0)
 		end
+	else
+		fastFallActive = false
 	end
+	local maxFall = if fastFalling then MovementConfig.FastFallSpeed else MovementConfig.MaxFallSpeed
 
-	-- 4. Plano 2D, orientación y caída máxima.
+	-- 4. Estado para el panel de depuración (atributos LOCALES: no se envían al servidor).
+	local moveName = character:GetAttribute("Move")
+	local moveState
+	if attackPhase then
+		moveState = if moveName == "Recovery" then "Recovering" elseif grounded then "Attacking" else "AirAttacking"
+	elseif grounded then
+		moveState = if running then "Running" elseif math.abs(speedX) > 1 then "Walking" else "Grounded"
+	elseif fastFalling then
+		moveState = "FastFalling"
+	else
+		moveState = if root.AssemblyLinearVelocity.Y > 0 then "Jumping" else "Falling"
+	end
+	publishDebug(character, moveState, root.AssemblyLinearVelocity.Y, attackPhase)
+
+	-- 5. Plano 2D, orientación y caída máxima.
 	lockToPlane(root, maxFall)
 end
 

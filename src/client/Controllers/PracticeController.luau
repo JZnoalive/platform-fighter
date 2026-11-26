@@ -12,6 +12,7 @@ local CpuConfig = require(ReplicatedStorage.Shared.Config.CpuConfig)
 local WeaponStyles = require(ReplicatedStorage.Shared.Config.WeaponStyles)
 local CharacterStyles = require(ReplicatedStorage.Shared.Config.CharacterStyles)
 local FighterStats = require(ReplicatedStorage.Shared.Modules.FighterStats)
+local DebugController = require(script.Parent.DebugController)
 
 local PracticeController = {}
 
@@ -276,6 +277,40 @@ local function build(practiceCommand: RemoteEvent)
 	hitboxButton = makeButton(panel, "Hitboxes", nextOrder(), UDim2.new(1, 0, 0, 26))
 	hitboxButton.Activated:Connect(function()
 		practiceCommand:FireServer("Hitboxes", not workspace:GetAttribute("DebugHitboxes"))
+	end)
+
+	-- Herramientas de la sala de prueba (2 columnas)
+	local tools = Instance.new("Frame")
+	tools.LayoutOrder = nextOrder()
+	tools.Size = UDim2.new(1, 0, 0, 56)
+	tools.BackgroundTransparency = 1
+	tools.Parent = panel
+	local toolsLayout = Instance.new("UIGridLayout")
+	toolsLayout.CellSize = UDim2.new(0.5, -3, 0, 26)
+	toolsLayout.CellPadding = UDim2.fromOffset(4, 4)
+	toolsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	toolsLayout.Parent = tools
+	local function tool(text: string, order: number, onClick: (TextButton) -> ())
+		local button = makeButton(tools, text, order, UDim2.new(1, 0, 1, 0))
+		button.TextSize = 12
+		button.Activated:Connect(function()
+			onClick(button)
+		end)
+		return button
+	end
+	tool("Congelar rival", 1, function()
+		practiceCommand:FireServer("Freeze")
+	end)
+	tool("Hurtboxes: NO", 2, function(button)
+		DebugController.SetHurtboxes(not DebugController.IsShowingHurtboxes())
+		button.Text = if DebugController.IsShowingHurtboxes() then "Hurtboxes: SÍ" else "Hurtboxes: NO"
+	end)
+	tool("Flecha KB: SÍ", 3, function(button)
+		DebugController.SetKnockbackArrow(not DebugController.IsShowingKnockbackArrow())
+		button.Text = if DebugController.IsShowingKnockbackArrow() then "Flecha KB: SÍ" else "Flecha KB: NO"
+	end)
+	tool("Imprimir cadena", 4, function()
+		DebugController.PrintLastChain()
 	end)
 
 	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")

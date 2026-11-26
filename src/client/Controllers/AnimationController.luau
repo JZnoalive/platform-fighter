@@ -185,7 +185,7 @@ local function updateModel(model: Model)
 		end
 	elseif st.currentKey and string.sub(st.currentKey, 1, 5) == "pred:" and os.clock() - (st.predictedAt or 0) < 0.35 then
 		-- Predicción en curso: el servidor aún no ha confirmado el ataque. Se deja sonar.
-	elseif state == "Hitstun" and Animations.States.Hurt then
+	elseif state == "Hitstun" and Animations.States.Hurt and not Poses.CodePosesForStates then
 		playAction(model, st, "hurt", Animations.States.Hurt, nil, true)
 	elseif state == "Dodging" and Animations.States.Dodge then
 		playAction(model, st, "dodge", Animations.States.Dodge, GameConfig.DodgeDuration, false)

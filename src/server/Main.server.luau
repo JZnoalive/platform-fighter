@@ -17,6 +17,7 @@ local OneWayPlatforms = require(ReplicatedStorage.Shared.Modules.OneWayPlatforms
 AppearanceService.Start() -- primero: desactiva la ropa del avatar antes de que aparezcan
 DecorService.Start()
 OneWayPlatforms.SetupServer() -- plataformas flotantes atravesables desde abajo
+workspace.Gravity = require(ReplicatedStorage.Shared.Config.MovementConfig).Gravity -- saltos cortos y rápidos
 FighterService.Start()
 CombatService.Start()
 TrainingService.Start()

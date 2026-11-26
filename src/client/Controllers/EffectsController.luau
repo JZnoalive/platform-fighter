@@ -373,6 +373,30 @@ function EffectsController.Start()
 
 	startMusic()
 	task.spawn(outlineLoop)
+
+	-- Sonido de "tajo al aire" cuando cualquier luchador empieza un ataque nuevo
+	-- (cambia su MoveId): se siente el movimiento aunque el golpe falle.
+	local lastMoveIds: { [Model]: any } = setmetatable({}, { __mode = "k" }) :: any
+	game:GetService("RunService").Heartbeat:Connect(function()
+		local models = {}
+		for _, player in Players:GetPlayers() do
+			if player.Character then
+				table.insert(models, player.Character)
+			end
+		end
+		for _, model in CollectionService:GetTagged("CameraTarget") do
+			table.insert(models, model)
+		end
+		for _, model in models do
+			local moveId = model:GetAttribute("MoveId")
+			if moveId ~= nil and lastMoveIds[model] ~= moveId then
+				if lastMoveIds[model] ~= nil and model:GetAttribute("State") == "Attacking" then
+					playSound(AudioConfig.Swing or "")
+				end
+				lastMoveIds[model] = moveId
+			end
+		end
+	end)
 end
 
 return EffectsController

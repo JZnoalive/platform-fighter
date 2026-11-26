@@ -194,6 +194,9 @@ end
 
 -- Hitlag (estilo Smash): congelación breve al impactar, más larga cuanto más daño.
 function FighterService.ComputeHitlag(attack): number
+	if attack.hitstop then
+		return attack.hitstop -- hitstop propio del ataque (configurable)
+	end
 	return math.min(GameConfig.HitlagBase + attack.damage * GameConfig.HitlagPerDamage, GameConfig.HitlagMax)
 end
 
@@ -233,6 +236,11 @@ function FighterService.ApplyHit(target: Fighter, attack, facing: number, attack
 	local velocity, hitstun = Knockback.Compute(attack, percent, facing, knockbackMult)
 	local hitlag = FighterService.ComputeHitlag(attack)
 
+	-- Para la reacción corporal del golpeado (PoseController): cuándo, cuánto y hacia dónde.
+	target.model:SetAttribute("HitAt", workspace:GetServerTimeNow() + hitlag)
+	target.model:SetAttribute("HitForce", velocity.Magnitude)
+	target.model:SetAttribute("HitDir", if velocity.X > 0.5 then 1 elseif velocity.X < -0.5 then -1 else 0)
+
 	-- Congelar a los dos durante el hitlag (lo leen MovementController y CpuService).
 	local frozenUntil = workspace:GetServerTimeNow() + hitlag
 	target.model:SetAttribute("FrozenUntil", frozenUntil)
@@ -247,7 +255,9 @@ function FighterService.ApplyHit(target: Fighter, attack, facing: number, attack
 		target.root.Position,
 		velocity.Magnitude,
 		hitlag + hitstun,
-		if attacker then attacker.model else nil
+		if attacker then attacker.model else nil,
+		velocity, -- (sala de prueba: flecha de knockback)
+		hitlag -- (sala de prueba: registro de tiempos)
 	)
 
 	target.hitToken += 1
@@ -346,10 +356,18 @@ end
 -- y ApplyHit no hace nada. El MOVIMIENTO de la esquiva lo pone quien controla el cuerpo:
 -- el cliente (jugador) o CpuService (CPU). Devuelve true si empezó.
 function FighterService.TryStartDodge(fighter: Fighter): boolean
-	if FighterService.GetState(fighter) ~= "Idle" then
+	local now = os.clock()
+	local state = FighterService.GetState(fighter)
+	-- Chase dodge: justo después de ACERTAR, se puede esquivar aunque el ataque siga en
+	-- su recuperación (cancela el resto del ataque). Si no, solo desde Idle.
+	local chaseCancel = state == "Attacking" and now - fighter.lastLandedAt <= GameConfig.ChaseDodgeWindow
+	if state ~= "Idle" and not chaseCancel then
 		return false
 	end
-	local now = os.clock()
+	if chaseCancel then
+		fighter.attackToken += 1 -- el ataque deja de contar (sus temporizadores ya no hacen nada)
+		fighter.queuedAttack = nil
+	end
 	-- Chase dodge (Brawlhalla): justo después de acertar un golpe, el enfriamiento es corto.
 	local cooldown = if now - fighter.lastLandedAt <= GameConfig.ChaseDodgeWindow
 		then GameConfig.ChaseDodgeCooldown
@@ -394,6 +412,10 @@ function FighterService.GetPlayerFighterId(player: Player): string
 	local choice = player:GetAttribute("FighterChoice")
 	if type(choice) == "string" and CharacterStyles[choice] then
 		return choice
+	end
+	-- Sala de prueba: el personaje de la prueba (Vórtice con Espada)
+	if GameConfig.TestRoom and GameConfig.TestRoom.Enabled then
+		return GameConfig.TestRoom.PlayerFighter
 	end
 	return "Brawler"
 end

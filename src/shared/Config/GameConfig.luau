@@ -2,7 +2,16 @@
 -- Reglas generales de la partida. Solo datos, sin lógica.
 
 local GameConfig = {
-	Version = "0.8.0-poses-video",
+	Version = "0.9.0-game-feel",
+
+	-- SALA DE PRUEBA (game feel): 1 personaje, 1 arma y un rival de prueba que se
+	-- reinicia solo para repetir combos. Enabled = false vuelve al modo normal.
+	TestRoom = {
+		Enabled = true,
+		PlayerFighter = "Blade", -- Vórtice con Espada
+		CpuFighter = "Brawler", -- rival de prueba (Forja, quieto)
+		AutoResetDelay = 2.5, -- segundos sin recibir golpes → vuelve a su sitio con 0 %
+	},
 
 	-- Presentación
 	ShowOverheadPercent = false, -- etiqueta de % encima de la cabeza (el HUD de abajo ya lo muestra)
@@ -23,7 +32,9 @@ local GameConfig = {
 	MinHitstun = 0.25,
 	MaxHitstun = 1.2,
 	RecoveryOnHitMultiplier = 0.5, -- si el ataque acierta, su recovery dura la mitad
-	AttackBufferWindow = 0.2, -- si pulsas atacar hasta 0.2 s antes de poder, el golpe sale en cuanto puedas
+	AttackBufferWindow = 0.35, -- búfer: si pulsas atacar hasta 0,35 s antes de poder, el golpe sale en cuanto puedas
+	-- Cadena de ligeros (golpe 1 → 2 → 3) con el ataque neutro en el suelo (ChainLogic)
+	LightChain = { Moves = { "Jab", "Jab2", "Jab3" }, Window = 0.55 },
 
 	-- Hitlag (estilo Smash): atacante y golpeado se congelan un instante al impactar
 	HitlagBase = 0.03,

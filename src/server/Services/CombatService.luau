@@ -246,6 +246,8 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack, mo
 			linkAttack.baseKnockback = attack.linkKnockback or 6
 			linkAttack.knockbackScale = 0
 			linkAttack.angle = attack.linkAngle or 90
+			linkAttack.knockback = nil -- el enganche usa siempre ángulo + fuerza pequeña
+			linkAttack.hitstun = nil
 			linkAttack.activeInput = nil
 		end
 
@@ -257,6 +259,9 @@ function CombatService.PerformAttack(fighter: FighterService.Fighter, attack, mo
 			if data.activeInput and inputDir ~= 0 and inputDir == -facingOf(fighter) then
 				local mirrored = table.clone(data)
 				mirrored.angle = 180 - data.angle
+				if data.knockback then
+					mirrored.knockback = Vector2.new(-data.knockback.X, data.knockback.Y)
+				end
 				return mirrored
 			end
 			return data

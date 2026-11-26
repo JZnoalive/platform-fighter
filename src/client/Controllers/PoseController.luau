@@ -94,6 +94,87 @@ local function lerpPose(from, to, alpha: number)
 	return result
 end
 
+local function smooth(a: number): number
+	return a * a * (3 - 2 * a) -- arranque y frenada suaves (smoothstep)
+end
+
+-- Guardia del arma (pose neutral) con respiración/balanceo suave. {} si el arma no tiene.
+local function guardPose(weapon: string?)
+	local guard = weapon and Poses.Guard and Poses.Guard[weapon]
+	if not guard then
+		return EMPTY
+	end
+	local t = os.clock()
+	local breathe = math.sin(t * 2.6) -- ~2,4 s por respiración
+	local sway = math.sin(t * 1.3)
+	local result = table.clone(guard)
+	result.Waist = (guard.Waist or Vector3.zero) + Vector3.new(breathe * 2.5, sway * 2, 0)
+	result.RightShoulder = (guard.RightShoulder or Vector3.zero) + Vector3.new(breathe * 2, 0, 0)
+	result.LeftShoulder = (guard.LeftShoulder or Vector3.zero) + Vector3.new(-breathe * 2, 0, 0)
+	result.Neck = (guard.Neck or Vector3.zero) + Vector3.new(-breathe * 1.5, 0, 0)
+	return result
+end
+
+-- Ataque por FOTOGRAMAS CLAVE (pose.keys): cada clave dice en qué fase está
+-- ("startup" / "active" / "recovery") y en qué punto de esa fase (at = 0..1).
+-- Fases típicas: anticipación → inicio del avance → extensión → impacto → seguimiento
+-- → recuperación → guardia. Entre claves se interpola con arranque y frenada suaves.
+local function keyedPose(pose, data, t: number, weapon: string?)
+	local starts = { startup = 0, active = data.startup, recovery = data.startup + data.active }
+	local lengths = { startup = data.startup, active = data.active, recovery = data.recovery }
+	local guard = guardPose(weapon)
+	local prevTime, prevPose = 0, guard
+	for _, key in pose.keys do
+		local keyTime = starts[key.phase] + lengths[key.phase] * key.at
+		local keyPose = if key.pose == "guard" then guard else key.pose
+		if t <= keyTime then
+			local span = math.max(keyTime - prevTime, 1e-3)
+			return lerpPose(prevPose, keyPose, smooth(math.clamp((t - prevTime) / span, 0, 1)))
+		end
+		prevTime, prevPose = keyTime, keyPose
+	end
+	return prevPose
+end
+
+local LEGS = { RightHip = true, RightKnee = true, LeftHip = true, LeftKnee = true }
+
+-- Pose "base" con las articulaciones de `parts` tomadas de `over`.
+local function mergePose(base, over, parts)
+	local result = table.clone(base)
+	for joint in parts do
+		result[joint] = over[joint]
+	end
+	return result
+end
+
+-- REACCIÓN AL GOLPE (por código): el cuerpo se dobla hacia donde lo empujan, más
+-- exagerado el primer instante (latigazo) y, si el golpe es fuerte, da vueltas.
+-- Lee HitAt (hora del golpe), HitForce (fuerza) y HitDir (lado del empujón) del servidor.
+local function hitPose(model: Model)
+	local base = Poses.States.Flinch or Poses.States.Hitstun
+	local hitAt = model:GetAttribute("HitAt")
+	local force = model:GetAttribute("HitForce") or 0
+	local dir = model:GetAttribute("HitDir") or 0
+	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local facing = if root and root.CFrame.LookVector.X < 0 then -1 else 1
+	-- Empujado hacia su espalda → se dobla hacia atrás (1); hacia su frente → hacia delante (-1)
+	local lean = if dir ~= 0 and dir == facing then -1 else 1
+	-- (durante el hitlag "since" es negativo: la pose se queda en el latigazo máximo)
+	local since = if type(hitAt) == "number" then math.max(workspace:GetServerTimeNow() - hitAt, 0) else 1
+	local snap = if since < 0.1 then 1.35 - since * 3.5 else 1 -- latigazo inicial
+	local result = {}
+	for joint, v in base do
+		result[joint] = v * snap
+	end
+	result.Root = Vector3.new((base.Root and base.Root.X or 0) * lean * snap, 0, 0)
+	result.Waist = Vector3.new((base.Waist and base.Waist.X or 0) * lean * snap, 0, 0)
+	if force >= (Poses.States.TumbleForce or 55) and since > 0.08 then
+		-- Sale volando: voltereta continua mientras dura el aturdimiento
+		result.Root = result.Root + Vector3.new(-lean * since * 540, 0, 0)
+	end
+	return result
+end
+
 -- Pose de ataque según el tiempo transcurrido, o nil si no hay datos.
 local function attackPose(model: Model)
 	local moveName = model:GetAttribute("Move")
@@ -110,6 +191,10 @@ local function attackPose(model: Model)
 
 	local now = workspace:GetServerTimeNow()
 	local t = now - moveTime
+
+	if pose.keys then
+		return keyedPose(pose, data, t, weapon)
+	end
 
 	-- Ataques con GANCHO y poses clave (guadaña): preparar → estirar → enganchar →
 	-- tirar → lanzar. El instante del enganche lo marca el servidor (atributo HookAt).
@@ -229,7 +314,9 @@ local function updateModel(model: Model, _isCpu: boolean, dt: number)
 			pose = attackPose(model)
 		end
 	elseif state == "Hitstun" then
-		if not Animations.States.Hurt then
+		if Poses.CodePosesForStates then
+			pose = hitPose(model)
+		elseif not Animations.States.Hurt then
 			pose = Poses.States.Hitstun
 		end
 	elseif state == "Dodging" then
@@ -239,8 +326,14 @@ local function updateModel(model: Model, _isCpu: boolean, dt: number)
 	else
 		-- En el aire (saltando / cayendo) no hay animación: postura aérea por código.
 		local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
+		local weapon = model:GetAttribute("Weapon")
+		local hasGuard = Poses.Guard and Poses.Guard[weapon] ~= nil
 		if root and math.abs(root.AssemblyLinearVelocity.Y) > 4 then
-			pose = Poses.Locomotion.Air
+			-- En el aire: piernas de salto + brazos en guardia del arma (si tiene).
+			pose = if hasGuard then mergePose(guardPose(weapon), Poses.Locomotion.Air, LEGS) else Poses.Locomotion.Air
+		elseif hasGuard and root and math.abs(root.AssemblyLinearVelocity.X) < 2 then
+			-- Quieto: guardia del arma con respiración (no la animación genérica de Roblox).
+			pose = guardPose(weapon)
 		elseif not Animations.States.Idle then
 			pose = locomotionPose(model, dt)
 		end

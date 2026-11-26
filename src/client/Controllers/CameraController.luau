@@ -65,7 +65,11 @@ local function computeTarget(camera: Camera): CFrame
 		CameraConfig.MaxDistance
 	)
 
-	local center = Vector3.new((minX + maxX) / 2, (minY + maxY) / 2 + CameraConfig.HeightOffset, 0)
+	-- Altura: solo se sigue una parte del salto (VerticalFollow) respecto al más bajo,
+	-- así la cámara no sube y baja de golpe con cada salto.
+	local follow = CameraConfig.VerticalFollow or 1
+	local centerY = minY + ((maxY - minY) / 2) * follow + (if follow < 1 then (maxY - minY) * (1 - follow) * 0.25 else 0)
+	local center = Vector3.new((minX + maxX) / 2, centerY + CameraConfig.HeightOffset, 0)
 	-- Un poco desde arriba (estilo Smash): se ve la parte de arriba de las plataformas.
 	local pitch = math.rad(CameraConfig.Pitch or 0)
 	local offset = Vector3.new(0, math.sin(pitch) * distance, math.cos(pitch) * distance)
@@ -107,7 +111,11 @@ function CameraController.Start()
 
 		local target = computeTarget(camera)
 		local alpha = 1 - math.exp(-CameraConfig.Smoothing * dt)
-		baseCFrame = baseCFrame:Lerp(target, alpha)
+		-- El lado (X) y la distancia siguen rápido; la altura (Y), más despacio.
+		local alphaY = 1 - math.exp(-(CameraConfig.VerticalSmoothing or CameraConfig.Smoothing) * dt)
+		local from, to = baseCFrame.Position, target.Position
+		local pos = Vector3.new(from.X + (to.X - from.X) * alpha, from.Y + (to.Y - from.Y) * alphaY, from.Z + (to.Z - from.Z) * alpha)
+		baseCFrame = CFrame.lookAt(pos, pos + target.LookVector)
 
 		local offset = Vector3.zero
 		local remaining = shakeUntil - os.clock()

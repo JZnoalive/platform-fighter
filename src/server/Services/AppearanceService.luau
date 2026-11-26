@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local CharacterStyles = require(ReplicatedStorage.Shared.Config.CharacterStyles)
+local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 local WeaponStyles = require(ReplicatedStorage.Shared.Config.WeaponStyles)
 local Movesets = require(ReplicatedStorage.Shared.Modules.Movesets)
 
@@ -190,7 +191,9 @@ local function dressPlayerCharacter(player: Player, character: Model)
 	-- Personaje elegido en el menú (atributo FighterChoice), o Brawler.
 	local fighterId = player:GetAttribute("FighterChoice")
 	if type(fighterId) ~= "string" or not CharacterStyles[fighterId] then
-		fighterId = PLAYER_FIGHTER_ID
+		fighterId = if GameConfig.TestRoom and GameConfig.TestRoom.Enabled
+			then GameConfig.TestRoom.PlayerFighter
+			else PLAYER_FIGHTER_ID
 	end
 
 	local ok, err = pcall(function()

@@ -17,6 +17,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local CpuConfig = require(ReplicatedStorage.Shared.Config.CpuConfig)
+local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 local CharacterStyles = require(ReplicatedStorage.Shared.Config.CharacterStyles)
 local WeaponStyles = require(ReplicatedStorage.Shared.Config.WeaponStyles)
 local FighterStats = require(ReplicatedStorage.Shared.Modules.FighterStats)
@@ -34,8 +35,11 @@ local spawning = false
 local cpuFighter: FighterService.Fighter? = nil
 local spawnCFrame: CFrame? = nil
 local currentBehavior = CpuConfig.DefaultBehavior
-local cpuFighterId = "Blade" -- personaje de la CPU (cambiable en el menú)
-local cpuWeapon = CharacterStyles.Blade.defaultWeapon -- se conserva aunque la CPU se recree
+local testRoom = GameConfig.TestRoom and GameConfig.TestRoom.Enabled and GameConfig.TestRoom or nil
+-- personaje de la CPU (cambiable en el menú); en la sala de prueba, el rival de prueba
+local cpuFighterId = if testRoom then testRoom.CpuFighter else "Blade"
+local cpuWeapon = CharacterStyles[cpuFighterId].defaultWeapon -- se conserva aunque la CPU se recree
+local lastCpuHitAt = 0 -- sala de prueba: último golpe que recibió la CPU
 local matchControl = false -- true = la CPU está en una partida "VsCpu" (la gestiona MatchService)
 local startVsCpuCallback: ((Player) -> ())? = nil
 
@@ -55,6 +59,7 @@ local function resetCpu(fighter: FighterService.Fighter)
 	end
 	local root = fighter.root
 	root.Anchored = false -- por si venía de estar eliminada en una partida
+	fighter.model:SetAttribute("Frozen", false)
 	fighter.model:PivotTo(spawnCFrame)
 	root.AssemblyLinearVelocity = Vector3.zero
 	pcall(function()
@@ -132,6 +137,22 @@ local function spawnCpu()
 		end
 		if not matchControl and not isInside(fighter.root.Position, blastZone) then
 			resetCpu(fighter)
+			return
+		end
+		-- Sala de prueba: si la CPU quedó tocada (con % o fuera de su sitio) y lleva
+		-- AutoResetDelay s sin recibir golpes, vuelve sola a su sitio con 0 %.
+		if testRoom and not matchControl then
+			local percent = model:GetAttribute("Percent") or 0
+			if model:GetAttribute("State") == "Hitstun" then
+				lastCpuHitAt = os.clock()
+			end
+			local moved = spawnCFrame and (fighter.root.Position - spawnCFrame.Position).Magnitude > 3
+			if (percent > 0 or moved) and FighterService.GetState(fighter) == "Idle"
+				and not model:GetAttribute("Frozen")
+				and os.clock() - lastCpuHitAt > testRoom.AutoResetDelay then
+				lastCpuHitAt = os.clock()
+				resetCpu(fighter)
+			end
 		end
 	end)
 
@@ -181,6 +202,16 @@ local function onPracticeCommand(player: Player, command: any, value: any)
 		if type(value) == "string" and WeaponStyles[value] then
 			cpuWeapon = value
 			AppearanceService.SetWeapon(fighter.model, value)
+		end
+	elseif command == "Freeze" then
+		-- Congelar/descongelar al rival: se queda clavado en el sitio (recibe golpes y
+		-- daño, pero no se mueve). Útil para medir hitboxes y cadenas.
+		local frozen = not fighter.model:GetAttribute("Frozen")
+		fighter.model:SetAttribute("Frozen", frozen)
+		fighter.root.Anchored = frozen
+		if frozen then
+			CpuService.SetBehavior(fighter, "Idle")
+			workspace:SetAttribute("CpuBehavior", "Idle")
 		end
 	elseif command == "Character" then
 		-- Cambiar MI personaje: se recuerda y reaparezco con él (y con su arma).

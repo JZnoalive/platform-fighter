@@ -111,6 +111,31 @@ local function attack(ctrl: Controller, moveName: string): boolean
 			push()
 		end
 	end
+	-- Ataque con desplazamiento propio (campo lunge): avanza mientras dura.
+	if data.lunge then
+		local lunge = data.lunge
+		local facing = ctrl.facing
+		local moveId = fighter.model:GetAttribute("MoveId")
+		task.spawn(function()
+			task.wait(lunge.delay or 0)
+			local stopAt = os.clock() + lunge.time
+			local vyDone = false
+			while os.clock() < stopAt do
+				if not fighter.model.Parent or FighterService.GetState(fighter) ~= "Attacking"
+					or fighter.model:GetAttribute("MoveId") ~= moveId then
+					return
+				end
+				local vel = fighter.root.AssemblyLinearVelocity
+				local vy = vel.Y
+				if lunge.vy and not vyDone then
+					vy = lunge.vy
+					vyDone = true
+				end
+				fighter.root.AssemblyLinearVelocity = Vector3.new(lunge.speed * facing, vy, 0)
+				RunService.Heartbeat:Wait()
+			end
+		end)
+	end
 	return true
 end
 

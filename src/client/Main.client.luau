@@ -16,6 +16,7 @@ local PracticeController = require(Controllers.PracticeController)
 local PoseController = require(Controllers.PoseController)
 local EffectsController = require(Controllers.EffectsController)
 local AnimationController = require(Controllers.AnimationController)
+local DebugController = require(Controllers.DebugController)
 
 -- La cámara va primero: si otro controlador falla, al menos se ve el juego.
 CameraController.Start()
@@ -27,5 +28,6 @@ PracticeController.Start()
 AnimationController.Start() -- animaciones reales
 PoseController.Start() -- poses por código como respaldo (después, en Stepped)
 EffectsController.Start()
+DebugController.Start() -- panel de la sala de prueba (F2)
 
 print(`[Client] listo — {Players.LocalPlayer.Name} — versión {GameConfig.Version}`)
