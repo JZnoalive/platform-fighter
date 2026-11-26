@@ -6,10 +6,10 @@ local MovementConfig = {
 	-- GAME FEEL (prueba 1): gravedad más fuerte + salto más bajo = saltos cortos y rápidos
 	-- (~1,3 cuerpos), como en el género. Antes: gravedad 196 y salto de ~14 studs (3 cuerpos).
 	-- NÚCLEO DE COMBATE (iteración 2): TODOS los números del movimiento están aquí.
-	Gravity = 250, -- gravedad base al SUBIR (la pone el servidor en workspace.Gravity)
+	Gravity = 200, -- (antes 250: caían demasiado rápido) gravedad base al SUBIR (la pone el servidor en workspace.Gravity)
 	ApexThreshold = 9, -- |velocidad vertical| < esto = "punto alto" del salto
 	ApexGravityMultiplier = 0.6, -- en el punto alto pesa menos (un instante de "flotar")
-	FallGravityMultiplier = 1.3, -- al BAJAR pesa más (caída clara, no flotante)
+	FallGravityMultiplier = 1.05, -- al BAJAR pesa un poco más (antes 1.3)
 
 	-- Suelo
 	WalkSpeed = 20, -- caminar (mantener A/D)
@@ -37,15 +37,15 @@ local MovementConfig = {
 	-- (durante el arranque y el golpe del ataque en el suelo no hay control: solo esa ventana)
 
 	-- Saltos (altura ≈ v² / (2·gravedad))
-	JumpVelocity = 60, -- ~7 studs
-	AirJumpVelocity = 52, -- ~5,4 studs
+	JumpVelocity = 54, -- ~7 studs con gravedad 200
+	AirJumpVelocity = 47, -- ~5,5 studs
 	MaxAirJumps = 2,
-	MaxFallSpeed = 72,
+	MaxFallSpeed = 40, -- (antes 72: caían demasiado rápido)
 
 	-- Caída rápida (mantener S en el aire). GRADUAL: acelera hacia FastFallSpeed, no se
 	-- teletransporta. Solo empieza cuando ya bajas o estás en el punto alto.
-	FastFallSpeed = 105, -- velocidad máxima de la caída rápida
-	FastFallAcceleration = 480, -- studs/s² extra hacia abajo mientras dura
+	FastFallSpeed = 62, -- velocidad máxima de la caída rápida (antes 105: bajaba de golpe)
+	FastFallAcceleration = 160, -- studs/s² extra mientras dura (antes 480)
 	FastFallTrigger = 6, -- se puede activar cuando la velocidad vertical es menor que esto
 
 	-- Esquiva (tiempos en GameConfig)
