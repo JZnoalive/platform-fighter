@@ -151,7 +151,9 @@ local function spawnCpu()
 		end
 		-- Sala de prueba: si la CPU quedó tocada (con % o fuera de su sitio) y lleva
 		-- AutoResetDelay s sin recibir golpes, vuelve sola a su sitio con 0 %.
-		if testRoom and not matchControl then
+		-- (Desactivado si AutoResetDelay = nil: con la CPU caminando o peleando se
+		-- reiniciaba sola cada pocos segundos y parecía bugueada.)
+		if testRoom and testRoom.AutoResetDelay and not matchControl then
 			local percent = model:GetAttribute("Percent") or 0
 			if model:GetAttribute("State") == "Hitstun" then
 				lastCpuHitAt = os.clock()
@@ -200,6 +202,11 @@ local function onPracticeCommand(player: Player, command: any, value: any)
 		-- los golpes lo doblan y lo lanzan (si se congelaba, no reaccionaba a nada y
 		-- parecía que el juego estaba parado). El jugador se coloca a 5 studs (lo hace su cliente).
 		resetCpu(fighter) -- (quita Frozen y el anclaje)
+		-- En el CENTRO del escenario, sin plataformas encima (su sitio normal está debajo
+		-- de la plataforma derecha y al lanzarla hacia arriba chocaba con ella).
+		if spawnCFrame then
+			fighter.model:PivotTo(CFrame.new(4, spawnCFrame.Position.Y, 0) * spawnCFrame.Rotation)
+		end
 		CpuService.SetBehavior(fighter, "Idle")
 		workspace:SetAttribute("CpuBehavior", "Idle")
 		local playerFighter = FighterService.Get(player.Character)

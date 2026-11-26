@@ -252,6 +252,8 @@ end
 local function onCharacterAdded(character: Model)
 	local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 	humanoid.AutoRotate = false
+	-- Sin "escalar": el Humanoid se trepaba al borde de las plataformas y se quedaba pegado en el aire.
+	humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, false)
 	humanoid.UseJumpPower = true
 	humanoid.JumpPower = MovementConfig.JumpVelocity
 	speedX = 0
@@ -320,6 +322,10 @@ local function step(dt: number)
 				else
 					root.AssemblyLinearVelocity = Vector3.zero
 				end
+			end
+			-- Lanzado: pesa menos mientras dura el aturdimiento (flota, combos aéreos).
+			if not pendingKnockback and humanoid.FloorMaterial == Enum.Material.Air then
+				hoverForce.Force = Vector3.new(0, root.AssemblyMass * workspace.Gravity * (1 - GameConfig.HitstunGravityMultiplier), 0)
 			end
 			lockToPlane(root, MovementConfig.MaxFallSpeed)
 			publishDebug(body, "Hitstun", root.AssemblyLinearVelocity.Y, nil)

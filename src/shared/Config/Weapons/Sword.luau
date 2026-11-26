@@ -58,7 +58,7 @@ return {
 		baseKnockback = 30,
 		knockbackScale = 0.4,
 		angle = 40,
-		knockback = Vector2.new(26, 48), -- antes (30, 22): ahora LANZA al aire para perseguir
+		knockback = Vector2.new(24, 38), -- LANZA en diagonal para perseguir
 		knockbackGrowth = 0.012,
 		hitstop = 0.08,
 		lunge = { speed = 26, time = 0.12, delay = 0.07 },
@@ -92,9 +92,9 @@ return {
 		baseKnockback = 26,
 		knockbackScale = 0.35,
 		angle = 85,
-		knockback = Vector2.new(5, 58),
-		knockbackGrowth = 0.006,
-		hitstun = 0.45,
+		knockback = Vector2.new(1.5, 42), -- COMBO AÉREO: recto hacia arriba, ~1 salto de alto (flota en hitstun)
+		knockbackGrowth = 0.004,
+		hitstun = 0.75, -- sigue aturdido en el aire mientras saltas a por él (antes 0.45)
 		hitstop = 0.06,
 		hitbox = { offset = Vector2.new(1.5, 3), size = Vector3.new(6, 6, 6) },
 		animationId = nil,
@@ -126,8 +126,9 @@ return {
 		baseKnockback = 24,
 		knockbackScale = 0.3,
 		angle = 40,
-		knockback = Vector2.new(14, 30),
+		knockback = Vector2.new(10, 34),
 		knockbackGrowth = 0.008,
+		hitstun = 0.7, -- encadenable en el aire
 		hitstop = 0.05,
 		lunge = { speed = 14, time = 0.08, delay = 0.05 },
 		-- arco grande que llega por debajo: atrapa al rival que sube
@@ -145,8 +146,9 @@ return {
 		baseKnockback = 26,
 		knockbackScale = 0.3,
 		angle = 25,
-		knockback = Vector2.new(30, 10),
+		knockback = Vector2.new(28, 16),
 		knockbackGrowth = 0.01,
+		hitstun = 0.65,
 		hitstop = 0.06,
 		lunge = { speed = 26, time = 0.1, delay = 0.04 },
 		hitbox = { offset = Vector2.new(4.5, 0), size = Vector3.new(7, 4, 6) },
@@ -161,10 +163,11 @@ return {
 		baseKnockback = 24,
 		knockbackScale = 0.3,
 		angle = 80,
-		knockback = Vector2.new(4, 46),
-		knockbackGrowth = 0.006,
+		knockback = Vector2.new(1.5, 34), -- sigue subiéndolo para otro golpe
+		knockbackGrowth = 0.005,
+		hitstun = 0.85, -- (antes 0.65) da tiempo a saltar otra vez y seguir el combo
 		hitstop = 0.05,
-		hitbox = { offset = Vector2.new(1, 4.5), size = Vector3.new(7, 5, 6) },
+		hitbox = { offset = Vector2.new(1.5, 4), size = Vector3.new(9, 6, 6) }, -- más ancho: perdona la distancia
 		animationId = nil,
 	},
 

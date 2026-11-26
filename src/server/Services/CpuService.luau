@@ -18,6 +18,26 @@ local RunService = game:GetService("RunService")
 
 local CpuConfig = require(ReplicatedStorage.Shared.Config.CpuConfig)
 local MovementConfig = require(ReplicatedStorage.Shared.Config.MovementConfig)
+local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
+
+-- Fuerza hacia arriba para que la CPU lanzada flote durante el hitstun (combos aéreos).
+local function getFloatForce(root: BasePart): VectorForce
+	local force = root:FindFirstChild("HitstunFloat") :: VectorForce?
+	if force then
+		return force
+	end
+	local attachment = Instance.new("Attachment")
+	attachment.Name = "HitstunFloatAttachment"
+	attachment.Parent = root
+	local newForce = Instance.new("VectorForce")
+	newForce.Name = "HitstunFloat"
+	newForce.Attachment0 = attachment
+	newForce.RelativeTo = Enum.ActuatorRelativeTo.World
+	newForce.ApplyAtCenterOfMass = true
+	newForce.Force = Vector3.zero
+	newForce.Parent = root
+	return newForce
+end
 local Movesets = require(ReplicatedStorage.Shared.Modules.Movesets)
 local FighterStats = require(ReplicatedStorage.Shared.Modules.FighterStats)
 local OneWayPlatforms = require(ReplicatedStorage.Shared.Modules.OneWayPlatforms)
@@ -283,6 +303,14 @@ local function step(ctrl: Controller)
 	local vel = root.AssemblyLinearVelocity
 	local moveX = 0
 
+	-- Lanzada y aturdida en el aire: pesa menos (flota) para que se la pueda perseguir.
+	local floatForce = getFloatForce(root)
+	if state == "Hitstun" and not grounded then
+		floatForce.Force = Vector3.new(0, root.AssemblyMass * workspace.Gravity * (1 - GameConfig.HitstunGravityMultiplier), 0)
+	else
+		floatForce.Force = Vector3.zero
+	end
+
 	-- Hitlag como atacante: quieta un instante al acertar (FrozenUntil lo pone FighterService).
 	local frozenUntil = fighter.model:GetAttribute("FrozenUntil")
 	local frozen = state ~= "Hitstun"
@@ -323,6 +351,8 @@ end
 function CpuService.Attach(fighter: FighterService.Fighter, behavior: string)
 	local humanoid = fighter.humanoid
 	humanoid.AutoRotate = false
+	-- Sin "escalar": el Humanoid se trepaba al borde de las plataformas y se quedaba pegado en el aire.
+	humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, false)
 	humanoid.UseJumpPower = true
 	humanoid.JumpPower = MovementConfig.JumpVelocity
 

@@ -10,7 +10,7 @@ local GameConfig = {
 		Enabled = true,
 		PlayerFighter = "Blade", -- Vórtice con Espada
 		CpuFighter = "Brawler", -- rival de prueba (Forja, quieto)
-		AutoResetDelay = 2.5, -- segundos sin recibir golpes → vuelve a su sitio con 0 %
+		AutoResetDelay = nil, -- (antes 2.5: la CPU volvía sola a su sitio y parecía bugueada; usa "Reiniciar posiciones")
 	},
 
 	-- Presentación
@@ -37,6 +37,9 @@ local GameConfig = {
 	LightChain = { Moves = { "Jab", "Jab2", "Jab3" }, Window = 0.55 },
 
 	-- Hitlag (estilo Smash): atacante y golpeado se congelan un instante al impactar
+	-- Lanzado y aturdido (hitstun) en el aire: pesa menos, flota más (para poder perseguir
+	-- y hacer combos aéreos, como en el género). 1 = gravedad normal.
+	HitstunGravityMultiplier = 0.45,
 	HitlagBase = 0.03,
 	HitlagPerDamage = 0.0045, -- un pesado de 15 % congela ~0.1 s (ágil, estilo Brawlhalla)
 	HitlagMax = 0.11,
