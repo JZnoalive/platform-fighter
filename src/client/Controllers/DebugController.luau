@@ -25,7 +25,7 @@ local DebugController = {}
 local MAX_LOG = 8
 local log: { { move: string, at: number, timing: string, hit: boolean, gap: number? } } = {}
 local panel: TextLabel
-local visible = true
+local visible = false -- paneles ocultos al empezar (F2 los muestra): la pantalla es para jugar
 local showHurtboxes = false
 local showKnockback = true
 local lastMoveId: any = nil
@@ -304,15 +304,34 @@ function DebugController.Start()
 	controlsPadding.Parent = controls
 	controls.Parent = gui
 
+	-- Pista pequeña siempre visible
+	local hint = Instance.new("TextLabel")
+	hint.AnchorPoint = Vector2.new(1, 1)
+	hint.Position = UDim2.new(1, -12, 1, -8)
+	hint.Size = UDim2.fromOffset(260, 22)
+	hint.BackgroundTransparency = 1
+	hint.TextColor3 = Color3.new(1, 1, 1)
+	hint.TextStrokeTransparency = 0.4
+	hint.Font = Enum.Font.GothamBold
+	hint.TextSize = 14
+	hint.TextXAlignment = Enum.TextXAlignment.Right
+	hint.Text = "F2 = controles y depuración"
+	hint.Parent = gui
+
+	local function applyVisibility()
+		input.Visible = visible
+		controls.Visible = visible
+		hint.Visible = not visible
+	end
+	applyVisibility()
+
 	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 
 	RunService.RenderStepped:Connect(render)
-	UserInputService.InputBegan:Connect(function(input, processed)
-		if not processed and input.KeyCode == Enum.KeyCode.F2 then
+	UserInputService.InputBegan:Connect(function(inputObject, processed)
+		if not processed and inputObject.KeyCode == Enum.KeyCode.F2 then
 			visible = not visible
-			if inputPanel then
-				inputPanel.Visible = visible
-			end
+			applyVisibility()
 		end
 	end)
 	-- Los cuerpos cambian al reaparecer: refrescar las hurtboxes cada poco.

@@ -58,7 +58,7 @@ return {
 		baseKnockback = 30,
 		knockbackScale = 0.4,
 		angle = 40,
-		knockback = Vector2.new(30, 22),
+		knockback = Vector2.new(26, 48), -- antes (30, 22): ahora LANZA al aire para perseguir
 		knockbackGrowth = 0.012,
 		hitstop = 0.08,
 		lunge = { speed = 26, time = 0.12, delay = 0.07 },
@@ -75,7 +75,7 @@ return {
 		baseKnockback = 26,
 		knockbackScale = 0.35,
 		angle = 32,
-		knockback = Vector2.new(26, 12), -- sobre todo horizontal
+		knockback = Vector2.new(26, 30), -- antes (26, 12): sale en diagonal -- sobre todo horizontal
 		knockbackGrowth = 0.01,
 		hitstop = 0.06,
 		lunge = { speed = 30, time = 0.12, delay = 0.06 },

@@ -321,7 +321,7 @@ local function build(practiceCommand: RemoteEvent)
 				local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
 				if model ~= Players.LocalPlayer.Character and model:GetAttribute("FighterId") and root then
 					MovementController.PlaceAt(root.Position.X - 5, root.Position.Y, 1)
-					DebugController.LogInput("REINICIO: rival congelado, tú a 5 studs mirándolo", "info")
+					DebugController.LogInput("REINICIO: rival quieto en su sitio, tú a 5 studs mirándolo", "info")
 					return
 				end
 			end

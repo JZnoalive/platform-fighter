@@ -196,23 +196,12 @@ local function onPracticeCommand(player: Player, command: any, value: any)
 			playerFighter.model:SetAttribute("Percent", 0)
 		end
 	elseif command == "ResetPositions" then
-		-- Prueba de la cadena: rival a su sitio, 0 %, CONGELADO (inmóvil); el jugador se
-		-- coloca a 5 studs mirándolo (lo hace su cliente, que es dueño de su física).
-		resetCpu(fighter)
+		-- Rival a su sitio, 0 %, QUIETO pero NO congelado: no se mueve por sí solo, pero
+		-- los golpes lo doblan y lo lanzan (si se congelaba, no reaccionaba a nada y
+		-- parecía que el juego estaba parado). El jugador se coloca a 5 studs (lo hace su cliente).
+		resetCpu(fighter) -- (quita Frozen y el anclaje)
 		CpuService.SetBehavior(fighter, "Idle")
 		workspace:SetAttribute("CpuBehavior", "Idle")
-		fighter.model:SetAttribute("Frozen", true) -- ya no se mueve ni se reinicia sola
-		-- Se ancla cuando TOCA EL SUELO (si se anclaba al aparecer, quedaba flotando a
-		-- 4 studs y los ataques bajos le pasaban por debajo).
-		task.spawn(function()
-			local started = os.clock()
-			while os.clock() - started < 2 and fighter.humanoid.FloorMaterial == Enum.Material.Air do
-				task.wait()
-			end
-			if fighter.model.Parent and fighter.model:GetAttribute("Frozen") then
-				anchorInPlace(fighter)
-			end
-		end)
 		local playerFighter = FighterService.Get(player.Character)
 		if playerFighter then
 			playerFighter.model:SetAttribute("Percent", 0)

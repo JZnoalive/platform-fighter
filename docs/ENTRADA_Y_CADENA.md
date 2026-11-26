@@ -7,7 +7,7 @@
 
 ## Cómo hacer el combo (secuencia exacta)
 
-1. En el menú de práctica pulsa **Reiniciar posiciones**: el rival queda quieto en el suelo y
+1. En el menú de práctica pulsa **Reiniciar posiciones**: el rival queda quieto (sin congelar: reacciona y sale volando) y
    tú a 5 studs, mirándolo.
 2. **Sin tocar A/D/W/S**, pulsa **J, J, J** a ritmo normal.
    - Si pulsas J mientras sale un golpe, el siguiente queda **guardado** y sale al terminar.
