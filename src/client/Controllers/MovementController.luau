@@ -4,6 +4,7 @@
 -- Corre en el cliente porque Roblox da al jugador la física de su propio personaje.
 -- Números en Shared.Config.MovementConfig (y tiempos de esquiva en GameConfig).
 
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -225,6 +226,17 @@ function MovementController.ResetMotion()
 		root.AssemblyLinearVelocity = Vector3.zero
 		humanoid:ChangeState(Enum.HumanoidStateType.Freefall)
 	end
+end
+
+-- Coloca al personaje en un punto mirando a un lado (botón de reinicio de la sala de prueba).
+function MovementController.PlaceAt(x: number, y: number, newFacing: number)
+	local root = getBody()
+	if not root then
+		return
+	end
+	facing = if newFacing < 0 then -1 else 1
+	root.CFrame = CFrame.new(x, y, 0)
+	MovementController.ResetMotion()
 end
 
 local function lockToPlane(root: BasePart, maxFallSpeed: number)
@@ -452,6 +464,19 @@ local function step(dt: number)
 			lungeVyDone = true
 			local vel = root.AssemblyLinearVelocity
 			root.AssemblyLinearVelocity = Vector3.new(vel.X, lungeVy, 0)
+		end
+	end
+	-- Durante un ataque (avance, embestida...), si hay un rival justo delante el avance se
+	-- para: no se le atraviesa y el siguiente golpe queda a buena distancia.
+	if attackPhase and speedX * facing > 0 then
+		for _, model in CollectionService:GetTagged("CameraTarget") do
+			local other = model ~= character and model:FindFirstChild("HumanoidRootPart") :: BasePart?
+			if other and math.abs(other.Position.Y - root.Position.Y) < 4 then
+				local ahead = (other.Position.X - root.Position.X) * facing
+				if ahead > -0.5 and ahead < MovementConfig.LungeStopDistance then
+					speedX = 0
+				end
+			end
 		end
 	end
 

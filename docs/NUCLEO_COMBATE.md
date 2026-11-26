@@ -6,6 +6,9 @@ ideas de mecánica del género, no personajes, arte, sonidos, HUD ni código.
 
 > **Estado: pendiente de la prueba de Jesús.** No está "terminado" hasta que Jesús lo
 > juegue y grabe 30–60 s (ver checklist al final).
+>
+> **Primero:** [ENTRADA_Y_CADENA.md](ENTRADA_Y_CADENA.md). Ahí está cómo hacer la cadena J J J,
+> el panel de entrada y los fallos de entrada corregidos.
 
 ---
 

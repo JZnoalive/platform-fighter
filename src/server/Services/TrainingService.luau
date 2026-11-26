@@ -53,6 +53,16 @@ local function isValidBehavior(name: any): boolean
 	return type(name) == "string" and table.find(CpuConfig.Behaviors, name) ~= nil
 end
 
+-- Ancla al luchador donde está AHORA y se asegura de que los clientes lo vean ahí.
+-- (Roblox no reenvía la posición de una pieza anclada que llegó por la física: el
+-- cliente se quedaba viendo al rival flotando donde apareció, 4 studs más arriba.)
+local function anchorInPlace(fighter: FighterService.Fighter)
+	local root = fighter.root
+	root.AssemblyLinearVelocity = Vector3.zero
+	root.Anchored = true
+	root.CFrame = root.CFrame + Vector3.new(0, 0.01, 0) -- cambio real de propiedad = se replica
+end
+
 local function resetCpu(fighter: FighterService.Fighter)
 	if not spawnCFrame then
 		return
@@ -185,6 +195,28 @@ local function onPracticeCommand(player: Player, command: any, value: any)
 		if playerFighter then
 			playerFighter.model:SetAttribute("Percent", 0)
 		end
+	elseif command == "ResetPositions" then
+		-- Prueba de la cadena: rival a su sitio, 0 %, CONGELADO (inmóvil); el jugador se
+		-- coloca a 5 studs mirándolo (lo hace su cliente, que es dueño de su física).
+		resetCpu(fighter)
+		CpuService.SetBehavior(fighter, "Idle")
+		workspace:SetAttribute("CpuBehavior", "Idle")
+		fighter.model:SetAttribute("Frozen", true) -- ya no se mueve ni se reinicia sola
+		-- Se ancla cuando TOCA EL SUELO (si se anclaba al aparecer, quedaba flotando a
+		-- 4 studs y los ataques bajos le pasaban por debajo).
+		task.spawn(function()
+			local started = os.clock()
+			while os.clock() - started < 2 and fighter.humanoid.FloorMaterial == Enum.Material.Air do
+				task.wait()
+			end
+			if fighter.model.Parent and fighter.model:GetAttribute("Frozen") then
+				anchorInPlace(fighter)
+			end
+		end)
+		local playerFighter = FighterService.Get(player.Character)
+		if playerFighter then
+			playerFighter.model:SetAttribute("Percent", 0)
+		end
 	elseif command == "Hitboxes" then
 		if type(value) == "boolean" then
 			workspace:SetAttribute("DebugHitboxes", value)
@@ -208,7 +240,11 @@ local function onPracticeCommand(player: Player, command: any, value: any)
 		-- daño, pero no se mueve). Útil para medir hitboxes y cadenas.
 		local frozen = not fighter.model:GetAttribute("Frozen")
 		fighter.model:SetAttribute("Frozen", frozen)
-		fighter.root.Anchored = frozen
+		if frozen then
+			anchorInPlace(fighter)
+		else
+			fighter.root.Anchored = false
+		end
 		if frozen then
 			CpuService.SetBehavior(fighter, "Idle")
 			workspace:SetAttribute("CpuBehavior", "Idle")

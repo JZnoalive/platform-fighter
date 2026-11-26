@@ -96,7 +96,7 @@ return {
 		knockbackGrowth = 0.006,
 		hitstun = 0.45,
 		hitstop = 0.06,
-		hitbox = { offset = Vector2.new(1, 4.5), size = Vector3.new(6, 5, 6) },
+		hitbox = { offset = Vector2.new(1.5, 3), size = Vector3.new(6, 6, 6) },
 		animationId = nil,
 	},
 

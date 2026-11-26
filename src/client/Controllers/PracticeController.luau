@@ -13,6 +13,7 @@ local WeaponStyles = require(ReplicatedStorage.Shared.Config.WeaponStyles)
 local CharacterStyles = require(ReplicatedStorage.Shared.Config.CharacterStyles)
 local FighterStats = require(ReplicatedStorage.Shared.Modules.FighterStats)
 local DebugController = require(script.Parent.DebugController)
+local MovementController = require(script.Parent.MovementController)
 
 local PracticeController = {}
 
@@ -282,7 +283,7 @@ local function build(practiceCommand: RemoteEvent)
 	-- Herramientas de la sala de prueba (2 columnas)
 	local tools = Instance.new("Frame")
 	tools.LayoutOrder = nextOrder()
-	tools.Size = UDim2.new(1, 0, 0, 56)
+	tools.Size = UDim2.new(1, 0, 0, 86)
 	tools.BackgroundTransparency = 1
 	tools.Parent = panel
 	local toolsLayout = Instance.new("UIGridLayout")
@@ -311,6 +312,20 @@ local function build(practiceCommand: RemoteEvent)
 	end)
 	tool("Imprimir cadena", 4, function()
 		DebugController.PrintLastChain()
+	end)
+	tool("Reiniciar posiciones", 5, function()
+		-- Rival quieto en su sitio y yo a 5 studs mirándolo: posición conocida para la cadena.
+		practiceCommand:FireServer("ResetPositions")
+		task.delay(0.6, function() -- (espera a que el rival aterrice)
+			for _, model in CollectionService:GetTagged("CameraTarget") do
+				local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
+				if model ~= Players.LocalPlayer.Character and model:GetAttribute("FighterId") and root then
+					MovementController.PlaceAt(root.Position.X - 5, root.Position.Y, 1)
+					DebugController.LogInput("REINICIO: rival congelado, tú a 5 studs mirándolo", "info")
+					return
+				end
+			end
+		end)
 	end)
 
 	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")

@@ -43,18 +43,52 @@ local held = {
 }
 local lastJumpPressedAt = -math.huge
 local tapJumpAt: number? = nil -- W pulsada: salto pendiente durante TapJumpWindow
-local pressListeners: { (string) -> () } = {}
+local pressListeners: { (string, string) -> () } = {}
+local diagnosticListeners: { (string) -> () } = {}
+local lastActionPressAt = -math.huge -- última pulsación que SÍ llegó a nuestras acciones
+
+-- ¿Está pulsada DE VERDAD alguna tecla de esta acción? Se pregunta al teclado/ratón
+-- en el momento, en vez de fiarse solo de "pulsó / soltó": si Roblox pierde el aviso de
+-- soltar (soltar el ratón encima del menú, cambiar de ventana...), la tecla se quedaba
+-- "pegada" y J dejaba de funcionar o W/S convertían J en otro ataque.
+local function isDown(action: string): boolean
+	if not held[action] then
+		return false
+	end
+	for _, input in BINDINGS[action] do
+		if input.EnumType == Enum.KeyCode then
+			if UserInputService:IsKeyDown(input) then
+				return true
+			end
+		elseif UserInputService:IsMouseButtonPressed(input) then
+			return true
+		end
+	end
+	held[action] = false -- estaba "pegada": se corrige
+	return false
+end
+
+-- ¿Está mantenida esta acción ahora mismo? (p. ej. "Light" para la cadena manteniendo J)
+function InputController.IsHeld(action: string): boolean
+	return isDown(action)
+end
+
+-- Diagnóstico: avisa si una tecla de ataque llegó pero la capturó la interfaz
+-- (un cuadro de texto con el foco, el chat...). Así se sabe si "J no llega".
+function InputController.OnDiagnostic(callback: (string) -> ())
+	table.insert(diagnosticListeners, callback)
+end
 
 function InputController.GetMoveX(): number
-	return (if held.Right then 1 else 0) - (if held.Left then 1 else 0)
+	return (if isDown("Right") then 1 else 0) - (if isDown("Left") then 1 else 0)
 end
 
 function InputController.IsUpHeld(): boolean
-	return held.Up
+	return isDown("Up")
 end
 
 function InputController.IsDownHeld(): boolean
-	return held.Down
+	return isDown("Down")
 end
 
 function InputController.HasBufferedJump(buffer: number): boolean
@@ -73,13 +107,23 @@ function InputController.ClearJump()
 end
 
 -- Registra una función que se llama con "Light", "Heavy" o "Dodge" al pulsar.
-function InputController.OnPress(callback: (string) -> ())
+function InputController.OnPress(callback: (string, string) -> ())
 	table.insert(pressListeners, callback)
+end
+
+local function keyName(inputObject: InputObject?): string
+	if not inputObject then
+		return "?"
+	end
+	if inputObject.KeyCode ~= Enum.KeyCode.Unknown then
+		return inputObject.KeyCode.Name
+	end
+	return inputObject.UserInputType.Name
 end
 
 function InputController.Start()
 	for action, inputs in BINDINGS do
-		ContextActionService:BindActionAtPriority("PF_" .. action, function(_, state)
+		ContextActionService:BindActionAtPriority("PF_" .. action, function(_, state, inputObject)
 			if state == Enum.UserInputState.Begin then
 				if action == "Jump" and not held.Jump then
 					lastJumpPressedAt = os.clock() -- Space: salto inmediato
@@ -87,11 +131,14 @@ function InputController.Start()
 				if action == "Up" and not held.Up then
 					tapJumpAt = os.clock() -- W: salto tras TapJumpWindow, salvo que llegue un ataque
 				end
-				if PRESS_ACTIONS[action] and not held[action] then
+				-- Cada pulsación nueva cuenta (no se exige haber "soltado" antes: si se perdió
+				-- el aviso de soltar, la tecla ya no queda bloqueada).
+				if PRESS_ACTIONS[action] then
 					-- W + ataque casi a la vez = ataque hacia arriba, sin saltar.
 					tapJumpAt = nil
+					lastActionPressAt = os.clock()
 					for _, callback in pressListeners do
-						task.spawn(callback, action)
+						task.spawn(callback, action, keyName(inputObject))
 					end
 				end
 				held[action] = true
@@ -101,6 +148,22 @@ function InputController.Start()
 			return Enum.ContextActionResult.Sink
 		end, false, PRIORITY, table.unpack(inputs))
 	end
+
+	UserInputService.InputBegan:Connect(function(input, processed)
+		if processed and (input.KeyCode == Enum.KeyCode.J or input.KeyCode == Enum.KeyCode.K) then
+			-- Nuestras acciones también la marcan como "usada": solo es un problema si NO
+			-- llegó a ellas (otro elemento de la interfaz se la quedó).
+			local pressedAt = os.clock()
+			task.delay(0.05, function()
+				if lastActionPressAt >= pressedAt - 0.05 then
+					return
+				end
+				for _, callback in diagnosticListeners do
+					task.spawn(callback, input.KeyCode.Name .. " llegó pero la capturó la interfaz (cuadro de texto o chat con el foco)")
+				end
+			end)
+		end
+	end)
 
 	-- Si la ventana pierde el foco, se sueltan todas las teclas.
 	UserInputService.WindowFocusReleased:Connect(function()

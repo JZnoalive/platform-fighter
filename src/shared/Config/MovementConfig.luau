@@ -30,6 +30,9 @@ local MovementConfig = {
 	-- encadenar en el aire sin caer de golpe). No afecta a los que bajan a propósito.
 	AirAttackGravityMultiplier = 0.15,
 	AirAttackMaxFallSpeed = 9,
+	-- El avance de un ataque (lunge) se para si el rival está delante a menos de esto:
+	-- así el atacante no atraviesa al rival y el siguiente golpe sigue a buena distancia.
+	LungeStopDistance = 3,
 	GroundControlInRecovery = 0.5, -- en el suelo: control durante la RECUPERACIÓN del ataque
 	-- (durante el arranque y el golpe del ataque en el suelo no hay control: solo esa ventana)
 

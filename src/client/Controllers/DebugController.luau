@@ -30,6 +30,48 @@ local showHurtboxes = false
 local showKnockback = true
 local lastMoveId: any = nil
 
+-- Registro de ENTRADA (siempre visible en la sala de prueba): cada pulsación, qué
+-- ataque se eligió, el índice de la cadena y, si no encadena, el MOTIVO exacto.
+local INPUT_LOG_MAX = 20
+local inputLog: { string } = {}
+local inputPanel: TextLabel? = nil
+
+local inputStatus = ""
+
+local function refreshInputPanel()
+	if inputPanel then
+		inputPanel.Text = "<b>ENTRADA</b> (J = ligero, K = pesado · mantener J = cadena)\n"
+			.. inputStatus .. "\n"
+			.. table.concat(inputLog, "\n")
+	end
+end
+
+-- Línea de estado fija (arriba del registro): última tecla, ataque, cadena y ventana.
+function DebugController.SetInputStatus(text: string)
+	if text ~= inputStatus then
+		inputStatus = text
+		refreshInputPanel()
+	end
+end
+
+-- Añade una línea al registro de entrada. kind: "input" | "ok" | "fail" | "info"
+function DebugController.LogInput(text: string, kind: string?)
+	if not (GameConfig.TestRoom and GameConfig.TestRoom.Enabled) then
+		return -- solo en la sala de prueba
+	end
+	local color = if kind == "fail" then "#ff6b6b"
+		elseif kind == "ok" then "#7CFC9A"
+		elseif kind == "input" then "#ffd84d"
+		else "#cfd8ff"
+	local line = string.format('<font color="%s">%6.2f  %s</font>', color, os.clock() % 1000, text)
+	table.insert(inputLog, line)
+	while #inputLog > INPUT_LOG_MAX do
+		table.remove(inputLog, 1)
+	end
+	refreshInputPanel()
+	print("[Entrada] " .. text)
+end
+
 local function cpuModel(): Model?
 	for _, model in CollectionService:GetTagged("CameraTarget") do
 		if model:IsA("Model") and model:GetAttribute("FighterId") then
@@ -92,7 +134,7 @@ local function render()
 	end
 	table.insert(lines, "<b>Últimos ataques</b> (arranque/golpe/recuperación):")
 	for _, entry in log do
-		table.insert(lines, string.format("  %s %s · %s%s", if entry.hit then "✔" else "·", entry.move, entry.timing,
+		table.insert(lines, string.format("  %s %s · %s%s", if entry.hit then "OK" else " ·", entry.move, entry.timing,
 			if entry.gap then string.format(" · +%.2f s", entry.gap) else ""))
 	end
 	panel.Text = table.concat(lines, "\n")
@@ -209,12 +251,68 @@ function DebugController.Start()
 	padding.PaddingTop = UDim.new(0, 6)
 	padding.Parent = panel
 	panel.Parent = gui
+
+	-- Panel de ENTRADA (arriba a la derecha, siempre visible en la sala de prueba)
+	local input = Instance.new("TextLabel")
+	input.Name = "InputLog"
+	input.AnchorPoint = Vector2.new(1, 0)
+	input.Position = UDim2.new(1, -12, 0, 150)
+	input.Size = UDim2.fromOffset(500, 320)
+	input.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
+	input.BackgroundTransparency = 0.2
+	input.TextColor3 = Color3.new(1, 1, 1)
+	input.Font = Enum.Font.Code
+	input.TextSize = 14
+	input.RichText = true
+	input.TextWrapped = true
+	input.TextXAlignment = Enum.TextXAlignment.Left
+	input.TextYAlignment = Enum.TextYAlignment.Top
+	local inputPadding = padding:Clone()
+	inputPadding.Parent = input
+	input.Parent = gui
+	inputPanel = input
+	refreshInputPanel()
+
+	-- CONTROLES reales (los de InputController.BINDINGS), abajo a la derecha.
+	local controls = Instance.new("TextLabel")
+	controls.Name = "Controls"
+	controls.AnchorPoint = Vector2.new(1, 1)
+	controls.Position = UDim2.new(1, -12, 1, -12)
+	controls.Size = UDim2.fromOffset(480, 175)
+	controls.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
+	controls.BackgroundTransparency = 0.25
+	controls.TextColor3 = Color3.new(1, 1, 1)
+	controls.Font = Enum.Font.Code
+	controls.TextSize = 12
+	controls.RichText = true
+	controls.TextXAlignment = Enum.TextXAlignment.Left
+	controls.TextYAlignment = Enum.TextYAlignment.Top
+	controls.Text = table.concat({
+		"<b>CONTROLES</b>",
+		"A / D ......... moverse (doble toque = dash, luego corres)",
+		"Espacio ....... saltar (W también) · 2 saltos en el aire",
+		"S (bajando) ... caída rápida · mantener S = bajar plataforma",
+		"J / clic izq .. ataque ligero",
+		"  J J J ....... cadena Light 1 > 2 > 3 (o mantener J)",
+		"  A/D + J ..... lateral · S + J abajo · W + J arriba",
+		"K / clic der .. ataque fuerte (+ dirección)",
+		"W + K (aire) .. recovery",
+		"Shift / L ..... esquiva (+ dirección en el aire)",
+		"F2 ............ ocultar/mostrar paneles",
+	}, "\n")
+	local controlsPadding = padding:Clone()
+	controlsPadding.Parent = controls
+	controls.Parent = gui
+
 	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 
 	RunService.RenderStepped:Connect(render)
 	UserInputService.InputBegan:Connect(function(input, processed)
 		if not processed and input.KeyCode == Enum.KeyCode.F2 then
 			visible = not visible
+			if inputPanel then
+				inputPanel.Visible = visible
+			end
 		end
 	end)
 	-- Los cuerpos cambian al reaparecer: refrescar las hurtboxes cada poco.
