@@ -334,6 +334,12 @@ local function updateModel(model: Model, _isCpu: boolean, dt: number)
 		elseif hasGuard and root and math.abs(root.AssemblyLinearVelocity.X) < 2 then
 			-- Quieto: guardia del arma con respiración (no la animación genérica de Roblox).
 			pose = guardPose(weapon)
+		elseif root and (Poses.CodePosesForStates or not Animations.States.Run) then
+			-- Andando / corriendo: SIEMPRE por código (antes dependía de una animación subida
+			-- y, si no cargaba, el personaje se deslizaba quieto). Piernas que corren, brazos
+			-- en guardia del arma.
+			local run = locomotionPose(model, dt)
+			pose = if hasGuard then mergePose(guardPose(weapon), run, LEGS) else run
 		elseif not Animations.States.Idle then
 			pose = locomotionPose(model, dt)
 		end

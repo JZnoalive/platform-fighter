@@ -26,7 +26,7 @@ return {
 	JumpInterval = 1.2, -- "Saltar": segundos entre saltos
 
 	-- Combate
-	AttackRange = 6, -- distancia (studs) a la que empieza a atacar
+	AttackRange = 4.2, -- distancia (studs) a la que empieza a atacar (antes 6: lanzaba golpes al aire)
 	AttackInterval = 1.0, -- "Atacar": segundos entre ataques
 	AttackCooldown = 0.55, -- "Pelear": pausa mínima entre ataques
 	ReactionJitter = 0.4, -- "Pelear": pausa extra aleatoria (0 a este valor)
